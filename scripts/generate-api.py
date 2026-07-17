@@ -134,7 +134,9 @@ class ResponseSchemaParser(cst.CSTVisitor):
 
         result_type = self._find_result_field(response_schema_name)
         if not result_type:
-            raise ValueError(f"Could not find result field for {response_schema_name}")
+            # No {result: ...} envelope in the current spec anymore,
+            # the response schema already IS the payload.
+            result_type = response_schema_name
 
         self.result_types[response_schema_name] = result_type
         return result_type
@@ -311,6 +313,30 @@ def extract_schema_names_from_type(type_annotation: str) -> set[str]:
     return schema_names
 
 
+def resolve_response_type(schema: dict, parser: "ResponseSchemaParser") -> str:
+    """
+    Resolve a 200-response schema to the Python type the generated SDK
+    method should return. Handles the shapes present in the current spec:
+      - {"$ref": ".../X"}                              -> X (via get_result_type)
+      - {"type": "array", "items": {"$ref": ".../X"}}  -> list[X]
+      - bare primitive ({"type": "integer"}, etc.)     -> matching builtin
+    """
+    if "$ref" in schema:
+        name = schema["$ref"].split("/")[-1]
+        return parser.get_result_type(name)
+
+    if schema.get("type") == "array":
+        items = schema.get("items", {})
+        item_type = resolve_response_type(items, parser) if items else "Any"
+        return f"list[{item_type}]"
+
+    PRIMITIVES = {"integer": "int", "number": "float", "string": "str", "boolean": "bool"}
+    t = schema.get("type")
+    if isinstance(t, list):
+        t = next((x for x in t if x != "null"), None)
+    return PRIMITIVES.get(t, "Any")
+
+
 def parse_openapi_for_rpc(spec_path: Path, parser: ResponseSchemaParser):
     """Parse OpenAPI spec for RPC methods."""
 
@@ -323,13 +349,13 @@ def parse_openapi_for_rpc(spec_path: Path, parser: ResponseSchemaParser):
     for path, spec in data["paths"].items():
         post_spec = spec["post"]
         request_ref = post_spec["requestBody"]["content"]["application/json"]["schema"]["$ref"]
-        response_ref = post_spec["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        response_schema = post_spec["responses"]["200"]["content"]["application/json"]["schema"]
 
         name = path.split("/")[-1]
         request_type = request_ref.split("/")[-1]
-        response_type = response_ref.split("/")[-1]
-        result_type = parser.get_result_type(response_type)
-        description = post_spec["description"]
+        result_type = resolve_response_type(response_schema, parser)
+        response_type = response_schema.get("$ref", "").split("/")[-1] or result_type
+        description = post_spec.get("description") or post_spec.get("summary", "")
 
         schema_imports.add(request_type)
         schema_imports.update(extract_schema_names_from_type(result_type))
