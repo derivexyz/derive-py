@@ -1207,7 +1207,7 @@ class ReplaceQuoteRequest(Struct):
     signer: Any
     subaccount_id: int
     client: str | UnsetType = '8baller-python-sdk'
-    extra_fee: Decimal | UnsetType = '0'
+    extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
     nonce_to_cancel: Any | UnsetType = UNSET
@@ -1276,7 +1276,7 @@ class SendQuoteRequest(Struct):
     signer: Address
     subaccount_id: int
     client: str | UnsetType = '8baller-python-sdk'
-    extra_fee: Decimal | UnsetType = '0'
+    extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
@@ -1287,11 +1287,11 @@ class SendRfqRequest(Struct):
     subaccount_id: int
     client: str | UnsetType = '8baller-python-sdk'
     counterparties: list[str] | UnsetType = UNSET
-    extra_fee: Decimal | UnsetType = '0'
+    extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     max_total_cost: Decimal | None | UnsetType = UNSET
     min_total_cost: Decimal | None | UnsetType = UNSET
-    partial_fill_step: Decimal | UnsetType = '1'
+    partial_fill_step: Decimal | UnsetType = Decimal('1')
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
 
@@ -1315,8 +1315,8 @@ class SetMmpConfigRequest(Struct):
     mmp_frozen_time: int
     mmp_interval: int
     subaccount_id: int
-    mmp_amount_limit: Decimal | UnsetType = '0'
-    mmp_delta_limit: Decimal | UnsetType = '0'
+    mmp_amount_limit: Decimal | UnsetType = Decimal('0')
+    mmp_delta_limit: Decimal | UnsetType = Decimal('0')
 
 
 class SetMmpConfigResponse(Struct):
@@ -1472,7 +1472,7 @@ class TransferPositionsRequest(Struct):
 
 class TriggerPriceType(StrEnum):
     mark = 'mark'
-    index = 'index'
+    index = 'index'  # type: ignore
 
 
 class TriggerType(StrEnum):
@@ -1697,12 +1697,12 @@ class CreateOrderRequest(Struct):
     is_atomic_signing: bool | None | UnsetType = UNSET
     label: str | None | UnsetType = UNSET
     mmp: bool | None | UnsetType = UNSET
-    order_type: OrderType | UnsetType = 'limit'
+    order_type: OrderType | UnsetType = OrderType('limit')
     reduce_only: bool | None | UnsetType = UNSET
     referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
     reject_post_only: bool | None | UnsetType = UNSET
     reject_timestamp: int | None | UnsetType = UNSET
-    time_in_force: TimeInForce | UnsetType = 'gtc'
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
     trigger_price: Decimal | None | UnsetType = UNSET
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
     trigger_type: TriggerType | None | UnsetType = UNSET
@@ -1843,7 +1843,7 @@ class Order(Struct):
     algo_num_slices: int | None | UnsetType = UNSET
     algo_slices_completed: int | None | UnsetType = UNSET
     algo_type: AlgoType | None | UnsetType = UNSET
-    cancel_reason: CancelReason | UnsetType = ''
+    cancel_reason: CancelReason | UnsetType = CancelReason('')
     label: str | UnsetType = ''
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
     trigger_reject_message: str | None | UnsetType = UNSET
@@ -1866,12 +1866,12 @@ class OrderQuoteRequest(Struct):
     is_atomic_signing: bool | UnsetType = False
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
-    order_type: OrderType | UnsetType = 'limit'
+    order_type: OrderType | UnsetType = OrderType('limit')
     reduce_only: bool | UnsetType = False
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
     reject_post_only: bool | UnsetType = True
     reject_timestamp: int | UnsetType = 9223372036854775807
-    time_in_force: TimeInForce | UnsetType = 'gtc'
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
     trigger_price: Decimal | None | UnsetType = UNSET
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
     trigger_type: TriggerType | None | UnsetType = UNSET
@@ -2066,12 +2066,12 @@ class ReplaceOrderRequest(Struct):
     mmp: bool | None | UnsetType = UNSET
     nonce_to_cancel: int | None | UnsetType = UNSET
     order_id_to_cancel: str | None | UnsetType = UNSET
-    order_type: OrderType | UnsetType = 'limit'
+    order_type: OrderType | UnsetType = OrderType('limit')
     reduce_only: bool | None | UnsetType = UNSET
     referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
     reject_post_only: bool | None | UnsetType = UNSET
     reject_timestamp: int | None | UnsetType = UNSET
-    time_in_force: TimeInForce | UnsetType = 'gtc'
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
     trigger_price: Decimal | None | UnsetType = UNSET
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
     trigger_type: TriggerType | None | UnsetType = UNSET

@@ -172,7 +172,13 @@ def patch_code(src: str) -> str:
     tree = OptionalRewriter().visit(tree)
 
     ast.fix_missing_locations(tree)
-    return ast.unparse(tree)
+
+    code_str = ast.unparse(tree)
+
+    # Append type ignore to index assignments to suppress pyright method override conflicts
+    code_str = re.sub(r"(\bindex\s*=\s*['\"]index['\"])", r"\1  # type: ignore", code_str)
+
+    return code_str
 
 
 def patch_file(path: Path) -> None:
@@ -228,27 +234,37 @@ class DefaultValueFixer(ast.NodeTransformer):
         if not isinstance(node.target, ast.Name) or node.value is None:
             return node
 
-        type_name = self._get_type_name(node.annotation)
-        if not type_name or not isinstance(node.value, ast.Constant):
+        type_names = self._get_type_names(node.annotation)
+        if not type_names or not isinstance(node.value, ast.Constant):
             return node
 
         if node.value.value is None:
             return node
 
-        # Fix known custom types that need constructor calls
-        if type_name in self.custom_types or type_name in self.enum_types:
-            node.value = ast.Call(func=ast.Name(id=type_name, ctx=ast.Load()), args=[node.value], keywords=[])
+        # Fix known custom types or enums that need constructor calls
+        for type_name in type_names:
+            if type_name in self.custom_types or type_name in self.enum_types:
+                node.value = ast.Call(func=ast.Name(id=type_name, ctx=ast.Load()), args=[node.value], keywords=[])
+                break
 
         return node
 
-    def _get_type_name(self, annotation: ast.expr) -> str | None:
-        """Extract the main type name from an annotation."""
+    def _get_type_names(self, annotation: ast.expr) -> set[str]:
+        """Extract all type names from an annotation recursively."""
+        names = set()
         if isinstance(annotation, ast.Name):
-            return annotation.id
+            names.add(annotation.id)
         elif isinstance(annotation, ast.Subscript):
-            # Handle Optional[X] -> X
-            return self._get_type_name(annotation.slice)
-        return None
+            names.update(self._get_type_names(annotation.slice))
+            if isinstance(annotation.value, ast.Name):
+                names.add(annotation.value.id)
+        elif isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+            names.update(self._get_type_names(annotation.left))
+            names.update(self._get_type_names(annotation.right))
+        elif isinstance(annotation, ast.Tuple):
+            for elt in annotation.elts:
+                names.update(self._get_type_names(elt))
+        return names
 
 
 def normalize_class_def(node: ast.ClassDef) -> str:
