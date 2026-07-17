@@ -234,13 +234,17 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
     return msgspec.json.decode(envelope.result, type=result_schema)
 
 
-def encode_json_exclude_none(obj: msgspec.Struct) -> bytes:
+def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
     """
     Encode msgspec Struct omitting None values.
 
     The Derive API requires optional fields to be omitted entirely
-    rather than sent as null.
+    rather than sent as null. Methods with no request parameters pass
+    None (EmptyRequest); encode as an empty JSON object.
     """
+    if obj is None:
+        return b"{}"
+
     data = msgspec.structs.asdict(obj)
     filtered = {k: v for k, v in data.items() if v is not None}
     return msgspec.json.encode(filtered)

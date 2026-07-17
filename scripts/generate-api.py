@@ -313,28 +313,36 @@ def extract_schema_names_from_type(type_annotation: str) -> set[str]:
     return schema_names
 
 
-def resolve_response_type(schema: dict, parser: "ResponseSchemaParser") -> str:
+def resolve_response_type(schema: dict, parser: "ResponseSchemaParser", schemas: dict) -> str:
     """
     Resolve a 200-response schema to the Python type the generated SDK
-    method should return. Handles the shapes present in the current spec:
+    method should return. Handles:
       - {"$ref": ".../X"}                              -> X (via get_result_type)
+      - singleton string enum ({"enum": ["ok"]})        -> Literal["ok"]
+                                                            (datamodel-code-generator
+                                                            emits no importable symbol
+                                                            for these, inline instead)
       - {"type": "array", "items": {"$ref": ".../X"}}  -> list[X]
       - bare primitive ({"type": "integer"}, etc.)     -> matching builtin
     """
     if "$ref" in schema:
         name = schema["$ref"].split("/")[-1]
+        target = schemas.get(name, {})
+        enum_values = target.get("enum")
+        if target.get("type") == "string" and enum_values and len(enum_values) == 1:
+            return "str"
         return parser.get_result_type(name)
 
     if schema.get("type") == "array":
         items = schema.get("items", {})
-        item_type = resolve_response_type(items, parser) if items else "Any"
+        item_type = resolve_response_type(items, parser, schemas) if items else "Any"
         return f"list[{item_type}]"
 
     PRIMITIVES = {"integer": "int", "number": "float", "string": "str", "boolean": "bool"}
     t = schema.get("type")
     if isinstance(t, list):
         t = next((x for x in t if x != "null"), None)
-    return PRIMITIVES.get(t, "Any")
+    return PRIMITIVES.get(t, "dict")
 
 
 def parse_openapi_for_rpc(spec_path: Path, parser: ResponseSchemaParser):
@@ -353,7 +361,7 @@ def parse_openapi_for_rpc(spec_path: Path, parser: ResponseSchemaParser):
 
         name = path.split("/")[-1]
         request_type = request_ref.split("/")[-1]
-        result_type = resolve_response_type(response_schema, parser)
+        result_type = result_type = resolve_response_type(response_schema, parser, data["components"]["schemas"])
         response_type = response_schema.get("$ref", "").split("/")[-1] or result_type
         description = post_spec.get("description") or post_spec.get("summary", "")
 

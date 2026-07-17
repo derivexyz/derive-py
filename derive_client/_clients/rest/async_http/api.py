@@ -1,7 +1,5 @@
 """Auto-generated API classes"""
 
-from typing import Any
-
 from derive_client._clients.rest.async_http.session import AsyncHTTPSession
 from derive_client._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
 from derive_client._clients.utils import AuthContext, decode_envelope, decode_result, encode_json_exclude_none
@@ -14,11 +12,8 @@ from derive_client.data_types.generated_models import (
     BurnSharesRequest,
     CancelAlgoOrderRequest,
     CancelAllAlgoOrdersRequest,
-    CancelAllAlgoOrdersResponse,
     CancelAllRequest,
-    CancelAllResponse,
     CancelAllTriggerOrdersRequest,
-    CancelAllTriggerOrdersResponse,
     CancelBatchQuotesRequest,
     CancelBatchResult,
     CancelBatchRfqsRequest,
@@ -32,7 +27,6 @@ from derive_client.data_types.generated_models import (
     CancelOrderRequest,
     CancelQuoteRequest,
     CancelRfqRequest,
-    CancelRfqResponse,
     CancelTriggerOrderRequest,
     CancelVaultRequestRequest,
     ChangeSubaccountLabelRequest,
@@ -159,7 +153,6 @@ from derive_client.data_types.generated_models import (
     ReplaceQuoteRequest,
     RequestVaultDepositRequest,
     RequestVaultWithdrawRequest,
-    ResetMmpResponse,
     Result,
     Rfq,
     RfqGetBestQuoteRequest,
@@ -841,7 +834,7 @@ class AsyncPublicRPC:
     async def withdraw_debug(
         self,
         params: PublicWithdrawDebugRequest,
-    ) -> Any:
+    ) -> dict:
         """
         Dry-run helper that returns the EIP-712 typed data and hashes that would be
         computed for the given withdrawal parameters, so clients can verify their own
@@ -854,7 +847,7 @@ class AsyncPublicRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Any)
+        result = decode_result(envelope, dict)
 
         return result
 
@@ -931,7 +924,7 @@ class AsyncPrivateRPC:
     async def cancel_all(
         self,
         params: CancelAllRequest,
-    ) -> CancelAllResponse:
+    ) -> str:
         """
         Cancels every open order on the given subaccount. Optional cancel_trigger_orders
         and cancel_algo_orders flags additionally clear the subaccount's trigger and
@@ -942,14 +935,14 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelAllResponse)
+        result = decode_result(envelope, str)
 
         return result
 
     async def cancel_all_algo_orders(
         self,
         params: CancelAllAlgoOrdersRequest,
-    ) -> CancelAllAlgoOrdersResponse:
+    ) -> str:
         """
         Cancels every active algo order on the given subaccount. Requires any trade
         scope; returns "ok" on success.
@@ -959,14 +952,14 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelAllAlgoOrdersResponse)
+        result = decode_result(envelope, str)
 
         return result
 
     async def cancel_all_trigger_orders(
         self,
         params: CancelAllTriggerOrdersRequest,
-    ) -> CancelAllTriggerOrdersResponse:
+    ) -> str:
         """
         Cancels every pending trigger order on the given subaccount. Requires any trade
         scope; returns "ok" on success.
@@ -976,7 +969,7 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelAllTriggerOrdersResponse)
+        result = decode_result(envelope, str)
 
         return result
 
@@ -1115,7 +1108,7 @@ class AsyncPrivateRPC:
     async def cancel_rfq(
         self,
         params: CancelRfqRequest,
-    ) -> CancelRfqResponse:
+    ) -> str:
         """
         Cancels one open RFQ owned by the given subaccount and cascade-cancels any
         quotes makers have submitted against it, notifying those makers. Identify the
@@ -1126,7 +1119,7 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelRfqResponse)
+        result = decode_result(envelope, str)
 
         return result
 
@@ -2018,7 +2011,7 @@ class AsyncPrivateRPC:
     async def reset_mmp(
         self,
         params: MmpScopeRequest,
-    ) -> ResetMmpResponse:
+    ) -> str:
         """
         Clears an active market maker protection freeze and resets the rolling MMP
         window for a subaccount, optionally scoped to a single currency. Use this to
@@ -2030,7 +2023,7 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, ResetMmpResponse)
+        result = decode_result(envelope, str)
 
         return result
 
