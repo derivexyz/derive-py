@@ -1,11 +1,12 @@
-with import <nixpkgs> {};
+with import (fetchTarball {
+  url = "https://github.com/NixOS/nixpkgs/archive/nixos-25.11.tar.gz";
+  # get with: nix-prefetch-url --unpack https://github.com/NixOS/nixpkgs/archive/nixos-25.11.tar.gz
+  sha256 = "0ln4yw7z3g9lb0x081hc0pd2j1wsx2qqf6bgmwwvdbkcl4bcy1dp"; 
+}) {};
 
 let
   python = pkgs.python311;
-
-  poetry = pkgs.poetry.override {
-    python3 = python;
-  };
+  poetry = pkgs.poetry;
 in
 
 mkShell {
@@ -43,13 +44,16 @@ mkShell {
     pkgs.python311Packages.cytoolz
     pkgs.pythonManylinuxPackages.manylinux2014Package
     pkgs.cmake
+    pkgs.ruff
   ];
 
+  NIX_RUFF = "${pkgs.ruff}/bin/ruff";
+  NIX_PYRIGHT = "${pkgs.pyright}/bin/pyright";
   # NIX_LD = builtins.readFile "${stdenv.cc}/nix-support/dynamic-linker";
 
   shellHook = ''
     set -e
-    export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib.outPath}/lib:${pkgs.pythonManylinuxPackages.manylinux2014Package}/lib:$LD_LIBRARY_PATH";
+    export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib.outPath}/lib:$LD_LIBRARY_PATH";
     echo 'Spinning up Python Virtual Environment in .nix-venv directory 🐍'
     ${pkgs.python311.interpreter} -m venv .nix-venv
     export PATH=$PWD/.nix-venv/bin:$PATH
