@@ -5,22 +5,15 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from derive_action_signing import DepositModuleData, WithdrawModuleData
+from derive_action_signing import WithdrawModuleData
 
 from derive_client.config import CURRENCY_DECIMALS
 from derive_client.data_types import Currency
 from derive_client.data_types.generated_models import (
-    MarginType,
-    PrivateDepositParamsSchema,
-    PrivateDepositResultSchema,
-    PrivateGetCollateralsParamsSchema,
-    PrivateGetCollateralsResultSchema,
-    PrivateGetMarginParamsSchema,
-    PrivateGetMarginResultSchema,
-    PrivateWithdrawParamsSchema,
-    PrivateWithdrawResultSchema,
-    SimulatedCollateralSchema,
-    SimulatedPositionSchema,
+    GetCollateralsRequest,
+    PrivateGetCollateralsResponse,
+    PrivateWithdrawRequest,
+    PrivateWithdrawResponse,
 )
 
 if TYPE_CHECKING:
@@ -39,93 +32,12 @@ class CollateralOperations:
         """
         self._subaccount = subaccount
 
-    async def get(self) -> PrivateGetCollateralsResultSchema:
+    async def get(self) -> PrivateGetCollateralsResponse:
         """Get collaterals of a subaccount."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetCollateralsParamsSchema(subaccount_id=subaccount_id)
+        params = GetCollateralsRequest(subaccount_id=subaccount_id)
         result = await self._subaccount._private_api.rpc.get_collaterals(params)
-        return result
-
-    async def get_margin(
-        self,
-        simulated_collateral_changes: Optional[list[SimulatedCollateralSchema]] = None,
-        simulated_position_changes: Optional[list[SimulatedPositionSchema]] = None,
-    ) -> PrivateGetMarginResultSchema:
-        """
-        Calculates margin for a given subaccount and (optionally) a simulated state change.
-
-        Does not take into account open orders margin requirements.
-        """
-
-        subaccount_id = self._subaccount.id
-        params = PrivateGetMarginParamsSchema(
-            subaccount_id=subaccount_id,
-            simulated_collateral_changes=simulated_collateral_changes,
-            simulated_position_changes=simulated_position_changes,
-        )
-        result = await self._subaccount._private_api.rpc.get_margin(params)
-        return result
-
-    async def deposit_to_subaccount(
-        self,
-        *,
-        amount: Decimal,
-        asset_name: str,
-        subaccount_id: Optional[int] = None,
-        nonce: Optional[int] = None,
-        signature_expiry_sec: Optional[int] = None,
-        is_atomic_signing: bool = False,
-    ) -> PrivateDepositResultSchema:
-        """Deposit an asset to a subaccount from the LightAccount wallet."""
-
-        subaccount_id = self._subaccount.id if subaccount_id is None else subaccount_id
-        module_address = self._subaccount._config.contracts.DEPOSIT_MODULE
-
-        currency = await self._subaccount.markets.get_currency(currency=asset_name)
-        if (asset := currency.protocol_asset_addresses.spot) is None:
-            raise ValueError(f"asset '{asset_name}' has no spot address, found: {currency}")
-
-        managers = []
-        for manager in currency.managers:
-            if manager.margin_type == self._subaccount.margin_type == MarginType.SM:
-                managers.append(manager)
-            if manager.margin_type is self._subaccount.margin_type and manager.currency == self._subaccount.currency:
-                managers.append(manager)
-
-        if len(managers) != 1:
-            msg = f"Expected exactly one manager for {(self._subaccount.margin_type, self._subaccount.currency)}, found {managers}"  # noqa: E501
-            raise ValueError(msg)
-
-        manager_address = managers[0].address
-        decimals = CURRENCY_DECIMALS[Currency[currency.currency]]
-
-        module_data = DepositModuleData(
-            amount=amount,
-            asset=asset,
-            manager=manager_address,
-            decimals=decimals,
-            asset_name=asset_name,
-        )
-
-        signed_action = self._subaccount.sign_action(
-            nonce=nonce,
-            module_address=module_address,
-            module_data=module_data,
-            signature_expiry_sec=signature_expiry_sec,
-        )
-
-        params = PrivateDepositParamsSchema(
-            amount=amount,
-            asset_name=asset_name,
-            nonce=signed_action.nonce,
-            signature=signed_action.signature,
-            signature_expiry_sec=signed_action.signature_expiry_sec,
-            signer=signed_action.signer,
-            subaccount_id=subaccount_id,
-            is_atomic_signing=is_atomic_signing,
-        )
-        result = await self._subaccount._private_api.rpc.deposit(params)
         return result
 
     async def withdraw_from_subaccount(
@@ -133,22 +45,38 @@ class CollateralOperations:
         *,
         amount: Decimal,
         asset_name: str,
+        max_fee_usd: Decimal,
         subaccount_id: Optional[int] = None,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
-        is_atomic_signing: bool = False,
-    ) -> PrivateWithdrawResultSchema:
-        """Withdraw an asset from a subaccount to the LightAccount wallet."""
+        force_batch: bool = False,
+    ) -> PrivateWithdrawResponse:
+        """
+        Withdraw an asset from a subaccount to the LightAccount wallet.
+
+        v3 changes, not fully resolved here:
+        - max_fee_usd is now required (max fee in USD the caller accepts).
+        - force_batch replaces is_atomic_signing; semantics not confirmed identical.
+        - asset address resolution below is unresolved, see raise.
+        """
 
         subaccount_id = self._subaccount.id if subaccount_id is None else subaccount_id
-        module_address = self._subaccount._config.contracts.WITHDRAWAL_MODULE
+        module_address = self._subaccount._config.contracts.WITHDRAW_MODULE
 
         currency = await self._subaccount.markets.get_currency(currency=asset_name)
-        if (asset := currency.protocol_asset_addresses.spot) is None:
-            raise ValueError(f"asset '{asset_name}' has no spot address, found: {currency}")
+
+        # v3: Currency.spot is now list[SpotAssetEntry], not a single nullable
+        # address (currency.protocol_asset_addresses.spot no longer exists).
+        # Not guessing which entry is correct for a withdrawal address —
+        # verify against Derive's docs before picking a selection rule.
+        raise NotImplementedError(
+            f"Asset address resolution for withdrawals needs updating for v3's Currency.spot "
+            f"list shape (found {len(currency.spot)} entries for '{asset_name}'). "
+            "Confirm the correct entry before implementing."
+        )
 
         decimals = CURRENCY_DECIMALS[Currency[asset_name]]
-
+        asset = ""  # Placeholder for the resolved asset address, to be implemented after confirming the correct entry.
         module_data = WithdrawModuleData(
             amount=amount,
             asset=asset,
@@ -163,15 +91,16 @@ class CollateralOperations:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateWithdrawParamsSchema(
-            amount=amount,
+        params = PrivateWithdrawRequest(
+            amount_in_underlying=str(amount),
             asset_name=asset_name,
+            force_batch=force_batch,
+            max_fee_usd=max_fee_usd,
             nonce=signed_action.nonce,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
             subaccount_id=subaccount_id,
-            is_atomic_signing=is_atomic_signing,
         )
         result = await self._subaccount._private_api.rpc.withdraw(params)
         return result

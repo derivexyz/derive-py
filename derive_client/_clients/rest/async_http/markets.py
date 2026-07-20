@@ -2,28 +2,22 @@
 
 from __future__ import annotations
 
-import warnings
-from typing import Optional
+from typing import Any, Optional
 
 from derive_client._clients.rest.async_http.api import AsyncPublicAPI
 from derive_client._clients.utils import async_fetch_all_pages_of_instrument_type, infer_instrument_type
 from derive_client.data_types import LoggerType
 from derive_client.data_types.generated_models import (
     AssetType,
-    CurrencyDetailedResponseSchema,
-    InstrumentPublicResponseSchema,
-    PublicGetAllCurrenciesParamsSchema,
-    PublicGetAllInstrumentsParamsSchema,
-    PublicGetAllInstrumentsResultSchema,
-    PublicGetCurrencyParamsSchema,
-    PublicGetCurrencyResultSchema,
-    PublicGetInstrumentParamsSchema,
-    PublicGetInstrumentResultSchema,
-    PublicGetInstrumentsParamsSchema,
-    PublicGetTickerParamsSchema,
-    PublicGetTickerResultSchema,
-    PublicGetTickersParamsSchema,
-    TickerSlimSchema,
+    Currency,
+    GetAllInstrumentsRequest,
+    GetAllInstrumentsResponse,
+    GetCurrencyRequest,
+    GetInstrumentRequest,
+    GetTickerRequest,
+    GetTickersRequest,
+    Instrument,
+    TickerSlimSnapshot,
 )
 
 
@@ -40,12 +34,12 @@ class MarketOperations:
         self._public_api = public_api
         self._logger = logger
 
-        self._erc20_instruments_cache: dict[str, InstrumentPublicResponseSchema] = {}
-        self._perp_instruments_cache: dict[str, InstrumentPublicResponseSchema] = {}
-        self._option_instruments_cache: dict[str, InstrumentPublicResponseSchema] = {}
+        self._erc20_instruments_cache: dict[str, Instrument] = {}
+        self._perp_instruments_cache: dict[str, Instrument] = {}
+        self._option_instruments_cache: dict[str, Instrument] = {}
 
     @property
-    def erc20_instruments_cache(self) -> dict[str, InstrumentPublicResponseSchema]:
+    def erc20_instruments_cache(self) -> dict[str, Instrument]:
         """Get cached ERC20 instruments."""
 
         if not self._erc20_instruments_cache:
@@ -55,7 +49,7 @@ class MarketOperations:
         return self._erc20_instruments_cache
 
     @property
-    def perp_instruments_cache(self) -> dict[str, InstrumentPublicResponseSchema]:
+    def perp_instruments_cache(self) -> dict[str, Instrument]:
         """Get cached perpetual instruments."""
 
         if not self._perp_instruments_cache:
@@ -65,7 +59,7 @@ class MarketOperations:
         return self._perp_instruments_cache
 
     @property
-    def option_instruments_cache(self) -> dict[str, InstrumentPublicResponseSchema]:
+    def option_instruments_cache(self) -> dict[str, Instrument]:
         """Get cached option instruments."""
 
         if not self._option_instruments_cache:
@@ -79,7 +73,7 @@ class MarketOperations:
         *,
         instrument_type: AssetType,
         expired: bool = False,
-    ) -> dict[str, InstrumentPublicResponseSchema]:
+    ) -> dict[str, Instrument]:
         """
         Fetch instruments for a specific instrument type from API.
 
@@ -109,7 +103,7 @@ class MarketOperations:
         self._logger.debug(f"Cached {len(cache)} {instrument_type.name.upper()} instruments")
         return cache
 
-    async def fetch_all_instruments(self, *, expired: bool = False) -> dict[str, InstrumentPublicResponseSchema]:
+    async def fetch_all_instruments(self, *, expired: bool = False) -> dict[str, Instrument]:
         """
         Fetch all instrument types from API.
 
@@ -128,7 +122,7 @@ class MarketOperations:
 
         return all_instruments
 
-    def _get_cache_for_type(self, instrument_type: AssetType) -> dict[str, InstrumentPublicResponseSchema]:
+    def _get_cache_for_type(self, instrument_type: AssetType) -> dict[str, Instrument]:
         """Get the cache for a specific instrument type."""
 
         match instrument_type:
@@ -141,7 +135,7 @@ class MarketOperations:
             case _:
                 raise TypeError(f"Unsupported instrument_type: {instrument_type!r}")
 
-    def _get_cached_instrument(self, *, instrument_name: str) -> InstrumentPublicResponseSchema:
+    def _get_cached_instrument(self, *, instrument_name: str) -> Instrument:
         """Internal helper to retrieve an instrument from cache."""
 
         instrument_type = infer_instrument_type(instrument_name=instrument_name)
@@ -157,42 +151,24 @@ class MarketOperations:
 
         return instrument
 
-    async def get_currency(self, *, currency: str) -> PublicGetCurrencyResultSchema:
+    async def get_currency(self, *, currency: str) -> Currency:
         """Get currency related risk params, spot price 24hrs ago and lending details for a specific currency."""
 
-        params = PublicGetCurrencyParamsSchema(currency=currency)
+        params = GetCurrencyRequest(currency=currency)
         result = await self._public_api.rpc.get_currency(params)
         return result
 
-    async def get_all_currencies(self) -> list[CurrencyDetailedResponseSchema]:
+    async def get_all_currencies(self) -> list[Currency]:
         """Get all active currencies with their spot price, spot price 24hrs ago."""
 
-        params = PublicGetAllCurrenciesParamsSchema()
-        result = await self._public_api.rpc.get_all_currencies(params)
+        result = await self._public_api.rpc.get_all_currencies(None)
         return result
 
-    async def get_instrument(self, *, instrument_name: str) -> PublicGetInstrumentResultSchema:
+    async def get_instrument(self, *, instrument_name: str) -> Instrument:
         """Get single instrument by asset name."""
 
-        params = PublicGetInstrumentParamsSchema(instrument_name=instrument_name)
+        params = GetInstrumentRequest(instrument_name=instrument_name)
         result = await self._public_api.rpc.get_instrument(params)
-        return result
-
-    async def get_instruments(
-        self,
-        *,
-        currency: str,
-        expired: bool,
-        instrument_type: AssetType,
-    ) -> list[InstrumentPublicResponseSchema]:
-        """Get all active instruments for a given `currency` and `type`."""
-
-        params = PublicGetInstrumentsParamsSchema(
-            currency=currency,
-            expired=expired,
-            instrument_type=instrument_type,
-        )
-        result = await self._public_api.rpc.get_instruments(params)
         return result
 
     async def get_all_instruments(
@@ -203,10 +179,10 @@ class MarketOperations:
         currency: Optional[str] = None,
         page: int = 1,
         page_size: int = 100,
-    ) -> PublicGetAllInstrumentsResultSchema:
+    ) -> GetAllInstrumentsResponse:
         """Get a paginated history of all instruments."""
 
-        params = PublicGetAllInstrumentsParamsSchema(
+        params = GetAllInstrumentsRequest(
             expired=expired,
             instrument_type=instrument_type,
             currency=currency,
@@ -216,20 +192,12 @@ class MarketOperations:
         result = await self._public_api.rpc.get_all_instruments(params)
         return result
 
-    async def get_ticker(self, *, instrument_name: str) -> PublicGetTickerResultSchema:
+    async def get_ticker(self, *, instrument_name: str) -> TickerSlimSnapshot:
         """
-        Get ticker information (best bid / ask, instrument contraints, fees info, etc.) for a single instrument
-
-        DEPRECATION NOTICE: This RPC is deprecated in favor of `get_tickers` on Dec 1, 2025.
+        Get ticker information (best bid / ask, instrument contraints, fees info, etc.) for a single instrument.
         """
 
-        warnings.warn(
-            "get_ticker is deprecated and will be removed on Dec 1, 2025. Use get_tickers instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        params = PublicGetTickerParamsSchema(instrument_name=instrument_name)
+        params = GetTickerRequest(instrument_name=instrument_name)
         result = await self._public_api.rpc.get_ticker(params)
         return result
 
@@ -239,16 +207,20 @@ class MarketOperations:
         instrument_type: AssetType,
         currency: Optional[str] = None,
         expiry_date: Optional[str] = None,
-    ) -> dict[str, TickerSlimSchema]:
+    ) -> dict[str, Any]:
         """
         Get tickers information (best bid / ask, stats, etc.) for multiple instruments.
+
+        v3 change: the response's tickers field is now dict[str, Any] upstream,
+        no per-ticker struct is generated anymore, precision lost at the spec
+        level, nothing to fix on this end.
 
         For options: currency is required and expiry_date is required.
         For perps: currency is optional, expiry_date will throw an error.
         For erc20s: currency is optional, expiry_date will throw an error.
         """
 
-        params = PublicGetTickersParamsSchema(
+        params = GetTickersRequest(
             currency=currency,
             instrument_type=instrument_type,
             expiry_date=expiry_date,

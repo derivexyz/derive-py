@@ -21,7 +21,7 @@ async def client_owner_wallet():
     Client connected to a wallet where the session key is the owner.
     Full authority over the wallet is available, allowing owner-level operations.
     """
-    subaccount_id = 137626
+    subaccount_id = 75723  # Prime Universe
     client = AsyncHTTPClient(
         wallet=OWNER_TEST_WALLET,
         session_key=SESSION_KEY_PRIVATE_KEY,
@@ -42,7 +42,7 @@ async def client_admin_wallet():
     Client connected to a wallet where the session key is registered as admin.
     This wallet is NOT owned by the session key, so only admin-level operations are allowed.
     """
-    subaccount_id = 31049
+    subaccount_id = 75723
     client = AsyncHTTPClient(
         wallet=ADMIN_TEST_WALLET,
         session_key=SESSION_KEY_PRIVATE_KEY,

@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
+import msgspec
 from derive_action_signing import (
     RFQExecuteModuleData,
     RFQQuoteDetails,
@@ -12,36 +13,33 @@ from derive_action_signing import (
 )
 
 from derive_client._clients.utils import sort_by_instrument_name
-from derive_client.config import UINT64_MAX
+from derive_client.config import INT64_MAX
 from derive_client.data_types.generated_models import (
+    CancelBatchQuotesRequest,
+    CancelBatchResult,
+    CancelBatchRfqsRequest,
+    CancelBatchRfqsResponse,
+    CancelQuoteRequest,
+    CancelRfqRequest,
     Direction,
-    LegPricedSchema,
-    LegUnpricedSchema,
-    PrivateCancelBatchQuotesParamsSchema,
-    PrivateCancelBatchQuotesResultSchema,
-    PrivateCancelBatchRfqsParamsSchema,
-    PrivateCancelBatchRfqsResultSchema,
-    PrivateCancelQuoteParamsSchema,
-    PrivateCancelQuoteResultSchema,
-    PrivateCancelRfqParamsSchema,
-    PrivateExecuteQuoteParamsSchema,
-    PrivateExecuteQuoteResultSchema,
-    PrivateGetQuotesParamsSchema,
-    PrivateGetQuotesResultSchema,
-    PrivateGetRfqsParamsSchema,
-    PrivateGetRfqsResultSchema,
-    PrivatePollQuotesParamsSchema,
-    PrivatePollQuotesResultSchema,
-    PrivatePollRfqsParamsSchema,
-    PrivatePollRfqsResultSchema,
-    PrivateRfqGetBestQuoteParamsSchema,
-    PrivateRfqGetBestQuoteResultSchema,
-    PrivateSendQuoteParamsSchema,
-    PrivateSendQuoteResultSchema,
-    PrivateSendRfqParamsSchema,
-    PrivateSendRfqResultSchema,
-    Result,
-    Status,
+    ExecuteQuoteRequest,
+    GetQuotesRequest,
+    GetRfqsRequest,
+    LegUnpricedParams,
+    PollQuotesRequest,
+    PollRfqsRequest,
+    PricedLegParamsAndResponse,
+    Quote,
+    QuoteExecuteResponse,
+    QuoteGetResponse,
+    QuotePollResponse,
+    Rfq,
+    RfqGetBestQuoteRequest,
+    RfqGetBestQuoteResponse,
+    RFQGetResponse,
+    RFQPollResponse,
+    SendQuoteRequest,
+    SendRfqRequest,
 )
 
 if TYPE_CHECKING:
@@ -63,22 +61,22 @@ class RFQOperations:
     async def send_rfq(
         self,
         *,
-        legs: list[LegUnpricedSchema],
+        legs: list[LegUnpricedParams],
         counterparties: Optional[list[str]] = None,
         label: str = "",
         max_total_cost: Optional[Decimal] = None,
         min_total_cost: Optional[Decimal] = None,
         partial_fill_step: Decimal = Decimal("1"),
-    ) -> PrivateSendRfqResultSchema:
+    ) -> Rfq:
         """Requests two-sided quotes from participating market makers."""
 
         subaccount_id = self._subaccount.id
         legs = sort_by_instrument_name(legs)
 
-        params = PrivateSendRfqParamsSchema(
+        params = SendRfqRequest(
             legs=legs,
             subaccount_id=subaccount_id,
-            counterparties=counterparties,
+            counterparties=counterparties if counterparties is not None else msgspec.UNSET,
             label=label,
             max_total_cost=max_total_cost,
             min_total_cost=min_total_cost,
@@ -93,16 +91,16 @@ class RFQOperations:
         page: int = 1,
         page_size: int = 100,
         rfq_id: Optional[str] = None,
-        status: Optional[Status] = None,
+        status: Optional[str] = None,
         from_timestamp: int = 0,
-        to_timestamp: int = UINT64_MAX,
-    ) -> PrivateGetRfqsResultSchema:
+        to_timestamp: int = INT64_MAX,
+    ) -> RFQGetResponse:
         """Retrieves a list of RFQs matching filter criteria.
 
         Takers can use this to get their open RFQs, RFQ history, etc."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetRfqsParamsSchema(
+        params = GetRfqsRequest(
             subaccount_id=subaccount_id,
             from_timestamp=from_timestamp,
             page=page,
@@ -114,11 +112,15 @@ class RFQOperations:
         result = await self._subaccount._private_api.rpc.get_rfqs(params)
         return result
 
-    async def cancel_rfq(self, *, rfq_id: str) -> Result:
-        """Cancels a single RFQ by id."""
+    async def cancel_rfq(self, *, rfq_id: str) -> str:
+        """
+        Cancels a single RFQ by id.
+
+        v3 change: response is now the literal string "ok", not a Result object.
+        """
 
         subaccount_id = self._subaccount.id
-        params = PrivateCancelRfqParamsSchema(rfq_id=rfq_id, subaccount_id=subaccount_id)
+        params = CancelRfqRequest(rfq_id=rfq_id, subaccount_id=subaccount_id)
         result = await self._subaccount._private_api.rpc.cancel_rfq(params)
         return result
 
@@ -128,17 +130,19 @@ class RFQOperations:
         label: Optional[str] = None,
         nonce: Optional[int] = None,
         rfq_id: Optional[str] = None,
-    ) -> PrivateCancelBatchRfqsResultSchema:
+    ) -> CancelBatchRfqsResponse:
         """Cancels RFQs given optional filters.
 
         If no filters are provided, all RFQs for the subaccount are cancelled.
 
         All filters are combined using `AND` logic, so mutually exclusive filters will
         result in no RFQs being cancelled.
+
+        v3 change: response is now {cancelled_ids: list[str]}, not the previous shape.
         """
 
         subaccount_id = self._subaccount.id
-        params = PrivateCancelBatchRfqsParamsSchema(
+        params = CancelBatchRfqsRequest(
             subaccount_id=subaccount_id,
             label=label,
             nonce=nonce,
@@ -155,9 +159,9 @@ class RFQOperations:
         page_size: int = 100,
         rfq_id: Optional[str] = None,
         rfq_subaccount_id: Optional[int] = None,
-        status: Optional[Status] = None,
-        to_timestamp: int = UINT64_MAX,
-    ) -> PrivatePollRfqsResultSchema:
+        status: Optional[str] = None,
+        to_timestamp: int = INT64_MAX,
+    ) -> RFQPollResponse:
         """Retrieves a list of RFQs matching filter criteria.
 
         Market makers can use this to poll RFQs directed to them.
@@ -165,7 +169,7 @@ class RFQOperations:
 
         # requires authorization: Unauthorized as RFQ maker
         subaccount_id = self._subaccount.id
-        params = PrivatePollRfqsParamsSchema(
+        params = PollRfqsRequest(
             subaccount_id=subaccount_id,
             from_timestamp=from_timestamp,
             page=page,
@@ -182,14 +186,14 @@ class RFQOperations:
         self,
         *,
         direction: Direction,
-        legs: list[LegPricedSchema],
+        legs: list[PricedLegParamsAndResponse],
         rfq_id: str,
         max_fee: Decimal = Decimal("1000"),
         signature_expiry_sec: Optional[int] = None,
         nonce: Optional[int] = None,
         label: str = "",
         mmp: bool = False,
-    ) -> PrivateSendQuoteResultSchema:
+    ) -> Quote:
         """Sends a quote in response to an RFQ request.
 
         The legs supplied in the parameters must exactly match those in the RFQ.
@@ -229,7 +233,7 @@ class RFQOperations:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateSendQuoteParamsSchema(
+        params = SendQuoteRequest(
             direction=direction,
             legs=legs,
             max_fee=max_fee,
@@ -245,11 +249,11 @@ class RFQOperations:
         result = await self._subaccount._private_api.rpc.send_quote(params)
         return result
 
-    async def cancel_quote(self, quote_id: str) -> PrivateCancelQuoteResultSchema:
+    async def cancel_quote(self, quote_id: str) -> Quote:
         """Cancels an open quote."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateCancelQuoteParamsSchema(
+        params = CancelQuoteRequest(
             quote_id=quote_id,
             subaccount_id=subaccount_id,
         )
@@ -263,7 +267,7 @@ class RFQOperations:
         nonce: Optional[int] = None,
         quote_id: Optional[str] = None,
         rfq_id: Optional[str] = None,
-    ) -> PrivateCancelBatchQuotesResultSchema:
+    ) -> CancelBatchResult:
         """Cancels quotes given optional filters. If no filters are provided, all quotes by
         the subaccount are cancelled.
 
@@ -272,7 +276,7 @@ class RFQOperations:
         """
 
         subaccount_id = self._subaccount.id
-        params = PrivateCancelBatchQuotesParamsSchema(
+        params = CancelBatchQuotesRequest(
             subaccount_id=subaccount_id,
             label=label,
             nonce=nonce,
@@ -290,16 +294,16 @@ class RFQOperations:
         page_size: int = 100,
         quote_id: Optional[str] = None,
         rfq_id: Optional[str] = None,
-        status: Optional[Status] = None,
-        to_timestamp: int = UINT64_MAX,
-    ) -> PrivateGetQuotesResultSchema:
+        status: Optional[str] = None,
+        to_timestamp: int = INT64_MAX,
+    ) -> QuoteGetResponse:
         """Retrieves a list of quotes matching filter criteria.
 
         Market makers can use this to get their open quotes, quote history, etc.
         """
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetQuotesParamsSchema(
+        params = GetQuotesRequest(
             subaccount_id=subaccount_id,
             from_timestamp=from_timestamp,
             page=page,
@@ -320,9 +324,9 @@ class RFQOperations:
         page_size: int = 100,
         quote_id: Optional[str] = None,
         rfq_id: Optional[str] = None,
-        status: Optional[Status] = None,
-        to_timestamp: int = UINT64_MAX,
-    ) -> PrivatePollQuotesResultSchema:
+        status: Optional[str] = None,
+        to_timestamp: int = INT64_MAX,
+    ) -> QuotePollResponse:
         """Retrieves a list of quotes matching filter criteria.
 
         Takers can use this to poll open quotes that they can fill against their open
@@ -330,7 +334,7 @@ class RFQOperations:
         """
 
         subaccount_id = self._subaccount.id
-        params = PrivatePollQuotesParamsSchema(
+        params = PollQuotesRequest(
             subaccount_id=subaccount_id,
             from_timestamp=from_timestamp,
             page=page,
@@ -347,14 +351,14 @@ class RFQOperations:
         self,
         *,
         direction: Direction,
-        legs: list[LegPricedSchema],
+        legs: list[PricedLegParamsAndResponse],
         quote_id: str,
         rfq_id: str,
         max_fee: Decimal = Decimal("1000"),
         label: str = "",
         signature_expiry_sec: Optional[int] = None,
         nonce: Optional[int] = None,
-    ) -> PrivateExecuteQuoteResultSchema:
+    ) -> QuoteExecuteResponse:
         """Executes a quote."""
 
         subaccount_id = self._subaccount.id
@@ -391,7 +395,7 @@ class RFQOperations:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateExecuteQuoteParamsSchema(
+        params = ExecuteQuoteRequest(
             subaccount_id=subaccount_id,
             direction=direction,
             legs=legs,
@@ -409,15 +413,9 @@ class RFQOperations:
 
     async def get_best_quote(
         self,
-        legs: list[LegUnpricedSchema],
+        legs: list[LegUnpricedParams],
         direction: Direction = Direction.buy,
-        rfq_id: Optional[str] = None,
-        label: str = "",
-        counterparties: Optional[list[str]] = None,
-        max_total_cost: Optional[Decimal] = None,
-        min_total_cost: Optional[Decimal] = None,
-        partial_fill_step: Decimal = Decimal("1"),
-    ) -> PrivateRfqGetBestQuoteResultSchema:
+    ) -> RfqGetBestQuoteResponse:
         """Performs a "dry run" on an RFQ, returning the estimated fee and whether the
         trade is expected to pass.
 
@@ -428,16 +426,10 @@ class RFQOperations:
         subaccount_id = self._subaccount.id
         legs = sort_by_instrument_name(legs)
 
-        params = PrivateRfqGetBestQuoteParamsSchema(
+        params = RfqGetBestQuoteRequest(
             legs=legs,
             subaccount_id=subaccount_id,
-            counterparties=counterparties,
             direction=direction,
-            label=label,
-            max_total_cost=max_total_cost,
-            min_total_cost=min_total_cost,
-            partial_fill_step=partial_fill_step,
-            rfq_id=rfq_id,
         )
         result = await self._subaccount._private_api.rpc.rfq_get_best_quote(params)
         return result
