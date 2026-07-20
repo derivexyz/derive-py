@@ -5,8 +5,8 @@ from __future__ import annotations
 from derive_client._clients.rest.http.api import PublicAPI
 from derive_client.data_types import LoggerType
 from derive_client.data_types.generated_models import (
-    PublicGetTransactionParamsSchema,
-    PublicGetTransactionResultSchema,
+    GetTransactionParams,
+    GetTransactionResult,
 )
 
 
@@ -24,9 +24,13 @@ class TransactionOperations:
         self._public_api = public_api
         self._logger = logger
 
-    def get(self, *, transaction_id: str) -> PublicGetTransactionResultSchema:
-        """Get a transaction by its transaction id."""
+    def get(self, *, op_uuid: str) -> GetTransactionResult:
+        """
+        Get a transaction by its operation UUID.
 
-        params = PublicGetTransactionParamsSchema(transaction_id=transaction_id)
+        v3 change: the request field is now op_uuid (was transaction_id).
+        """
+
+        params = GetTransactionParams(op_uuid=op_uuid)
         result = self._public_api.rpc.get_transaction(params)
         return result
