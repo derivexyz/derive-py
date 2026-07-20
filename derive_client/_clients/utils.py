@@ -19,10 +19,10 @@ from web3 import AsyncWeb3, Web3
 from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
 from derive_client.data_types.generated_models import (
     AssetType,
-    InstrumentPublicResponseSchema,
-    LegPricedSchema,
-    LegUnpricedSchema,
-    RPCErrorFormatSchema,
+    Instrument,
+    LegUnpricedParams,
+    PricedLegParamsAndResponse,
+    RPCError,
 )
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-InstrumentT = TypeVar("InstrumentT", LegUnpricedSchema, LegPricedSchema, PositionTransfer)
+InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
 
 
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
@@ -114,7 +114,7 @@ class AuthContext:
 class DeriveJSONRPCError(Exception):
     """Raised when a Derive JSON-RPC error payload is returned."""
 
-    def __init__(self, message_id: str | int, rpc_error: RPCErrorFormatSchema):
+    def __init__(self, message_id: str | int, rpc_error: RPCError):
         super().__init__(f"{rpc_error.code}: {rpc_error.message} (message_id={message_id})")
         self.message_id = message_id
         self.rpc_error = rpc_error
@@ -129,7 +129,7 @@ def try_cast_response(response: bytes, response_schema: type[T]) -> T:
         return msgspec.json.decode(response, type=response_schema)
     except msgspec.ValidationError:
         message = json.loads(response)
-        rpc_error = RPCErrorFormatSchema(**message["error"])
+        rpc_error = RPCError(**message["error"])
         raise DeriveJSONRPCError(message_id=message.get("id", ""), rpc_error=rpc_error)
     raise ValueError(f"Failed to decode response data: {response}")
 
@@ -224,7 +224,7 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
     """
 
     if envelope.error is not msgspec.UNSET:
-        error = msgspec.json.decode(envelope.error, type=RPCErrorFormatSchema)
+        error = msgspec.json.decode(envelope.error, type=RPCError)
         message_id = envelope.id if envelope.id is not msgspec.UNSET else ""
         raise DeriveJSONRPCError(message_id=message_id, rpc_error=error)
 
@@ -254,7 +254,7 @@ def fetch_all_pages_of_instrument_type(
     markets: MarketOperations,
     instrument_type: AssetType,
     expired: bool,
-) -> list[InstrumentPublicResponseSchema]:
+) -> list[Instrument]:
     """Fetch all instruments of a type, handling pagination."""
 
     page = 1
@@ -280,7 +280,7 @@ async def async_fetch_all_pages_of_instrument_type(
     markets: AsyncMarketOperations,
     instrument_type: AssetType,
     expired: bool,
-) -> list[InstrumentPublicResponseSchema]:
+) -> list[Instrument]:
     """Fetch all instruments of a type, handling pagination."""
 
     page = 1
