@@ -18,11 +18,8 @@ from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
-from derive_client.data_types.generated_models import (
-    MarginType,
-    PrivateGetSubaccountParamsSchema,
-    PrivateGetSubaccountResultSchema,
-)
+from derive_client.data_types.generated_models import GetSubaccountRequest
+from derive_client.data_types.generated_models import Subaccount as SubaccountState
 
 
 @functools.total_ordering
@@ -40,7 +37,7 @@ class Subaccount:
         transactions: TransactionOperations,
         public_api: PublicAPI,
         private_api: PrivateAPI,
-        _state: PrivateGetSubaccountResultSchema | None = None,
+        _state: SubaccountState | None = None,
     ):
         """
         Initialize subaccount (internal use - use from_api() instead).
@@ -73,7 +70,7 @@ class Subaccount:
         self._rfq = RFQOperations(subaccount=self)
         self._mmp = MMPOperations(subaccount=self)
 
-        self._state: PrivateGetSubaccountResultSchema | None = _state
+        self._state: SubaccountState | None = _state
 
     @classmethod
     def from_api(
@@ -110,7 +107,7 @@ class Subaccount:
             APIError: If subaccount does not exist or API call fails
         """
 
-        params = PrivateGetSubaccountParamsSchema(subaccount_id=subaccount_id)
+        params = GetSubaccountRequest(subaccount_id=subaccount_id)
         result = private_api.rpc.get_subaccount(params)
         state = result
         logger.debug(f"Subaccount validated: {state.subaccount_id}")
@@ -130,13 +127,13 @@ class Subaccount:
     def refresh(self) -> Subaccount:
         """Refresh mutable state from API."""
 
-        params = PrivateGetSubaccountParamsSchema(subaccount_id=self.id)
+        params = GetSubaccountRequest(subaccount_id=self.id)
         result = self._private_api.rpc.get_subaccount(params)
         self._state = result
         return self
 
     @property
-    def state(self) -> PrivateGetSubaccountResultSchema:
+    def state(self) -> SubaccountState:
         """Current mutable state (positions, orders, collateral, etc)."""
 
         if not self._state:
@@ -147,14 +144,18 @@ class Subaccount:
         return self._state
 
     @property
-    def margin_type(self) -> MarginType:
-        """Margin type of subaccount (PM (Portfolio Margin), PM2 (Portfolio Margin 2), or SM (Standard Margin))"""
+    def margin_type(self) -> str:
+        """
+        Margin type of subaccount.
+        """
 
         return self.state.margin_type
 
     @property
-    def currency(self) -> str:
-        """Currency of subaccount."""
+    def currency(self) -> list[str]:
+        """
+        Currency of subaccount.
+        """
 
         return self.state.currency
 
