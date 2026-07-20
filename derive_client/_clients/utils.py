@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
 import msgspec
-from derive_action_signing import ModuleData, SignedAction, sign_rest_auth_header, sign_ws_login
+from derive_action_signing import ModuleData, SignedAction, sign_ws_login
 from dotenv import load_dotenv
+from eth_account.messages import encode_defunct
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
 from pydantic import BaseModel
@@ -36,6 +37,39 @@ T = TypeVar("T")
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
 
 
+def sign_rest_auth_header(
+    web3_client: Web3 | AsyncWeb3,
+    smart_contract_wallet: str,
+    session_key_or_wallet_private_key: str,
+) -> dict[str, str]:
+    """
+    Local reimplementation of derive_action_signing.sign_rest_auth_header.
+
+    derive-action-signing==0.0.13 (pinned) still emits the pre-rebrand
+    X-Lyra* header names (X-LYRAWALLET, X-LYRATIMESTAMP, X-LYRASIGNATURE).
+    v3 expects X-DeriveWallet/X-DeriveTimestamp/X-DeriveSignature instead,
+    confirmed against derivexyz/derive-ts's current auth.ts. The server
+    never sees a timestamp under a name it recognizes, hence "Missing
+    timestamp in header". Signing logic (sign the millisecond timestamp
+    string with the session key) is identical to the library, only the
+    header names differ.
+
+    Replace this with the real library call once derive-action-signing
+    ships a version with the updated header names — check `poetry show
+    derive-action-signing` periodically.
+    """
+    timestamp = str(int(time.time() * 1000))
+    signature = web3_client.eth.account.sign_message(
+        encode_defunct(text=timestamp),
+        private_key=session_key_or_wallet_private_key,
+    ).signature.hex()
+    return {
+        "X-DeriveWallet": smart_contract_wallet,
+        "X-DeriveTimestamp": timestamp,
+        "X-DeriveSignature": signature,
+    }
+
+
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
     """Derive API mandate: 'Legs must be sorted by instrument name'."""
     return sorted(items, key=lambda item: item.instrument_name)
@@ -43,18 +77,17 @@ def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
 
 def get_default_signature_expiry_sec() -> int:
     """
-    Compute a conservative default signature_expiry_sec (Unix epoch seconds)
+    Compute a conservative default signature_expiry_sec (Unix epoch seconds).
 
-    Rationale:
-    - RFQ send/execute docs require expiry >= 310 seconds from now and mark the quote
-      expired once time-to-expiry <= 300 seconds.
-    - We choose 330 seconds from current local time (310 + 20s margin) to cover:
-      - small local/server clock skew
-      - signing and network transmission latency
-      - brief processing/queue delays on client or server
+    Derive's v3 API enforces signature_expiry_sec between 300 and
+    10,368,000 seconds (120 days) from now (RPC 11011: "Invalid signature
+    expiry"). The previous implementation returned now + 1 year
+    (31,536,000s), outside that bound — already inconsistent with this
+    docstring's own stated ~330s reasoning, only surfaced once tested
+    against the live v3 API.
     """
     utc_time_now_s = int(time.time())
-    return utc_time_now_s + (60 * 60 * 24 * 365)  # 1 year
+    return utc_time_now_s + 3600  # 1 hour, safely within [300, 10_368_000]
 
 
 @dataclass
@@ -236,7 +269,7 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
 
 def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
     """
-    Encode msgspec Struct omitting None values.
+    Encode msgspec Struct omitting None and UNSET values.
 
     The Derive API requires optional fields to be omitted entirely
     rather than sent as null. Methods with no request parameters pass
@@ -246,7 +279,7 @@ def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
         return b"{}"
 
     data = msgspec.structs.asdict(obj)
-    filtered = {k: v for k, v in data.items() if v is not None}
+    filtered = {k: v for k, v in data.items() if v is not None and v is not msgspec.UNSET}
     return msgspec.json.encode(filtered)
 
 
