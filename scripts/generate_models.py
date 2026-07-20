@@ -10,6 +10,29 @@ from libcst import matchers as m
 TIMEOUT = 10
 CUSTOM_HEADER = "# ruff: noqa: E741,E501"
 
+# class_name -> {readable_python_name: original_wire_key}
+#
+# Some of Derive's WS channel schemas (e.g. the slim ticker snapshot) use
+# single/double-letter JSON keys to cut payload size on high-frequency
+# streams — a reasonable wire-format choice, unreadable as a Python API.
+# _apply_field_renames() renames the field and attaches the corresponding
+# msgspec `rename=` mapping, so decode/encode against the real API is
+# unaffected: same bytes on the wire, readable attribute names in Python.
+FIELD_RENAMES: dict[str, dict[str, str]] = {
+    "TickerSlimSnapshot": {
+        "best_ask_price": "A",
+        "best_bid_price": "B",
+        "index_price": "I",
+        "mark_price": "M",
+        "best_ask_amount": "a",
+        "best_bid_amount": "b",
+        "max_price": "maxp",
+        "min_price": "minp",
+        "timestamp": "t",
+        "funding_rate": "f",  # unverified — confirm against a live perp ticker payload
+    },
+}
+
 
 @dataclass
 class ModelDefinition:
@@ -129,6 +152,44 @@ def update_get_tx_result_schema(node: ast.ClassDef) -> None:
                 stmt.annotation.slice = ast.Name(id="dict", ctx=ast.Load())
 
 
+def _apply_field_renames(node: ast.ClassDef) -> None:
+    """
+    Rename abbreviated wire-format fields to readable attribute names on
+    classes listed in FIELD_RENAMES, and attach the matching msgspec
+    `rename=` class keyword so the wire format is untouched.
+
+    Raises if an expected wire key is missing, rather than silently
+    no-op'ing — a mismatch means the spec's shape moved and the mapping
+    needs updating, not that the rename should be skipped.
+    """
+    renames = FIELD_RENAMES.get(node.name)
+    if not renames:
+        return
+
+    wire_key_by_field: dict[str, str] = {}
+    for stmt in node.body:
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            wire_key = stmt.target.id
+            if wire_key in renames.values():
+                readable_name = next(k for k, v in renames.items() if v == wire_key)
+                wire_key_by_field[readable_name] = wire_key
+                stmt.target = ast.Name(id=readable_name, ctx=ast.Store())
+
+    missing = set(renames.values()) - set(wire_key_by_field.values())
+    if missing:
+        raise ValueError(
+            f"{node.name}: FIELD_RENAMES expects wire keys {sorted(missing)} "
+            f"but they weren't found on the generated class. The spec likely "
+            f"changed shape — update FIELD_RENAMES to match."
+        )
+
+    rename_dict = ast.Dict(
+        keys=[ast.Constant(value=k) for k in wire_key_by_field],
+        values=[ast.Constant(value=v) for v in wire_key_by_field.values()],
+    )
+    node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
+
+
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -143,6 +204,7 @@ class OptionalRewriter(ast.NodeTransformer):
 
         if not is_struct_class(node):
             return node
+        _apply_field_renames(node)
         node.body = reorder_fields(node.body)
         return node
 
@@ -575,8 +637,15 @@ def deduplicate_channel_models(
 
 if __name__ == "__main__":
     repo_root = Path(__file__).parent.parent
-    input_path = repo_root / "specs" / "openapi-spec.json"
+    raw_input_path = repo_root / "specs" / "openapi-spec.json"
+    input_path = raw_input_path.with_name(f"{raw_input_path.stem}.patched{raw_input_path.suffix}")
     output_path = repo_root / "derive_client" / "data_types" / "generated_models.py"
+
+    if not input_path.exists():
+        raise SystemExit(
+            f"{input_path} not found. Run `poetry run python scripts/patch_spec.py "
+            f"{raw_input_path}` first (patches {raw_input_path.name} without modifying it)."
+        )
 
     generate_models(
         input_path=input_path,
