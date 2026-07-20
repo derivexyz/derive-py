@@ -692,15 +692,9 @@ class OffchainAckResponse(Struct):
     status: str
 
 
-class OffchainKeyScope1(StrEnum):
+class OffchainKeyScope(StrEnum):
     account_info = 'account_info'
-
-
-class OffchainKeyScope2(StrEnum):
     delete_session_key = 'delete_session_key'
-
-
-OffchainKeyScope: TypeAlias = OffchainKeyScope1 | OffchainKeyScope2
 
 
 class Ohlc(Struct):
@@ -1385,18 +1379,32 @@ class SpotUniverse(Struct):
     lending: LendingDetails | None | UnsetType = UNSET
 
 
-class TickerSlimSnapshot(Struct):
-    A: str
-    B: str
-    I: str
-    M: str
-    a: str
-    b: str
-    maxp: str
-    minp: str
+class TickerSlimSnapshot(
+    Struct,
+    rename={
+        'best_ask_price': 'A',
+        'best_bid_price': 'B',
+        'index_price': 'I',
+        'mark_price': 'M',
+        'best_ask_amount': 'a',
+        'best_bid_amount': 'b',
+        'max_price': 'maxp',
+        'min_price': 'minp',
+        'timestamp': 't',
+        'funding_rate': 'f',
+    },
+):
+    best_ask_price: str
+    best_bid_price: str
+    index_price: str
+    mark_price: str
+    best_ask_amount: str
+    best_bid_amount: str
+    max_price: str
+    min_price: str
     stats: DailyTradingStatistics
-    t: int
-    f: str | None | UnsetType = UNSET
+    timestamp: int
+    funding_rate: str | None | UnsetType = UNSET
     option_pricing: OptionPricing | None | UnsetType = UNSET
 
 
@@ -1480,32 +1488,17 @@ class TriggerType(StrEnum):
     takeprofit = 'takeprofit'
 
 
-class TxStatus1(StrEnum):
+class TxStatus(StrEnum):
     requested = 'requested'
     pending = 'pending'
     settled = 'settled'
     reverted = 'reverted'
     ignored = 'ignored'
     timed_out = 'timed_out'
-
-
-class TxStatus2(StrEnum):
     applied = 'applied'
-
-
-class TxStatus3(StrEnum):
     in_batch = 'in_batch'
-
-
-class TxStatus4(StrEnum):
     proving = 'proving'
-
-
-class TxStatus5(StrEnum):
     submitted = 'submitted'
-
-
-TxStatus: TypeAlias = TxStatus1 | TxStatus2 | TxStatus3 | TxStatus4 | TxStatus5
 
 
 class UniverseManagers(Struct):
