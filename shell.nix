@@ -7,6 +7,8 @@ with import (fetchTarball {
 let
   python = pkgs.python311;
   poetry = pkgs.poetry;
+  userShell = builtins.getEnv "SHELL";
+
 in
 
 mkShell {
@@ -44,12 +46,10 @@ mkShell {
     pkgs.python311Packages.cytoolz
     pkgs.pythonManylinuxPackages.manylinux2014Package
     pkgs.cmake
-    pkgs.ruff
   ];
 
-  NIX_RUFF = "${pkgs.ruff}/bin/ruff";
-  NIX_PYRIGHT = "${pkgs.pyright}/bin/pyright";
-  # NIX_LD = builtins.readFile "${stdenv.cc}/nix-support/dynamic-linker";
+  NIX_LD = builtins.readFile "${stdenv.cc}/nix-support/dynamic-linker";
+  PYRIGHT_PYTHON_FORCE_VERSION ="1.1.407";
 
   shellHook = ''
     set -e
@@ -57,6 +57,11 @@ mkShell {
     echo 'Spinning up Python Virtual Environment in .nix-venv directory 🐍'
     ${pkgs.python311.interpreter} -m venv .nix-venv
     export PATH=$PWD/.nix-venv/bin:$PATH
+    if [ -z "''${POETRY_RUN_SHELL_ACTIVE:-}" ]; then
+      export POETRY_RUN_SHELL_ACTIVE=1
+      echo "Dropping into pyenv"
+      exec poetry run ${userShell}
+    fi
   '';
 }
 
