@@ -51,13 +51,13 @@ class TradeOperations:
             currency=currency,
             from_timestamp=from_timestamp,
             instrument_name=instrument_name,
-            instrument_type=instrument_type,
+            instrument_type=instrument_type.value if instrument_type is not None else None,
             page=page,
             page_size=page_size,
             subaccount_id=subaccount_id,
             to_timestamp=to_timestamp,
             trade_id=trade_id,
-            tx_status=tx_status,
+            tx_status=tx_status.value if tx_status is not None else None,
         )
         result = self._subaccount._public_api.rpc.get_trade_history(params)
         return result.trades

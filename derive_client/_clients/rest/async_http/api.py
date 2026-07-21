@@ -127,6 +127,7 @@ from derive_client.data_types.generated_models import (
     PrivateGetSubaccountsResponse,
     PrivateSessionKeysResponse,
     PrivateTransferSpotExternalRequest,
+    PrivateTransferSpotExternalResponse,
     PrivateTransferSpotRequest,
     PrivateTransferSpotResponse,
     PrivateWithdrawRequest,
@@ -153,12 +154,12 @@ from derive_client.data_types.generated_models import (
     ReplaceQuoteRequest,
     RequestVaultDepositRequest,
     RequestVaultWithdrawRequest,
-    Result,
     Rfq,
     RfqGetBestQuoteRequest,
     RfqGetBestQuoteResponse,
     RFQGetResponse,
     RFQPollResponse,
+    RiskUniverse,
     SendQuoteRequest,
     SendRfqRequest,
     SessionKey,
@@ -181,6 +182,7 @@ from derive_client.data_types.generated_models import (
     VaultIdsResponse,
     VaultPerformanceHistoryResult,
     VaultRequestAckResponse,
+    VaultSettleResponse,
     VaultSharesResponse,
     VaultsResponse,
     WithdrawalHistoryResult,
@@ -204,6 +206,45 @@ class AsyncPublicRPC:
     def headers(self) -> dict:
         return PUBLIC_HEADERS
 
+    async def get_wallets_from_session_key(
+        self,
+        params: GetWalletsFromSessionKeyRequest,
+    ) -> PublicGetWalletsFromSessionKeyResponse:
+        """
+        Public lookup that returns the wallet addresses a given session key is
+        registered to, sorted by expiry, with expired keys omitted. An optional scope
+        filter narrows results to keys holding that off-chain scope; returns an error if
+        no matching, unexpired keys exist.
+        """
+
+        url = self._endpoints.get_wallets_from_session_key
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicGetWalletsFromSessionKeyResponse)
+
+        return result
+
+    async def order_quote(
+        self,
+        params: OrderQuoteRequest,
+    ) -> OrderQuoteResponse:
+        """
+        Public dry-run variant of order_quote that estimates fill price, fees, margin
+        impact, projected order status and realized PnL for a prospective order without
+        placing it, returning all values as decimal strings. Unlike private/order_quote
+        it bypasses session scope checks, so it can be used to preview costs without
+        account authentication.
+        """
+
+        url = self._endpoints.order_quote
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OrderQuoteResponse)
+
+        return result
+
     async def execute_quote_debug(
         self,
         params: PublicExecuteQuoteDebugRequest,
@@ -224,6 +265,206 @@ class AsyncPublicRPC:
 
         return result
 
+    async def send_quote_debug(
+        self,
+        params: PublicSendQuoteDebugRequest,
+    ) -> QuoteSendDebugResult:
+        """
+        Public signing-preview helper that returns the EIP-712 encoding artifacts
+        (encoded data, its hash, the action hash, and the typed-data hash) for a maker
+        quote a client is about to sign. It does not verify signatures, persist
+        anything, or place a quote; use it to construct and check the exact payload to
+        sign before calling private/send_quote.
+        """
+
+        url = self._endpoints.send_quote_debug
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, QuoteSendDebugResult)
+
+        return result
+
+    async def get_vault(
+        self,
+        params: GetVaultRequest,
+    ) -> Vault:
+        """
+        Returns the full vault record — on-chain state plus curator metadata — for one
+        vault subaccount id. Unauthenticated and read-only.
+        """
+
+        url = self._endpoints.get_vault
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Vault)
+
+        return result
+
+    async def get_vault_action_history(
+        self,
+        params: GetVaultActionHistoryRequest,
+    ) -> PaginatedVaultActions:
+        """
+        Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events
+        — including NAV, share price, high-water mark, and the fee-share split across
+        management, performance, curator, and protocol — at the vault level (per-holder
+        position details are omitted). Inputs are the vault subaccount, an optional
+        event_type filter, and pagination. Amounts and prices are decimal strings.
+        Unauthenticated.
+        """
+
+        url = self._endpoints.get_vault_action_history
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PaginatedVaultActions)
+
+        return result
+
+    async def get_vault_performance_history(
+        self,
+        params: GetVaultPerformanceHistoryRequest,
+    ) -> VaultPerformanceHistoryResult:
+        """
+        Returns a time series of a vault's mark-to-market performance (NAV, share price,
+        total and curator shares, high-water mark, optional benchmark) sampled hourly
+        and downsampled to the requested resolution (1h, 8h, 24h, or 1wk). Supports
+        optional from/to unix-second bounds and a limit (newest first, default 1000,
+        capped at 10000). Values are decimal strings, with live prices nullable.
+        Unauthenticated.
+        """
+
+        url = self._endpoints.get_vault_performance_history
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultPerformanceHistoryResult)
+
+        return result
+
+    async def get_vaults(
+        self,
+        params: GetVaultsRequest,
+    ) -> VaultsResponse:
+        """
+        Returns every vault in the system, each paired with its subaccount id, paginated
+        by page and page_size. Unauthenticated and read-only.
+        """
+
+        url = self._endpoints.get_vaults
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultsResponse)
+
+        return result
+
+    async def withdraw_debug(
+        self,
+        params: PublicWithdrawDebugRequest,
+    ) -> dict:
+        """
+        Dry-run helper that returns the EIP-712 typed data and hashes that would be
+        computed for the given withdrawal parameters, so clients can verify their own
+        signing and hashing before submitting. Takes the same inputs as private/withdraw
+        (subaccount, signer, nonce, amount, max fee, expiry, asset) but performs no
+        state change and needs no signature.
+        """
+
+        url = self._endpoints.withdraw_debug
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, dict)
+
+        return result
+
+    async def get_onchain_action_history(
+        self,
+        params: GetOnchainActionHistoryParams,
+    ) -> GetOnchainActionHistoryResponse:
+        """
+        Returns the lifecycle of onchain actions submitted via
+        `OnchainActionManager.sol`. Public endpoint.
+
+        Onchain actions are either applied directly or with a `fallback` flag. Each
+        onchain action is affected by the `fallback` flag uniquely:
+
+        - Deposits: sequencer moved the deposit into the `fallback_subaccount`
+
+        - SetSessionKey: no-op
+
+        - Admin actions: no-op
+
+        The onchain action can have several states:
+
+        - `applied`: action was successfully applied by the sequencer
+
+        - `applied_with_fallback`: action was applied by the sequencer with
+        fallback=true
+
+        - `instant_fallback`: action failed its initial attempt, will be re-submitted
+        with fallback=true
+
+        - `retry_then_fallback`: action failed its initial attempt, will be re-submitted
+        with fallback=false until the retry budget is exceeded, then re-submitted with
+        fallback=true
+
+        - `never_escalate`: action failed its initial attempt but will retry until
+        successful, never with fallback=true
+        """
+
+        url = self._endpoints.get_onchain_action_history
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetOnchainActionHistoryResponse)
+
+        return result
+
+    async def get_pending_deposits(
+        self,
+        params: GetPendingDepositsParams,
+    ) -> GetPendingDepositsResult:
+        """
+        Returns deposits queued on L1 but not yet applied by the sequencer, indexed for
+        a wallet and keyed by (tx_hash, log_index). Once a deposit is applied it moves
+        to private/get_deposit_history; this endpoint covers the window in between.
+        Public because a first-time depositor has no account (and thus no session key)
+        until their deposit is applied.
+        """
+
+        url = self._endpoints.get_pending_deposits
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetPendingDepositsResult)
+
+        return result
+
+    async def register_deposit_address(
+        self,
+        params: RegisterDepositAddressParams,
+    ) -> RegisterDepositAddressResult:
+        """
+        Returns the deterministic on-chain deposit address for a wallet and records it
+        so incoming deposits are watched and credited. Pass the wallet and optionally an
+        existing subaccount id; when creating a new subaccount (subaccount omitted or 0)
+        a non-zero manager_id is required. Repeated calls return the same cached address
+        and keep it alive, while new registrations are rate limited per rolling window;
+        unused addresses are dropped after 7 days.
+        """
+
+        url = self._endpoints.register_deposit_address
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, RegisterDepositAddressResult)
+
+        return result
+
     async def getRateLimits(
         self,
         params: EmptyRequest,
@@ -240,6 +481,43 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RateLimitResult)
+
+        return result
+
+    async def get_time(
+        self,
+        params: EmptyRequest,
+    ) -> int:
+        """
+        Returns the current server time in milliseconds since the UNIX epoch. Takes no
+        parameters and requires no authentication. Use it to align the timestamps and
+        nonces bound into signed actions with the server clock.
+        """
+
+        url = self._endpoints.get_time
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, int)
+
+        return result
+
+    async def get_transaction(
+        self,
+        params: GetTransactionParams,
+    ) -> GetTransactionResult:
+        """
+        Looks up the settlement lifecycle of a previously submitted operation by its
+        operation UUID (op_uuid). Returns the operation's serialized data along with its
+        batch status, settlement transaction hash, and any error log; the status is null
+        until the operation has been picked up for settlement.
+        """
+
+        url = self._endpoints.get_transaction
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetTransactionResult)
 
         return result
 
@@ -298,24 +576,6 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[str])
-
-        return result
-
-    async def get_all_referral_codes(
-        self,
-        params: GetAllReferralCodesParams,
-    ) -> list[Referrer]:
-        """
-        Returns every registered referral code along with the owner's wallet address
-        and, when configured, the wallet that receives referral rewards. Takes no
-        parameters.
-        """
-
-        url = self._endpoints.get_all_referral_codes
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, list[Referrer])
 
         return result
 
@@ -459,49 +719,6 @@ class AsyncPublicRPC:
 
         return result
 
-    async def get_onchain_action_history(
-        self,
-        params: GetOnchainActionHistoryParams,
-    ) -> GetOnchainActionHistoryResponse:
-        """
-        Returns the lifecycle of onchain actions submitted via
-        `OnchainActionManager.sol`. Public endpoint.
-
-        Onchain actions are either applied directly or with a `fallback` flag. Each
-        onchain action is affected by the `fallback` flag uniquely:
-
-        - Deposits: sequencer moved the deposit into the `fallback_subaccount`
-
-        - SetSessionKey: no-op
-
-        - Admin actions: no-op
-
-        The onchain action can have several states:
-
-        - `applied`: action was successfully applied by the sequencer
-
-        - `applied_with_fallback`: action was applied by the sequencer with
-        fallback=true
-
-        - `instant_fallback`: action failed its initial attempt, will be re-submitted
-        with fallback=true
-
-        - `retry_then_fallback`: action failed its initial attempt, will be re-submitted
-        with fallback=false until the retry budget is exceeded, then re-submitted with
-        fallback=true
-
-        - `never_escalate`: action failed its initial attempt but will retry until
-        successful, never with fallback=true
-        """
-
-        url = self._endpoints.get_onchain_action_history
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, GetOnchainActionHistoryResponse)
-
-        return result
-
     async def get_option_settlement_prices(
         self,
         params: GetOptionSettlementPricesRequest,
@@ -521,40 +738,29 @@ class AsyncPublicRPC:
 
         return result
 
-    async def get_pending_deposits(
+    async def get_risk_universes(
         self,
-        params: GetPendingDepositsParams,
-    ) -> GetPendingDepositsResult:
+        params: EmptyRequest,
+    ) -> list[RiskUniverse]:
         """
-        public/get_pending_deposits
+        Returns every risk universe (the isolated risk-containment boundaries trades
+        never cross), each with its display name and description, its managers — at most
+        one Standard (`SM`) and one Portfolio (`PM2`), each listing the derivative
+        instruments it risk-prices and the collateral assets it accepts with their
+        margin discounts and deposit metadata — and its Security Module. The one call
+        that answers which universe and manager to choose: pick a universe, pick a
+        manager in it, and pass its `manager_id` when depositing to a new subaccount
+        (the accepted collateral entries carry the `asset` address for the deposit). The
+        no-margin fallback universe (id 0) is included; it custodies dead-lettered
+        deposits and lists no tradeable instruments. Public endpoint, no authentication
+        required.
         """
 
-        url = self._endpoints.get_pending_deposits
+        url = self._endpoints.get_risk_universes
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, GetPendingDepositsResult)
-
-        return result
-
-    async def get_referral_performance(
-        self,
-        params: GetReferralPerformanceParams,
-    ) -> GetReferralPerformanceResult:
-        """
-        Returns broker-program referral performance for a referral code, identified
-        either by the code itself or by the referrer's wallet, over a requested time
-        window (start_ms to end_ms, capped at 28 days). The response includes total
-        notional volume, referred fees, fee rewards, builder fees collected, the
-        applicable fee-share percentage, and a per-role/currency/instrument-type
-        breakdown, all as decimal strings.
-        """
-
-        url = self._endpoints.get_referral_performance
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, GetReferralPerformanceResult)
+        result = decode_result(envelope, list[RiskUniverse])
 
         return result
 
@@ -594,24 +800,6 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetTickersResponse)
-
-        return result
-
-    async def get_time(
-        self,
-        params: EmptyRequest,
-    ) -> int:
-        """
-        Returns the current server time in milliseconds since the UNIX epoch. Takes no
-        parameters and requires no authentication. Use it to align the timestamps and
-        nonces bound into signed actions with the server clock.
-        """
-
-        url = self._endpoints.get_time
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, int)
 
         return result
 
@@ -656,198 +844,42 @@ class AsyncPublicRPC:
 
         return result
 
-    async def get_transaction(
+    async def get_all_referral_codes(
         self,
-        params: GetTransactionParams,
-    ) -> GetTransactionResult:
+        params: GetAllReferralCodesParams,
+    ) -> list[Referrer]:
         """
-        Looks up the settlement lifecycle of a previously submitted operation by its
-        operation UUID (op_uuid). Returns the operation's serialized data along with its
-        batch status, settlement transaction hash, and any error log; the status is null
-        until the operation has been picked up for settlement.
+        Returns every registered referral code along with the owner's wallet address
+        and, when configured, the wallet that receives referral rewards. Takes no
+        parameters.
         """
 
-        url = self._endpoints.get_transaction
+        url = self._endpoints.get_all_referral_codes
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, GetTransactionResult)
+        result = decode_result(envelope, list[Referrer])
 
         return result
 
-    async def get_vault(
+    async def get_referral_performance(
         self,
-        params: GetVaultRequest,
-    ) -> Vault:
+        params: GetReferralPerformanceParams,
+    ) -> GetReferralPerformanceResult:
         """
-        Returns the full vault record — on-chain state plus curator metadata — for one
-        vault subaccount id. Unauthenticated and read-only.
+        Returns broker-program referral performance for a referral code, identified
+        either by the code itself or by the referrer's wallet, over a requested time
+        window (start_ms to end_ms, capped at 28 days). The response includes total
+        notional volume, referred fees, fee rewards, builder fees collected, the
+        applicable fee-share percentage, and a per-role/currency/instrument-type
+        breakdown, all as decimal strings.
         """
 
-        url = self._endpoints.get_vault
+        url = self._endpoints.get_referral_performance
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Vault)
-
-        return result
-
-    async def get_vault_action_history(
-        self,
-        params: GetVaultActionHistoryRequest,
-    ) -> PaginatedVaultActions:
-        """
-        Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events
-        — including NAV, share price, high-water mark, and the fee-share split across
-        management, performance, curator, and protocol — at the vault level (per-holder
-        position details are omitted). Inputs are the vault subaccount, an optional
-        event_type filter, and pagination. Amounts and prices are decimal strings.
-        Unauthenticated.
-        """
-
-        url = self._endpoints.get_vault_action_history
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PaginatedVaultActions)
-
-        return result
-
-    async def get_vault_performance_history(
-        self,
-        params: GetVaultPerformanceHistoryRequest,
-    ) -> VaultPerformanceHistoryResult:
-        """
-        Returns a time series of a vault's mark-to-market performance (NAV, share price,
-        total and curator shares, high-water mark, optional benchmark) sampled hourly
-        and downsampled to the requested resolution (1h, 8h, 24h, or 1wk). Supports
-        optional from/to unix-second bounds and a limit (newest first, default 1000,
-        capped at 10000). Values are decimal strings, with live prices nullable.
-        Unauthenticated.
-        """
-
-        url = self._endpoints.get_vault_performance_history
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultPerformanceHistoryResult)
-
-        return result
-
-    async def get_vaults(
-        self,
-        params: GetVaultsRequest,
-    ) -> VaultsResponse:
-        """
-        Returns every vault in the system, each paired with its subaccount id, paginated
-        by page and page_size. Unauthenticated and read-only.
-        """
-
-        url = self._endpoints.get_vaults
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultsResponse)
-
-        return result
-
-    async def get_wallets_from_session_key(
-        self,
-        params: GetWalletsFromSessionKeyRequest,
-    ) -> PublicGetWalletsFromSessionKeyResponse:
-        """
-        Public lookup that returns the wallet addresses a given session key is
-        registered to, sorted by expiry, with expired keys omitted. An optional scope
-        filter narrows results to keys holding that off-chain scope; returns an error if
-        no matching, unexpired keys exist.
-        """
-
-        url = self._endpoints.get_wallets_from_session_key
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PublicGetWalletsFromSessionKeyResponse)
-
-        return result
-
-    async def order_quote(
-        self,
-        params: OrderQuoteRequest,
-    ) -> OrderQuoteResponse:
-        """
-        Public dry-run variant of order_quote that estimates fill price, fees, margin
-        impact, projected order status and realized PnL for a prospective order without
-        placing it, returning all values as decimal strings. Unlike private/order_quote
-        it bypasses session scope checks, so it can be used to preview costs without
-        account authentication.
-        """
-
-        url = self._endpoints.order_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OrderQuoteResponse)
-
-        return result
-
-    async def register_deposit_address(
-        self,
-        params: RegisterDepositAddressParams,
-    ) -> RegisterDepositAddressResult:
-        """
-        Returns the deterministic on-chain deposit address for a wallet and records it
-        so incoming deposits are watched and credited. Pass the wallet and optionally an
-        existing subaccount id; when creating a new subaccount (subaccount omitted or 0)
-        a non-zero manager_id is required. Repeated calls return the same cached address
-        and keep it alive, while new registrations are rate limited per rolling window;
-        unused addresses are dropped after 7 days.
-        """
-
-        url = self._endpoints.register_deposit_address
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, RegisterDepositAddressResult)
-
-        return result
-
-    async def send_quote_debug(
-        self,
-        params: PublicSendQuoteDebugRequest,
-    ) -> QuoteSendDebugResult:
-        """
-        Public signing-preview helper that returns the EIP-712 encoding artifacts
-        (encoded data, its hash, the action hash, and the typed-data hash) for a maker
-        quote a client is about to sign. It does not verify signatures, persist
-        anything, or place a quote; use it to construct and check the exact payload to
-        sign before calling private/send_quote.
-        """
-
-        url = self._endpoints.send_quote_debug
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, QuoteSendDebugResult)
-
-        return result
-
-    async def withdraw_debug(
-        self,
-        params: PublicWithdrawDebugRequest,
-    ) -> dict:
-        """
-        Dry-run helper that returns the EIP-712 typed data and hashes that would be
-        computed for the given withdrawal parameters, so clients can verify their own
-        signing and hashing before submitting. Takes the same inputs as private/withdraw
-        (subaccount, signer, nonce, amount, max fee, expiry, asset) but performs no
-        state change and needs no signature.
-        """
-
-        url = self._endpoints.withdraw_debug
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, dict)
+        result = decode_result(envelope, GetReferralPerformanceResult)
 
         return result
 
@@ -866,22 +898,198 @@ class AsyncPrivateRPC:
     def headers(self) -> dict:
         return {**PUBLIC_HEADERS, **self._auth.signed_headers}
 
-    async def burn_vault_shares(
+    async def change_subaccount_label(
         self,
-        params: BurnSharesRequest,
-    ) -> Result:
+        params: ChangeSubaccountLabelRequest,
+    ) -> PrivateChangeSubaccountLabelResponse:
         """
-        Curator-only endpoint that settles a pending withdraw request by signing a burn
-        approval at a quoted share price (USD per share). Takes the request id and the
-        user's withdraw-action hash, burns the shares, and returns the settlement
-        result. Requires the curator mint-and-burn permission.
+        Updates the human-readable label for a subaccount. The label must be at most 16
+        characters, otherwise an invalid-params error is returned. Requires a signed
+        session key with account-info scope; on success it echoes back the subaccount ID
+        and the new label.
         """
 
-        url = self._endpoints.burn_vault_shares
+        url = self._endpoints.change_subaccount_label
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Result)
+        result = decode_result(envelope, PrivateChangeSubaccountLabelResponse)
+
+        return result
+
+    async def get_all_portfolios(
+        self,
+        params: GetAllPortfoliosRequest,
+    ) -> list[Subaccount]:
+        """
+        Returns the complete portfolio (same shape as get_subaccount) for every
+        subaccount owned by the given wallet, including valuations, margin figures, open
+        orders, positions, and collaterals. If an individual subaccount's portfolio
+        cannot be built, it is returned as a placeholder entry with failed_to_fetch set
+        to true rather than failing the whole request.
+        """
+
+        url = self._endpoints.get_all_portfolios
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, list[Subaccount])
+
+        return result
+
+    async def get_collaterals(
+        self,
+        params: GetCollateralsRequest,
+    ) -> PrivateGetCollateralsResponse:
+        """
+        Returns the subaccount ID and the list of its collateral balances, including
+        each asset's amount and current value valued against live feed data. A lighter
+        alternative to get_subaccount when only collateral holdings are needed.
+        """
+
+        url = self._endpoints.get_collaterals
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateGetCollateralsResponse)
+
+        return result
+
+    async def get_positions(
+        self,
+        params: GetPositionsRequest,
+    ) -> PrivateGetPositionsResponse:
+        """
+        Returns the subaccount ID and the list of its active positions, including size,
+        mark price, average price, unrealized and realized PnL, and Greeks where
+        applicable, valued against live feed data at request time. A lighter alternative
+        to get_subaccount when only positions are needed.
+        """
+
+        url = self._endpoints.get_positions
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateGetPositionsResponse)
+
+        return result
+
+    async def get_subaccount(
+        self,
+        params: GetSubaccountRequest,
+    ) -> Subaccount:
+        """
+        Returns the complete portfolio for a single subaccount: its label, manager and
+        risk-universe identifiers, margin type and liquidation status, aggregate
+        valuation and margin figures (positions, collaterals, initial and maintenance
+        margin, open-order margin) as decimal strings, plus the full lists of open
+        orders, positions, and collateral balances. Margin, mark price, and Greek values
+        are computed from live feed data at request time.
+        """
+
+        url = self._endpoints.get_subaccount
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Subaccount)
+
+        return result
+
+    async def get_subaccounts(
+        self,
+        params: GetSubaccountsRequest,
+    ) -> PrivateGetSubaccountsResponse:
+        """
+        Returns the wallet address and the sorted list of subaccount IDs owned by that
+        wallet. Yields an empty list if the wallet has no subaccounts.
+        """
+
+        url = self._endpoints.get_subaccounts
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateGetSubaccountsResponse)
+
+        return result
+
+    async def create_session_key(
+        self,
+        params: CreateSessionKeyRequest,
+    ) -> PrivateCreateSessionKeyResponse:
+        """
+        Authorizes a new session key for a wallet from a signed action, granting it a
+        set of on-chain (protocol) scopes and off-chain scopes with an expiry, an
+        optional label, an optional IP allowlist, and an optional list of subaccounts it
+        may act on (defaults to all of the wallet's subaccounts). Send the signed action
+        fields (nonce, signer, signature, signature expiry, and module) alongside the
+        requested scopes; the endpoint returns the registered key's public address and
+        its granted scopes, expiry, allowlist, label, and subaccounts.
+        """
+
+        url = self._endpoints.create_session_key
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateCreateSessionKeyResponse)
+
+        return result
+
+    async def edit_session_key(
+        self,
+        params: EditSessionKeyRequest,
+    ) -> SessionKey:
+        """
+        Updates an existing session key's label, IP allowlist, and/or off-chain scopes
+        for a given wallet; it cannot change on-chain (protocol) scopes, for which you
+        must re-register with private/create_session_key. Editing only the label needs
+        account-info permission, while changing the IP allowlist or off-chain scopes
+        requires admin/owner authorization. Returns the updated session key details.
+        """
+
+        url = self._endpoints.edit_session_key
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, SessionKey)
+
+        return result
+
+    async def session_keys(
+        self,
+        params: SessionKeysRequest,
+    ) -> PrivateSessionKeysResponse:
+        """
+        Returns every session key registered to the given wallet, including expired and
+        not-yet-activated keys, each with its public address, scopes, expiry, label, IP
+        allowlist, and permitted subaccounts.
+        """
+
+        url = self._endpoints.session_keys
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateSessionKeysResponse)
+
+        return result
+
+    async def get_account(
+        self,
+        params: GetAccountRequest,
+    ) -> PrivateGetAccountResponse:
+        """
+        Returns account-level information for a given wallet address: the list of its
+        subaccount IDs, WebSocket rate limits (matching, non-matching, perp, and option
+        messages per second) and any per-endpoint overrides, cancel-on-disconnect and
+        RFQ-maker flags, the account creation timestamp, and a fee_info block with fee
+        discounts and per-instrument maker/taker fee overrides expressed as decimals.
+        Returns an account-not-found error if the wallet has never been registered.
+        """
+
+        url = self._endpoints.get_account
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateGetAccountResponse)
 
         return result
 
@@ -973,64 +1181,6 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def cancel_all_vault_requests(
-        self,
-        params: CancelVaultRequestRequest,
-    ) -> VaultCancelResponse:
-        """
-        Submits a signed cancel action that drains all of the caller's pending deposit
-        and withdraw requests for a given vault and posts the corresponding on-chain
-        operation. Input is the vault subaccount; any subaccount the caller owns may
-        sign. Requires the user-cancel permission.
-        """
-
-        url = self._endpoints.cancel_all_vault_requests
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultCancelResponse)
-
-        return result
-
-    async def cancel_batch_quotes(
-        self,
-        params: CancelBatchQuotesRequest,
-    ) -> CancelBatchResult:
-        """
-        Cancels all open quotes on a subaccount that match the supplied filters (any
-        combination of quote_id, rfq_id, label, and nonce, applied together) in a single
-        atomic operation. Omitting the optional filters targets all of the subaccount's
-        open quotes. Returns the list of cancelled quote ids. Requires an RFQ trade
-        scope.
-        """
-
-        url = self._endpoints.cancel_batch_quotes
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelBatchResult)
-
-        return result
-
-    async def cancel_batch_rfqs(
-        self,
-        params: CancelBatchRfqsRequest,
-    ) -> CancelBatchRfqsResponse:
-        """
-        Cancels all open RFQs on a subaccount that match the supplied filters (any
-        combination of rfq_id, label, and nonce, applied together), cascade-cancelling
-        their quotes. Omitting the optional filters targets all of the subaccount's open
-        RFQs. Returns the set of cancelled RFQs. Requires an RFQ trade scope.
-        """
-
-        url = self._endpoints.cancel_batch_rfqs
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, CancelBatchRfqsResponse)
-
-        return result
-
     async def cancel_by_instrument(
         self,
         params: CancelByInstrumentRequest,
@@ -1086,6 +1236,214 @@ class AsyncPrivateRPC:
 
         return result
 
+    async def cancel_trigger_order(
+        self,
+        params: CancelTriggerOrderRequest,
+    ) -> Order:
+        """
+        Cancels a single pending trigger order identified by order_id and subaccount_id.
+        Requires any trade scope; returns the cancelled order.
+        """
+
+        url = self._endpoints.cancel_trigger_order
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Order)
+
+        return result
+
+    async def get_algo_orders(
+        self,
+        params: GetAlgoOrdersRequest,
+    ) -> list[Order]:
+        """
+        Returns all active algo orders (e.g. time-sliced execution orders) for the given
+        subaccount as a flat list. Read-only query.
+        """
+
+        url = self._endpoints.get_algo_orders
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, list[Order])
+
+        return result
+
+    async def get_open_orders(
+        self,
+        params: GetOpenOrdersRequest,
+    ) -> AggregatedOrdersResult:
+        """
+        Returns all currently open orders for the given subaccount, including each
+        order's instrument, direction, prices, amounts and status. Read-only query.
+        """
+
+        url = self._endpoints.get_open_orders
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, AggregatedOrdersResult)
+
+        return result
+
+    async def get_order(
+        self,
+        params: GetOrderRequest,
+    ) -> Order:
+        """
+        Returns one order (active or completed) by order_id and subaccount_id; the
+        subaccount filter enforces ownership. Returns the order or an order-does-not-
+        exist error.
+        """
+
+        url = self._endpoints.get_order
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Order)
+
+        return result
+
+    async def get_trigger_orders(
+        self,
+        params: GetTriggerOrdersRequest,
+    ) -> AggregatedTriggerOrdersResult:
+        """
+        Returns all pending trigger (conditional) orders for the given subaccount that
+        have not yet fired. Read-only query.
+        """
+
+        url = self._endpoints.get_trigger_orders
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, AggregatedTriggerOrdersResult)
+
+        return result
+
+    async def order(
+        self,
+        params: CreateOrderRequest,
+    ) -> OrderCreatedResponse:
+        """
+        Submits a signed limit or market order for a subaccount, specifying instrument,
+        direction, amount, limit price and max fee, plus optional flags like time-in-
+        force, reduce-only, post-only and MMP. The same endpoint also creates trigger
+        orders (via trigger_type/trigger_price) and algo orders (via algo_type), though
+        the two cannot be combined in one request. Requires a signed order payload and
+        Orderbook trade scope for the instrument's asset; returns the created order with
+        its assigned id and current status.
+        """
+
+        url = self._endpoints.order
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OrderCreatedResponse)
+
+        return result
+
+    async def order_debug(
+        self,
+        params: CreateOrderRequest,
+    ) -> OrderDebugResponse:
+        """
+        Takes the same params as private/order and rebuilds the order Action without
+        executing anything, returning the EIP-712 encoded_data, encoded_data_hashed,
+        action_hash, typed_data_hash, domain_separator, action_typehash, module, owner
+        and expected_signer, plus the decoded order action data. Byte-compare these
+        against your local computation to find why a signature is rejected. Requires a
+        logged-in session; no trade scope needed.
+        """
+
+        url = self._endpoints.order_debug
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OrderDebugResponse)
+
+        return result
+
+    async def order_quote(
+        self,
+        params: OrderQuoteRequest,
+    ) -> OrderQuoteResponse:
+        """
+        Dry-run pricing helper that estimates the outcome of a prospective order without
+        placing it, returning projected fill price and amount, fees, pre/post initial
+        margin, realized PnL, resulting order status and (where relevant) liquidation
+        price and max tradable amount. All monetary values are returned as decimal
+        strings. The private variant requires account-level authentication.
+        """
+
+        url = self._endpoints.order_quote
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OrderQuoteResponse)
+
+        return result
+
+    async def replace(
+        self,
+        params: ReplaceOrderRequest,
+    ) -> ReplaceOrderResponse:
+        """
+        Atomically cancels a resting order (identified by order_id_to_cancel or
+        nonce_to_cancel) and submits a replacement order in a single request. The
+        payload is a full new-order specification plus the cancel target and an optional
+        expected_filled_amount guard. Requires a signed order payload and Orderbook
+        trade scope; returns both the cancelled and the newly created order.
+        """
+
+        url = self._endpoints.replace
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, ReplaceOrderResponse)
+
+        return result
+
+    async def cancel_batch_quotes(
+        self,
+        params: CancelBatchQuotesRequest,
+    ) -> CancelBatchResult:
+        """
+        Cancels all open quotes on a subaccount that match the supplied filters (any
+        combination of quote_id, rfq_id, label, and nonce, applied together) in a single
+        atomic operation. Omitting the optional filters targets all of the subaccount's
+        open quotes. Returns the list of cancelled quote ids. Requires an RFQ trade
+        scope.
+        """
+
+        url = self._endpoints.cancel_batch_quotes
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, CancelBatchResult)
+
+        return result
+
+    async def cancel_batch_rfqs(
+        self,
+        params: CancelBatchRfqsRequest,
+    ) -> CancelBatchRfqsResponse:
+        """
+        Cancels all open RFQs on a subaccount that match the supplied filters (any
+        combination of rfq_id, label, and nonce, applied together), cascade-cancelling
+        their quotes. Omitting the optional filters targets all of the subaccount's open
+        RFQs. Returns the set of cancelled RFQs. Requires an RFQ trade scope.
+        """
+
+        url = self._endpoints.cancel_batch_rfqs
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, CancelBatchRfqsResponse)
+
+        return result
+
     async def cancel_quote(
         self,
         params: CancelQuoteRequest,
@@ -1123,61 +1481,335 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def cancel_trigger_order(
+    async def execute_quote(
         self,
-        params: CancelTriggerOrderRequest,
-    ) -> Order:
+        params: ExecuteQuoteRequest,
+    ) -> QuoteExecuteResponse:
         """
-        Cancels a single pending trigger order identified by order_id and subaccount_id.
-        Requires any trade scope; returns the cancelled order.
+        Taker-side call that accepts a specific maker quote and settles the trade
+        atomically. You reference the rfq_id and quote_id and supply the taker's priced
+        legs, direction, max fee, and EIP-712 signature (signer, signature, nonce,
+        expiry), with an optional taker-protection flag. The signature is verified and
+        the taker fill, maker quote, and RFQ are updated together in one atomic step.
+        Requires trade scope for every instrument in the legs.
         """
 
-        url = self._endpoints.cancel_trigger_order
+        url = self._endpoints.execute_quote
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Order)
+        result = decode_result(envelope, QuoteExecuteResponse)
 
         return result
 
-    async def change_subaccount_label(
+    async def get_quotes(
         self,
-        params: ChangeSubaccountLabelRequest,
-    ) -> PrivateChangeSubaccountLabelResponse:
+        params: GetQuotesRequest,
+    ) -> QuoteGetResponse:
         """
-        Updates the human-readable label for a subaccount. The label must be at most 16
-        characters, otherwise an invalid-params error is returned. Requires a signed
-        session key with account-info scope; on success it echoes back the subaccount ID
-        and the new label.
+        Returns a paginated, merged view of a subaccount's quotes, combining currently
+        open quotes with the archived history of filled, cancelled, and expired ones.
+        Supports filtering by quote_id, rfq_id, status, and a from/to timestamp window,
+        with page and page_size controls. Each entry includes priced legs, direction,
+        fees, liquidity role, and fill percentage.
         """
 
-        url = self._endpoints.change_subaccount_label
+        url = self._endpoints.get_quotes
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateChangeSubaccountLabelResponse)
+        result = decode_result(envelope, QuoteGetResponse)
 
         return result
 
-    async def create_session_key(
+    async def get_rfqs(
         self,
-        params: CreateSessionKeyRequest,
-    ) -> PrivateCreateSessionKeyResponse:
+        params: GetRfqsRequest,
+    ) -> RFQGetResponse:
         """
-        Authorizes a new session key for a wallet from a signed action, granting it a
-        set of on-chain (protocol) scopes and off-chain scopes with an expiry, an
-        optional label, an optional IP allowlist, and an optional list of subaccounts it
-        may act on (defaults to all of the wallet's subaccounts). Send the signed action
-        fields (nonce, signer, signature, signature expiry, and module) alongside the
-        requested scopes; the endpoint returns the registered key's public address and
-        its granted scopes, expiry, allowlist, label, and subaccounts.
+        Returns a paginated, merged view of a subaccount's RFQs, combining currently
+        open RFQs with the archived history of filled, cancelled, and expired ones.
+        Supports filtering by rfq_id, status, and a from/to timestamp window, with page
+        and page_size controls. Each entry includes legs, status, timestamps, cost
+        bounds, and fill percentage.
         """
 
-        url = self._endpoints.create_session_key
+        url = self._endpoints.get_rfqs
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateCreateSessionKeyResponse)
+        result = decode_result(envelope, RFQGetResponse)
+
+        return result
+
+    async def poll_quotes(
+        self,
+        params: PollQuotesRequest,
+    ) -> QuotePollResponse:
+        """
+        Taker-side call that lists the maker quotes received against RFQs owned by the
+        subaccount. Supports filtering by quote_id, rfq_id, status, and a timestamp
+        window, with pagination. Returns public quote views (including the maker's
+        wallet) without any signing material.
+        """
+
+        url = self._endpoints.poll_quotes
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, QuotePollResponse)
+
+        return result
+
+    async def poll_rfqs(
+        self,
+        params: PollRfqsRequest,
+    ) -> RFQPollResponse:
+        """
+        Maker-side call that lists the RFQs a subaccount is eligible to quote, i.e. RFQs
+        that are open to all makers or that name the maker's wallet as a counterparty.
+        Supports filtering by rfq_id, status, an originating RFQ subaccount, and a
+        timestamp window, with pagination. Returns public RFQ views without taker-
+        private signing material.
+        """
+
+        url = self._endpoints.poll_rfqs
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, RFQPollResponse)
+
+        return result
+
+    async def replace_quote(
+        self,
+        params: ReplaceQuoteRequest,
+    ) -> QuoteReplaceResponse:
+        """
+        Maker-side call that atomically cancels an existing quote and submits a new
+        signed quote for the same RFQ in one operation. You provide the new priced legs,
+        direction, max fee, and EIP-712 signature, plus the quote to cancel (by quote_id
+        or nonce_to_cancel). Returns the cancellation result together with the newly
+        created quote. Requires trade scope for every instrument quoted.
+        """
+
+        url = self._endpoints.replace_quote
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, QuoteReplaceResponse)
+
+        return result
+
+    async def rfq_get_best_quote(
+        self,
+        params: RfqGetBestQuoteRequest,
+    ) -> RfqGetBestQuoteResponse:
+        """
+        Taker-side dry run that evaluates a prospective RFQ (its legs and intended
+        direction) without creating anything. Returns the best available maker quote if
+        one exists, along with the expected fee, validity, projected liquidation prices,
+        and realized-PnL estimate for taking it.
+        """
+
+        url = self._endpoints.rfq_get_best_quote
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, RfqGetBestQuoteResponse)
+
+        return result
+
+    async def send_quote(
+        self,
+        params: SendQuoteRequest,
+    ) -> Quote:
+        """
+        Maker-side call that submits a priced, signed quote in response to an existing
+        RFQ. You provide the priced legs, direction, max fee, an EIP-712 signature
+        (signer, signature, nonce, expiry), and optional label or MMP flag. The quote's
+        signature is verified and validated against the referenced RFQ before it is
+        stored. Returns the created quote. Requires trade scope for every instrument
+        quoted.
+        """
+
+        url = self._endpoints.send_quote
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Quote)
+
+        return result
+
+    async def send_rfq(
+        self,
+        params: SendRfqRequest,
+    ) -> Rfq:
+        """
+        Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount,
+        inviting makers to quote it. You supply the legs (instrument, amount, and
+        direction per leg) plus optional limits such as min/max total cost, a partial-
+        fill step, a label, and a list of specific counterparties to restrict who can
+        see it. Returns the created RFQ including its assigned id and validity window.
+        Requires trade scope for every instrument in the legs.
+        """
+
+        url = self._endpoints.send_rfq
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, Rfq)
+
+        return result
+
+    async def cancel_all_vault_requests(
+        self,
+        params: CancelVaultRequestRequest,
+    ) -> VaultCancelResponse:
+        """
+        Submits a signed cancel action that drains all of the caller's pending deposit
+        and withdraw requests for a given vault and posts the corresponding on-chain
+        operation. Input is the vault subaccount; any subaccount the caller owns may
+        sign. Requires the user-cancel permission.
+        """
+
+        url = self._endpoints.cancel_all_vault_requests
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultCancelResponse)
+
+        return result
+
+    async def get_live_vault_requests(
+        self,
+        params: GetLiveVaultRequestsRequest,
+    ) -> MultipleVaultRequestsResponse:
+        """
+        Returns the caller's currently-pending vault deposit and withdraw requests, read
+        live from the vault queue. Not paginated (the live queue is bounded); settled
+        and terminal history is served by get_vault_request_history. The wallet
+        parameter must match the authenticated connection.
+        """
+
+        url = self._endpoints.get_live_vault_requests
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, MultipleVaultRequestsResponse)
+
+        return result
+
+    async def get_shareholder_vaults(
+        self,
+        params: GetShareholderVaultsRequest,
+    ) -> VaultIdsResponse:
+        """
+        Returns the subaccount ids of the vaults in which the given wallet holds shares.
+        The wallet parameter must match the authenticated connection. Read-only.
+        """
+
+        url = self._endpoints.get_shareholder_vaults
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultIdsResponse)
+
+        return result
+
+    async def get_vault_request_history(
+        self,
+        params: GetVaultRequestHistoryRequest,
+    ) -> PaginatedVaultActions:
+        """
+        Returns the caller's full vault action history (deposits, withdrawals, force-
+        withdrawals, and cancels) across every status — enqueued, requested, applied,
+        cancelled, rejected, or expired — with one row per action at its latest state.
+        Paginated by page and page_size; monetary amounts, prices, and share counts are
+        decimal strings. The wallet parameter must match the authenticated connection.
+        """
+
+        url = self._endpoints.get_vault_request_history
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PaginatedVaultActions)
+
+        return result
+
+    async def get_vault_shares(
+        self,
+        params: GetVaultSharesRequest,
+    ) -> VaultSharesResponse:
+        """
+        Returns the caller's share balance for every vault it holds shares in, each
+        paired with the full enriched vault row (the same shape as public/get_vault).
+        The wallet parameter must match the authenticated connection. Read-only.
+        """
+
+        url = self._endpoints.get_vault_shares
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultSharesResponse)
+
+        return result
+
+    async def request_vault_deposit(
+        self,
+        params: RequestVaultDepositRequest,
+    ) -> VaultRequestAckResponse:
+        """
+        Submits a signed deposit action from the user's source subaccount and enqueues
+        it in the vault's pending-deposit queue for the curator to settle. Inputs are
+        the target vault subaccount, the deposit asset, and the amount as a decimal
+        string. Returns an acknowledgement with the queued request; requires the user-
+        deposit permission.
+        """
+
+        url = self._endpoints.request_vault_deposit
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultRequestAckResponse)
+
+        return result
+
+    async def request_vault_withdraw(
+        self,
+        params: RequestVaultWithdrawRequest,
+    ) -> VaultRequestAckResponse:
+        """
+        Submits a signed withdraw action that enqueues a request to burn a given number
+        of vault shares and redeem the proceeds to the user's subaccount. Inputs are the
+        vault subaccount and the share quantity to burn (decimal string). Returns an
+        acknowledgement with the queued request; requires the user-withdraw permission.
+        """
+
+        url = self._endpoints.request_vault_withdraw
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultRequestAckResponse)
+
+        return result
+
+    async def burn_vault_shares(
+        self,
+        params: BurnSharesRequest,
+    ) -> VaultSettleResponse:
+        """
+        Curator-only endpoint that settles a pending withdraw request by signing a burn
+        approval at a quoted share price (USD per share). Takes the request id and the
+        user's withdraw-action hash, burns the shares, and returns the settlement
+        result. Requires the curator mint-and-burn permission.
+        """
+
+        url = self._endpoints.burn_vault_shares
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultSettleResponse)
 
         return result
 
@@ -1202,47 +1834,6 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def edit_session_key(
-        self,
-        params: EditSessionKeyRequest,
-    ) -> SessionKey:
-        """
-        Updates an existing session key's label, IP allowlist, and/or off-chain scopes
-        for a given wallet; it cannot change on-chain (protocol) scopes, for which you
-        must re-register with private/create_session_key. Editing only the label needs
-        account-info permission, while changing the IP allowlist or off-chain scopes
-        requires admin/owner authorization. Returns the updated session key details.
-        """
-
-        url = self._endpoints.edit_session_key
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, SessionKey)
-
-        return result
-
-    async def execute_quote(
-        self,
-        params: ExecuteQuoteRequest,
-    ) -> QuoteExecuteResponse:
-        """
-        Taker-side call that accepts a specific maker quote and settles the trade
-        atomically. You reference the rfq_id and quote_id and supply the taker's priced
-        legs, direction, max fee, and EIP-712 signature (signer, signature, nonce,
-        expiry), with an optional taker-protection flag. The signature is verified and
-        the taker fill, maker quote, and RFQ are updated together in one atomic step.
-        Requires trade scope for every instrument in the legs.
-        """
-
-        url = self._endpoints.execute_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, QuoteExecuteResponse)
-
-        return result
-
     async def force_burn(
         self,
         params: ForceBurnRequest,
@@ -1262,82 +1853,6 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def get_account(
-        self,
-        params: GetAccountRequest,
-    ) -> PrivateGetAccountResponse:
-        """
-        Returns account-level information for a given wallet address: the list of its
-        subaccount IDs, WebSocket rate limits (matching, non-matching, perp, and option
-        messages per second) and any per-endpoint overrides, cancel-on-disconnect and
-        RFQ-maker flags, the account creation timestamp, and a fee_info block with fee
-        discounts and per-instrument maker/taker fee overrides expressed as decimals.
-        Returns an account-not-found error if the wallet has never been registered.
-        """
-
-        url = self._endpoints.get_account
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateGetAccountResponse)
-
-        return result
-
-    async def get_algo_orders(
-        self,
-        params: GetAlgoOrdersRequest,
-    ) -> list[Order]:
-        """
-        Returns all active algo orders (e.g. time-sliced execution orders) for the given
-        subaccount as a flat list. Read-only query.
-        """
-
-        url = self._endpoints.get_algo_orders
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, list[Order])
-
-        return result
-
-    async def get_all_portfolios(
-        self,
-        params: GetAllPortfoliosRequest,
-    ) -> list[Subaccount]:
-        """
-        Returns the complete portfolio (same shape as get_subaccount) for every
-        subaccount owned by the given wallet, including valuations, margin figures, open
-        orders, positions, and collaterals. If an individual subaccount's portfolio
-        cannot be built, it is returned as a placeholder entry with failed_to_fetch set
-        to true rather than failing the whole request.
-        """
-
-        url = self._endpoints.get_all_portfolios
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, list[Subaccount])
-
-        return result
-
-    async def get_collaterals(
-        self,
-        params: GetCollateralsRequest,
-    ) -> PrivateGetCollateralsResponse:
-        """
-        Returns the subaccount ID and the list of its collateral balances, including
-        each asset's amount and current value valued against live feed data. A lighter
-        alternative to get_subaccount when only collateral holdings are needed.
-        """
-
-        url = self._endpoints.get_collaterals
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateGetCollateralsResponse)
-
-        return result
-
     async def get_curated_vaults(
         self,
         params: GetCuratedVaultsRequest,
@@ -1352,6 +1867,99 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultIdsResponse)
+
+        return result
+
+    async def get_live_burn_requests(
+        self,
+        params: GetLiveBurnRequestsRequest,
+    ) -> MultipleVaultRequestsResponse:
+        """
+        Curator-only endpoint that returns a FIFO page of a vault's pending withdraw
+        (burn) requests. Inputs are the vault subaccount and a page limit. Requires the
+        curator mint-and-burn permission.
+        """
+
+        url = self._endpoints.get_live_burn_requests
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, MultipleVaultRequestsResponse)
+
+        return result
+
+    async def get_live_mint_requests(
+        self,
+        params: GetLiveMintRequestsRequest,
+    ) -> MultipleVaultRequestsResponse:
+        """
+        Curator-only endpoint that returns a FIFO page of a vault's pending deposit
+        (mint) requests. Inputs are the vault subaccount and a page limit. Requires the
+        curator mint-and-burn permission.
+        """
+
+        url = self._endpoints.get_live_mint_requests
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, MultipleVaultRequestsResponse)
+
+        return result
+
+    async def mint_vault_shares(
+        self,
+        params: MintSharesRequest,
+    ) -> VaultSettleResponse:
+        """
+        Curator-only endpoint that settles a pending deposit request by signing a mint
+        approval at a quoted share price (USD per share). Takes the request id and the
+        user's deposit-action hash, mints the corresponding shares, and returns the
+        settlement result. Requires the curator mint-and-burn permission.
+        """
+
+        url = self._endpoints.mint_vault_shares
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultSettleResponse)
+
+        return result
+
+    async def reject_deposit_request(
+        self,
+        params: RejectDepositRequestRequest,
+    ) -> VaultRequestAckResponse:
+        """
+        Curator-only endpoint that removes a queued deposit request off-chain (no on-
+        chain settlement), recording the rejection with an optional short reason. Takes
+        the request id and returns an acknowledgement. Requires the curator mint-and-
+        burn permission.
+        """
+
+        url = self._endpoints.reject_deposit_request
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, VaultRequestAckResponse)
+
+        return result
+
+    async def update_vault_info(
+        self,
+        params: UpdateVaultInfoRequest,
+    ) -> OffchainAckResponse:
+        """
+        Applies an off-chain patch to a vault the caller curates, updating any of its
+        display name, description, advisory mark-to-market cap (a USD decimal), or
+        whitelist-only flag. Only the fields supplied are changed. The caller must own
+        the vault's subaccount (i.e. be its curator); description length is capped.
+        """
+
+        url = self._endpoints.update_vault_info
+        data = encode_json_exclude_none(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OffchainAckResponse)
 
         return result
 
@@ -1434,98 +2042,6 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def get_live_burn_requests(
-        self,
-        params: GetLiveBurnRequestsRequest,
-    ) -> MultipleVaultRequestsResponse:
-        """
-        Curator-only endpoint that returns a FIFO page of a vault's pending withdraw
-        (burn) requests. Inputs are the vault subaccount and a page limit. Requires the
-        curator mint-and-burn permission.
-        """
-
-        url = self._endpoints.get_live_burn_requests
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, MultipleVaultRequestsResponse)
-
-        return result
-
-    async def get_live_mint_requests(
-        self,
-        params: GetLiveMintRequestsRequest,
-    ) -> MultipleVaultRequestsResponse:
-        """
-        Curator-only endpoint that returns a FIFO page of a vault's pending deposit
-        (mint) requests. Inputs are the vault subaccount and a page limit. Requires the
-        curator mint-and-burn permission.
-        """
-
-        url = self._endpoints.get_live_mint_requests
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, MultipleVaultRequestsResponse)
-
-        return result
-
-    async def get_live_vault_requests(
-        self,
-        params: GetLiveVaultRequestsRequest,
-    ) -> MultipleVaultRequestsResponse:
-        """
-        Returns the caller's currently-pending vault deposit and withdraw requests, read
-        live from the vault queue. Not paginated (the live queue is bounded); settled
-        and terminal history is served by get_vault_request_history. The wallet
-        parameter must match the authenticated connection.
-        """
-
-        url = self._endpoints.get_live_vault_requests
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, MultipleVaultRequestsResponse)
-
-        return result
-
-    async def get_mmp_config(
-        self,
-        params: MmpScopeRequest,
-    ) -> list[MmpConfigResult]:
-        """
-        Returns the market maker protection (MMP) settings for a subaccount, optionally
-        filtered to a single currency. Each entry reports the amount and delta limits
-        (as decimal strings), the rolling interval and freeze duration (in
-        milliseconds), and the current freeze state, including whether MMP is currently
-        frozen and the timestamp at which it unfreezes.
-        """
-
-        url = self._endpoints.get_mmp_config
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, list[MmpConfigResult])
-
-        return result
-
-    async def get_open_orders(
-        self,
-        params: GetOpenOrdersRequest,
-    ) -> AggregatedOrdersResult:
-        """
-        Returns all currently open orders for the given subaccount, including each
-        order's instrument, direction, prices, amounts and status. Read-only query.
-        """
-
-        url = self._endpoints.get_open_orders
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, AggregatedOrdersResult)
-
-        return result
-
     async def get_option_settlement_history(
         self,
         params: GetOptionSettlementHistoryParams,
@@ -1541,24 +2057,6 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OptionSettlementHistoryResponse)
-
-        return result
-
-    async def get_order(
-        self,
-        params: GetOrderRequest,
-    ) -> Order:
-        """
-        Returns one order (active or completed) by order_id and subaccount_id; the
-        subaccount filter enforces ownership. Returns the order or an order-does-not-
-        exist error.
-        """
-
-        url = self._endpoints.get_order
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, Order)
 
         return result
 
@@ -1581,120 +2079,6 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def get_positions(
-        self,
-        params: GetPositionsRequest,
-    ) -> PrivateGetPositionsResponse:
-        """
-        Returns the subaccount ID and the list of its active positions, including size,
-        mark price, average price, unrealized and realized PnL, and Greeks where
-        applicable, valued against live feed data at request time. A lighter alternative
-        to get_subaccount when only positions are needed.
-        """
-
-        url = self._endpoints.get_positions
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateGetPositionsResponse)
-
-        return result
-
-    async def get_quotes(
-        self,
-        params: GetQuotesRequest,
-    ) -> QuoteGetResponse:
-        """
-        Returns a paginated, merged view of a subaccount's quotes, combining currently
-        open quotes with the archived history of filled, cancelled, and expired ones.
-        Supports filtering by quote_id, rfq_id, status, and a from/to timestamp window,
-        with page and page_size controls. Each entry includes priced legs, direction,
-        fees, liquidity role, and fill percentage.
-        """
-
-        url = self._endpoints.get_quotes
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, QuoteGetResponse)
-
-        return result
-
-    async def get_rfqs(
-        self,
-        params: GetRfqsRequest,
-    ) -> RFQGetResponse:
-        """
-        Returns a paginated, merged view of a subaccount's RFQs, combining currently
-        open RFQs with the archived history of filled, cancelled, and expired ones.
-        Supports filtering by rfq_id, status, and a from/to timestamp window, with page
-        and page_size controls. Each entry includes legs, status, timestamps, cost
-        bounds, and fill percentage.
-        """
-
-        url = self._endpoints.get_rfqs
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, RFQGetResponse)
-
-        return result
-
-    async def get_shareholder_vaults(
-        self,
-        params: GetShareholderVaultsRequest,
-    ) -> VaultIdsResponse:
-        """
-        Returns the subaccount ids of the vaults in which the given wallet holds shares.
-        The wallet parameter must match the authenticated connection. Read-only.
-        """
-
-        url = self._endpoints.get_shareholder_vaults
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultIdsResponse)
-
-        return result
-
-    async def get_subaccount(
-        self,
-        params: GetSubaccountRequest,
-    ) -> Subaccount:
-        """
-        Returns the complete portfolio for a single subaccount: its label, manager and
-        risk-universe identifiers, margin type and liquidation status, aggregate
-        valuation and margin figures (positions, collaterals, initial and maintenance
-        margin, open-order margin) as decimal strings, plus the full lists of open
-        orders, positions, and collateral balances. Margin, mark price, and Greek values
-        are computed from live feed data at request time.
-        """
-
-        url = self._endpoints.get_subaccount
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, Subaccount)
-
-        return result
-
-    async def get_subaccounts(
-        self,
-        params: GetSubaccountsRequest,
-    ) -> PrivateGetSubaccountsResponse:
-        """
-        Returns the wallet address and the sorted list of subaccount IDs owned by that
-        wallet. Yields an empty list if the wallet has no subaccounts.
-        """
-
-        url = self._endpoints.get_subaccounts
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateGetSubaccountsResponse)
-
-        return result
-
     async def get_trade_history(
         self,
         params: GetTradeHistoryRequest,
@@ -1711,61 +2095,6 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PaginatedTradesResult)
-
-        return result
-
-    async def get_trigger_orders(
-        self,
-        params: GetTriggerOrdersRequest,
-    ) -> AggregatedTriggerOrdersResult:
-        """
-        Returns all pending trigger (conditional) orders for the given subaccount that
-        have not yet fired. Read-only query.
-        """
-
-        url = self._endpoints.get_trigger_orders
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, AggregatedTriggerOrdersResult)
-
-        return result
-
-    async def get_vault_request_history(
-        self,
-        params: GetVaultRequestHistoryRequest,
-    ) -> PaginatedVaultActions:
-        """
-        Returns the caller's full vault action history (deposits, withdrawals, force-
-        withdrawals, and cancels) across every status — enqueued, requested, applied,
-        cancelled, rejected, or expired — with one row per action at its latest state.
-        Paginated by page and page_size; monetary amounts, prices, and share counts are
-        decimal strings. The wallet parameter must match the authenticated connection.
-        """
-
-        url = self._endpoints.get_vault_request_history
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PaginatedVaultActions)
-
-        return result
-
-    async def get_vault_shares(
-        self,
-        params: GetVaultSharesRequest,
-    ) -> VaultSharesResponse:
-        """
-        Returns the caller's share balance for every vault it holds shares in, each
-        paired with the full enriched vault row (the same shape as public/get_vault).
-        The wallet parameter must match the authenticated connection. Read-only.
-        """
-
-        url = self._endpoints.get_vault_shares
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultSharesResponse)
 
         return result
 
@@ -1789,222 +2118,23 @@ class AsyncPrivateRPC:
 
         return result
 
-    async def mint_vault_shares(
+    async def get_mmp_config(
         self,
-        params: MintSharesRequest,
-    ) -> Result:
+        params: MmpScopeRequest,
+    ) -> list[MmpConfigResult]:
         """
-        Curator-only endpoint that settles a pending deposit request by signing a mint
-        approval at a quoted share price (USD per share). Takes the request id and the
-        user's deposit-action hash, mints the corresponding shares, and returns the
-        settlement result. Requires the curator mint-and-burn permission.
+        Returns the market maker protection (MMP) settings for a subaccount, optionally
+        filtered to a single currency. Each entry reports the amount and delta limits
+        (as decimal strings), the rolling interval and freeze duration (in
+        milliseconds), and the current freeze state, including whether MMP is currently
+        frozen and the timestamp at which it unfreezes.
         """
 
-        url = self._endpoints.mint_vault_shares
+        url = self._endpoints.get_mmp_config
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Result)
-
-        return result
-
-    async def order(
-        self,
-        params: CreateOrderRequest,
-    ) -> OrderCreatedResponse:
-        """
-        Submits a signed limit or market order for a subaccount, specifying instrument,
-        direction, amount, limit price and max fee, plus optional flags like time-in-
-        force, reduce-only, post-only and MMP. The same endpoint also creates trigger
-        orders (via trigger_type/trigger_price) and algo orders (via algo_type), though
-        the two cannot be combined in one request. Requires a signed order payload and
-        Orderbook trade scope for the instrument's asset; returns the created order with
-        its assigned id and current status.
-        """
-
-        url = self._endpoints.order
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OrderCreatedResponse)
-
-        return result
-
-    async def order_debug(
-        self,
-        params: CreateOrderRequest,
-    ) -> OrderDebugResponse:
-        """
-        Takes the same params as private/order and rebuilds the order Action without
-        executing anything, returning the EIP-712 encoded_data, encoded_data_hashed,
-        action_hash, typed_data_hash, domain_separator, action_typehash, module, owner
-        and expected_signer, plus the decoded order action data. Byte-compare these
-        against your local computation to find why a signature is rejected. Requires a
-        logged-in session; no trade scope needed.
-        """
-
-        url = self._endpoints.order_debug
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OrderDebugResponse)
-
-        return result
-
-    async def order_quote(
-        self,
-        params: OrderQuoteRequest,
-    ) -> OrderQuoteResponse:
-        """
-        Dry-run pricing helper that estimates the outcome of a prospective order without
-        placing it, returning projected fill price and amount, fees, pre/post initial
-        margin, realized PnL, resulting order status and (where relevant) liquidation
-        price and max tradable amount. All monetary values are returned as decimal
-        strings. The private variant requires account-level authentication.
-        """
-
-        url = self._endpoints.order_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OrderQuoteResponse)
-
-        return result
-
-    async def poll_quotes(
-        self,
-        params: PollQuotesRequest,
-    ) -> QuotePollResponse:
-        """
-        Taker-side call that lists the maker quotes received against RFQs owned by the
-        subaccount. Supports filtering by quote_id, rfq_id, status, and a timestamp
-        window, with pagination. Returns public quote views (including the maker's
-        wallet) without any signing material.
-        """
-
-        url = self._endpoints.poll_quotes
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, QuotePollResponse)
-
-        return result
-
-    async def poll_rfqs(
-        self,
-        params: PollRfqsRequest,
-    ) -> RFQPollResponse:
-        """
-        Maker-side call that lists the RFQs a subaccount is eligible to quote, i.e. RFQs
-        that are open to all makers or that name the maker's wallet as a counterparty.
-        Supports filtering by rfq_id, status, an originating RFQ subaccount, and a
-        timestamp window, with pagination. Returns public RFQ views without taker-
-        private signing material.
-        """
-
-        url = self._endpoints.poll_rfqs
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, RFQPollResponse)
-
-        return result
-
-    async def reject_deposit_request(
-        self,
-        params: RejectDepositRequestRequest,
-    ) -> VaultRequestAckResponse:
-        """
-        Curator-only endpoint that removes a queued deposit request off-chain (no on-
-        chain settlement), recording the rejection with an optional short reason. Takes
-        the request id and returns an acknowledgement. Requires the curator mint-and-
-        burn permission.
-        """
-
-        url = self._endpoints.reject_deposit_request
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultRequestAckResponse)
-
-        return result
-
-    async def replace(
-        self,
-        params: ReplaceOrderRequest,
-    ) -> ReplaceOrderResponse:
-        """
-        Atomically cancels a resting order (identified by order_id_to_cancel or
-        nonce_to_cancel) and submits a replacement order in a single request. The
-        payload is a full new-order specification plus the cancel target and an optional
-        expected_filled_amount guard. Requires a signed order payload and Orderbook
-        trade scope; returns both the cancelled and the newly created order.
-        """
-
-        url = self._endpoints.replace
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, ReplaceOrderResponse)
-
-        return result
-
-    async def replace_quote(
-        self,
-        params: ReplaceQuoteRequest,
-    ) -> QuoteReplaceResponse:
-        """
-        Maker-side call that atomically cancels an existing quote and submits a new
-        signed quote for the same RFQ in one operation. You provide the new priced legs,
-        direction, max fee, and EIP-712 signature, plus the quote to cancel (by quote_id
-        or nonce_to_cancel). Returns the cancellation result together with the newly
-        created quote. Requires trade scope for every instrument quoted.
-        """
-
-        url = self._endpoints.replace_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, QuoteReplaceResponse)
-
-        return result
-
-    async def request_vault_deposit(
-        self,
-        params: RequestVaultDepositRequest,
-    ) -> VaultRequestAckResponse:
-        """
-        Submits a signed deposit action from the user's source subaccount and enqueues
-        it in the vault's pending-deposit queue for the curator to settle. Inputs are
-        the target vault subaccount, the deposit asset, and the amount as a decimal
-        string. Returns an acknowledgement with the queued request; requires the user-
-        deposit permission.
-        """
-
-        url = self._endpoints.request_vault_deposit
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultRequestAckResponse)
-
-        return result
-
-    async def request_vault_withdraw(
-        self,
-        params: RequestVaultWithdrawRequest,
-    ) -> VaultRequestAckResponse:
-        """
-        Submits a signed withdraw action that enqueues a request to burn a given number
-        of vault shares and redeem the proceeds to the user's subaccount. Inputs are the
-        vault subaccount and the share quantity to burn (decimal string). Returns an
-        acknowledgement with the queued request; requires the user-withdraw permission.
-        """
-
-        url = self._endpoints.request_vault_withdraw
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, VaultRequestAckResponse)
+        result = decode_result(envelope, list[MmpConfigResult])
 
         return result
 
@@ -2024,85 +2154,6 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
-
-        return result
-
-    async def rfq_get_best_quote(
-        self,
-        params: RfqGetBestQuoteRequest,
-    ) -> RfqGetBestQuoteResponse:
-        """
-        Taker-side dry run that evaluates a prospective RFQ (its legs and intended
-        direction) without creating anything. Returns the best available maker quote if
-        one exists, along with the expected fee, validity, projected liquidation prices,
-        and realized-PnL estimate for taking it.
-        """
-
-        url = self._endpoints.rfq_get_best_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, RfqGetBestQuoteResponse)
-
-        return result
-
-    async def send_quote(
-        self,
-        params: SendQuoteRequest,
-    ) -> Quote:
-        """
-        Maker-side call that submits a priced, signed quote in response to an existing
-        RFQ. You provide the priced legs, direction, max fee, an EIP-712 signature
-        (signer, signature, nonce, expiry), and optional label or MMP flag. The quote's
-        signature is verified and validated against the referenced RFQ before it is
-        stored. Returns the created quote. Requires trade scope for every instrument
-        quoted.
-        """
-
-        url = self._endpoints.send_quote
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, Quote)
-
-        return result
-
-    async def send_rfq(
-        self,
-        params: SendRfqRequest,
-    ) -> Rfq:
-        """
-        Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount,
-        inviting makers to quote it. You supply the legs (instrument, amount, and
-        direction per leg) plus optional limits such as min/max total cost, a partial-
-        fill step, a label, and a list of specific counterparties to restrict who can
-        see it. Returns the created RFQ including its assigned id and validity window.
-        Requires trade scope for every instrument in the legs.
-        """
-
-        url = self._endpoints.send_rfq
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, Rfq)
-
-        return result
-
-    async def session_keys(
-        self,
-        params: SessionKeysRequest,
-    ) -> PrivateSessionKeysResponse:
-        """
-        Returns every session key registered to the given wallet, including expired and
-        not-yet-activated keys, each with its public address, scopes, expiry, label, IP
-        allowlist, and permitted subaccounts.
-        """
-
-        url = self._endpoints.session_keys
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateSessionKeysResponse)
 
         return result
 
@@ -2171,7 +2222,7 @@ class AsyncPrivateRPC:
     async def transfer_spot_external(
         self,
         params: PrivateTransferSpotExternalRequest,
-    ) -> Result:
+    ) -> PrivateTransferSpotExternalResponse:
         """
         Submits a signed transfer of a single spot asset to a subaccount belonging to a
         different owner. Alongside the standard transfer fields (asset, sub_id, amount,
@@ -2186,26 +2237,7 @@ class AsyncPrivateRPC:
         data = encode_json_exclude_none(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, Result)
-
-        return result
-
-    async def update_vault_info(
-        self,
-        params: UpdateVaultInfoRequest,
-    ) -> OffchainAckResponse:
-        """
-        Applies an off-chain patch to a vault the caller curates, updating any of its
-        display name, description, advisory mark-to-market cap (a USD decimal), or
-        whitelist-only flag. Only the fields supplied are changed. The caller must own
-        the vault's subaccount (i.e. be its curator); description length is capped.
-        """
-
-        url = self._endpoints.update_vault_info
-        data = encode_json_exclude_none(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OffchainAckResponse)
+        result = decode_result(envelope, PrivateTransferSpotExternalResponse)
 
         return result
 

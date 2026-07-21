@@ -77,7 +77,7 @@ docs: clean-docs
 	poetry run python scripts/generate-internal-pages.py
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
-		
+
 
 release:
 	$(eval current_version := $(shell poetry run tbump current-version))
@@ -88,9 +88,10 @@ release:
 
 .PHONY: generate-models
 generate-models:
-	# curl https://docs.derive.xyz/openapi/rest-api.json | jq > specs/openapi-spec.json
-	poetry run python scripts/patch_spec.py specs/openapi-spec.json
-    # poetry run python scripts/merge-websocket-channels.py
+ 	curl https://v3.docs.derive.xyz/openapi.json | jq > specs/openapi.json
+ 	curl https://v3.docs.derive.xyz/websocket.asyncapi.json | jq > specs/websocket.json
+ 	curl https://v3.docs.derive.xyz/subscriptions.asyncapi.json | jq > specs/subscriptions.json
+	poetry run python scripts/patch_spec.py specs/openapi.json
 	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
 	poetry run ruff format derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
@@ -129,7 +130,7 @@ sync-ws-tests:
 codegen-all: generate-models generate-api generate-rest-async-http generate-sync-bridge-client sync-ws-tests fmt lint
 
 typecheck:
-	poetry run pyright derive_client tests
+	poetry run pyright derive_client tests examples
 
 check_diff:
 	@git diff --exit-code
@@ -138,5 +139,3 @@ demo:
 	poetry run bash scripts/demos/all.sh
 
 all: codegen-all typecheck tests docs
-
-

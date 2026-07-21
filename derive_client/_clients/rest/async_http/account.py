@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-import msgspec
-
 from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
 from derive_client._clients.utils import AuthContext
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
@@ -151,7 +149,7 @@ class LightAccount:
         params = EditSessionKeyRequest(
             wallet=self.address,
             public_session_key=public_session_key,
-            ip_whitelist=ip_whitelist if ip_whitelist is not None else msgspec.UNSET,
+            ip_whitelist=ip_whitelist,
             label=label,
         )
         result = await self._private_api.rpc.edit_session_key(params)

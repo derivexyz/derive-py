@@ -5,7 +5,6 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-import msgspec
 from derive_action_signing import (
     RFQExecuteModuleData,
     RFQQuoteDetails,
@@ -76,7 +75,7 @@ class RFQOperations:
         params = SendRfqRequest(
             legs=legs,
             subaccount_id=subaccount_id,
-            counterparties=counterparties if counterparties is not None else msgspec.UNSET,
+            counterparties=counterparties,
             label=label,
             max_total_cost=max_total_cost,
             min_total_cost=min_total_cost,

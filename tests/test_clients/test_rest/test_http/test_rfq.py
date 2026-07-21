@@ -21,9 +21,6 @@ from derive_client.data_types.generated_models import (
     RFQGetResponse,
     RFQPollResponse,
 )
-from derive_client.data_types.generated_models import (
-    InstrumentType as AssetType,
-)
 from tests.conftest import assert_api_calls
 
 
@@ -53,11 +50,12 @@ def _create_unpriced_legs(client):
 
     n_legs = 2
     direction = Direction.buy
-    instruments = client.markets.get_all_instruments(
+    get_all_instruments_response = client.markets.get_all_instruments(
         currency=currency,
         instrument_type=AssetType.option,
         expired=False,
-    ).instruments
+    )
+    instruments = get_all_instruments_response.instruments
     active_instruments = [instrument for instrument in instruments if instrument.is_active]
 
     legs = []

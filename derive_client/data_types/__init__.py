@@ -14,11 +14,9 @@ from .enums import (
     TxStatus,
 )
 from .generated_models import (
+    AssetType,
     Direction,
     OrderType,
-)
-from .generated_models import (
-    InstrumentType as AssetType,
 )
 from .models import (
     BridgeContext,

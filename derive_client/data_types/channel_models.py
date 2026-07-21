@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from enum import StrEnum
-from typing import Any, TypeAlias
+from enum import Enum
+from typing import Any, List, Optional
 
-from msgspec import UNSET, Struct, UnsetType, field
+from msgspec import Struct, field
 
 from derive_client.data_types.generated_models import (
     Direction,
@@ -19,7 +19,7 @@ from derive_client.data_types.generated_models import (
     TxStatus,
 )
 
-DeriveWebsocketChannelSchemas: TypeAlias = Any
+DeriveWebsocketChannelSchemas = Any
 
 
 class AuctionDetails(Struct):
@@ -32,7 +32,7 @@ class AuctionDetails(Struct):
     min_cash_transfer: str
     min_price_limit: str
     subaccount_balances: str
-    currency: str | None | UnsetType = UNSET
+    currency: Optional[str] = None
 
 
 class SpotFeedEntry(Struct):
@@ -44,12 +44,12 @@ class SpotFeedEntry(Struct):
 
 
 class MarginWatchResult(Struct):
-    collaterals: list[Any]
+    collaterals: List
     currency: str
     initial_margin: str
     maintenance_margin: str
     margin_type: str
-    positions: list[Any]
+    positions: List
     subaccount_id: int
     subaccount_value: str
     valuation_timestamp: int
@@ -60,12 +60,12 @@ class OrderSnapshot(Struct):
     price: str
 
 
-class AuctionStateType(StrEnum):
+class AuctionStateType(Enum):
     ongoing = 'ongoing'
     ended = 'ended'
 
 
-class BalanceUpdateType(StrEnum):
+class BalanceUpdateType(Enum):
     trade = 'trade'
     asset_deposit = 'asset_deposit'
     asset_withdrawal = 'asset_withdrawal'
@@ -86,19 +86,19 @@ class AuctionResult(Struct):
     state: AuctionStateType
     subaccount_id: int
     timestamp: int
-    details: AuctionDetails | None | UnsetType = UNSET
+    details: Optional[AuctionDetails] = None
 
 
 class OrderbookSnapshot(Struct):
-    asks: list[OrderSnapshot]
-    bids: list[OrderSnapshot]
+    asks: List[OrderSnapshot]
+    bids: List[OrderSnapshot]
     instrument_name: str
     publish_id: int
     timestamp: int
 
 
 class Feeds(Struct):
-    field_key_: SpotFeedEntry | UnsetType = field(name='{key}', default=UNSET)
+    field_key_: Optional[SpotFeedEntry] = field(name='{key}', default=None)
 
 
 class SpotFeedPayload(Struct):
@@ -107,9 +107,9 @@ class SpotFeedPayload(Struct):
 
 
 class LoginRequest(Struct):
-    signature: str | None | UnsetType = UNSET
-    timestamp: Any | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    signature: Optional[str] = None
+    timestamp: Optional[int] = None
+    wallet: Optional[str] = None
 
 
 class BalanceUpdate(Struct):
@@ -120,11 +120,11 @@ class BalanceUpdate(Struct):
 
 
 class SetCancelOnDisconnectRequest(Struct):
-    enabled: bool | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    enabled: Optional[bool] = None
+    wallet: Optional[str] = None
 
 
-Address: TypeAlias = str
+Address = str
 
 
 class PublicTrade(Struct):
@@ -136,8 +136,8 @@ class PublicTrade(Struct):
     trade_amount: str
     trade_id: str
     trade_price: str
-    quote_id: str | None | UnsetType = UNSET
-    rfq_id: str | None | UnsetType = UNSET
+    quote_id: Optional[str] = None
+    rfq_id: Optional[str] = None
 
 
 class QuotePublishResult(Struct):
@@ -149,7 +149,7 @@ class QuotePublishResult(Struct):
     is_transfer: bool
     label: str
     last_update_timestamp: int
-    legs: list[PricedLegParamsAndResponse]
+    legs: List[PricedLegParamsAndResponse]
     legs_hash: str
     liquidity_role: LiquidityRole
     max_fee: Decimal
@@ -162,9 +162,9 @@ class QuotePublishResult(Struct):
     signer: str
     status: RFQStatus
     subaccount_id: int
-    cancel_reason: RFQCancelReason | None | UnsetType = UNSET
-    tx_hash: str | None | UnsetType = UNSET
-    tx_status: TxStatus | None | UnsetType = UNSET
+    cancel_reason: Optional[RFQCancelReason] = None
+    tx_hash: Optional[str] = None
+    tx_status: Optional[TxStatus] = None
 
 
 class TickerSlimPayload(Struct):
@@ -174,5 +174,5 @@ class TickerSlimPayload(Struct):
 
 class BestQuoteChannelResult(Struct):
     rfq_id: str
-    error: RPCError | None | UnsetType = UNSET
-    result: RfqGetBestQuoteResponse | None | UnsetType = UNSET
+    error: Optional[RPCError] = None
+    result: Optional[RfqGetBestQuoteResponse] = None

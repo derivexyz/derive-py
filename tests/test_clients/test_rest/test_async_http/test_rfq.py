@@ -21,9 +21,6 @@ from derive_client.data_types.generated_models import (
     RFQGetResponse,
     RFQPollResponse,
 )
-from derive_client.data_types.generated_models import (
-    InstrumentType as AssetType,
-)
 from tests.conftest import assert_api_calls
 
 
@@ -174,7 +171,7 @@ async def test_rfq_poll_quotes(client_owner_wallet):
     assert isinstance(quotes, QuotePollResponse)
 
 
-@pytest.mark.skip("Server-side bug: 11101.")
+@pytest.mark.skip("Requires an open position, no liquidity on testnet yet.")
 @pytest.mark.asyncio
 async def test_rfq_get_best_quote(client_owner_wallet):
     unpriced_legs = await _create_unpriced_legs(client_owner_wallet)

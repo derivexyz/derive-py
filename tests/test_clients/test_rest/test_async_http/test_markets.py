@@ -3,13 +3,14 @@
 import pytest
 
 from derive_client.data_types.generated_models import (
+    Asset,
     AssetType,
     Currency,
     GetAllInstrumentsResponse,
+    GetLatestSignedFeedsResponse,
     Instrument,
-)
-from derive_client.data_types.generated_models import (
-    InstrumentType as AssetType,
+    RiskUniverse,
+    TickerSlimSnapshot,
 )
 
 
@@ -34,11 +35,6 @@ async def test_markets_get_instrument(client_admin_wallet):
     assert isinstance(instrument, Instrument)
 
 
-# test_markets_get_instruments removed: /public/get_instruments no longer exists
-# in v3, MarketOperations.get_instruments() was deleted accordingly.
-# get_all_instruments (paginated) is the surviving equivalent, covered below.
-
-
 @pytest.mark.asyncio
 async def test_markets_get_all_instruments(client_admin_wallet):
     expired = False
@@ -50,6 +46,51 @@ async def test_markets_get_all_instruments(client_admin_wallet):
         currency=currency,
     )
     assert isinstance(all_instruments, GetAllInstrumentsResponse)
+
+
+@pytest.mark.asyncio
+async def test_markets_get_all_live_instruments(client_admin_wallet):
+    all_live_instruments = await client_admin_wallet.markets.get_all_live_instruments()
+    assert isinstance(all_live_instruments, list)
+    assert all(isinstance(item, str) for item in all_live_instruments)
+
+
+@pytest.mark.asyncio
+async def test_markets_get_assets(client_admin_wallet):
+    asset_type = AssetType.option
+    currency = "ETH"
+    expired = False
+    assets = await client_admin_wallet.markets.get_assets(
+        asset_type=asset_type,
+        currency=currency,
+        expired=expired,
+    )
+    assert isinstance(assets, list)
+    assert all(isinstance(item, Asset) for item in assets)
+
+
+@pytest.mark.asyncio
+async def test_markets_get_latest_signed_feeds(client_admin_wallet):
+    currency = "ETH"
+    signed_feeds = await client_admin_wallet.markets.get_latest_signed_feeds(
+        currency=currency,
+        expiry=None,
+    )
+    assert isinstance(signed_feeds, GetLatestSignedFeedsResponse)
+
+
+@pytest.mark.asyncio
+async def test_markets_get_risk_universes(client_admin_wallet):
+    risk_universes = await client_admin_wallet.markets.get_risk_universes()
+    assert isinstance(risk_universes, list)
+    assert all(isinstance(item, RiskUniverse) for item in risk_universes)
+
+
+@pytest.mark.asyncio
+async def test_markets_get_ticker(client_admin_wallet):
+    instrument_name = "ETH-PERP"
+    ticker = await client_admin_wallet.markets.get_ticker(instrument_name=instrument_name)
+    assert isinstance(ticker, TickerSlimSnapshot)
 
 
 @pytest.mark.asyncio
@@ -71,7 +112,4 @@ async def test_markets_get_tickers(client_admin_wallet):
     )
 
     assert isinstance(tickers, dict)
-    # v3 change: GetTickersResponse.tickers is dict[str, Any] upstream now,
-    # no per-ticker struct is generated anymore. Can't assert a richer type
-    # here — check for an expected key on the raw value if you need more.
     assert all(isinstance(ticker, dict) for ticker in tickers.values())

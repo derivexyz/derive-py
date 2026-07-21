@@ -113,7 +113,7 @@ class WebSocketClient:
         login_dict = self._auth.sign_ws_login()
         login_params = LoginRequest(
             wallet=login_dict["wallet"],
-            timestamp=login_dict["timestamp"],
+            timestamp=int(login_dict["timestamp"]),
             signature=login_dict["signature"],
         )
         subaccount_ids = await self._public_api.rpc.login(login_params)

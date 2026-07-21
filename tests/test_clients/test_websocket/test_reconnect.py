@@ -7,11 +7,13 @@ import asyncio
 import pytest
 
 from derive_client import WebSocketClient
-from derive_client.data_types.channel_models import Interval, TickerSlimInstrumentNameIntervalPublisherDataSchema
+from derive_client.data_types.channel_models import TickerSlimPayload
 
 TIMEOUT = 30
 SUBSCRIPTION_OK = "ok"
 ALREADY_SUBSCRIBED = "already subscribed"
+
+INTERVAL = 1000
 
 
 @pytest.mark.asyncio
@@ -62,17 +64,17 @@ async def test_reconnection_after_forced_disconnect(client_admin_wallet: WebSock
     # Step 1: Subscribe and verify initial message
     subscription_result = await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
         instrument_name="ETH-PERP",
-        interval=Interval.field_1000,
+        interval=INTERVAL,
         callback=callback,
     )
 
-    assert subscription_result.status["ticker_slim.ETH-PERP.1000"] in [SUBSCRIPTION_OK, ALREADY_SUBSCRIBED]
+    assert subscription_result.status[f"ticker_slim.ETH-PERP.{INTERVAL}"] in [SUBSCRIPTION_OK, ALREADY_SUBSCRIBED]
 
     # Wait for first message
     await asyncio.sleep(TIMEOUT)
     assert msg_event.is_set() is True
     assert len(messages) >= 1
-    assert isinstance(messages[0], TickerSlimInstrumentNameIntervalPublisherDataSchema)
+    assert isinstance(messages[0], TickerSlimPayload)
 
     first_message_count = len(messages)
 
@@ -97,7 +99,7 @@ async def test_reconnection_after_forced_disconnect(client_admin_wallet: WebSock
     assert len(messages) > first_message_count, "No new messages after reconnection"
 
     # Verify the new message is still the correct type
-    assert isinstance(messages[-1], TickerSlimInstrumentNameIntervalPublisherDataSchema)
+    assert isinstance(messages[-1], TickerSlimPayload)
 
     print(f"✓ Received {len(messages)} total messages")
     print(f"✓ Messages before disconnect: {first_message_count}")
@@ -137,13 +139,13 @@ async def test_reconnection_with_multiple_channels(client_admin_wallet):
     # Subscribe to two different channels
     await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
         instrument_name="ETH-PERP",
-        interval=Interval.field_1000,
+        interval=INTERVAL,
         callback=eth_callback,
     )
 
     await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
         instrument_name="BTC-PERP",
-        interval=Interval.field_1000,
+        interval=INTERVAL,
         callback=btc_callback,
     )
 
@@ -207,7 +209,7 @@ async def test_multiple_reconnections(client_admin_wallet):
     # Subscribe
     await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
         instrument_name="ETH-PERP",
-        interval=Interval.field_1000,
+        interval=INTERVAL,
         callback=callback,
     )
 
