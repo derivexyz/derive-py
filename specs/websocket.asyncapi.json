@@ -1,0 +1,630 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Derive v3 API",
+    "version": "0.2.0",
+    "description": "Generated AsyncAPI 3.0 spec for the Derive v3 WebSocket + HTTP POST API."
+  },
+  "servers": {
+    "production": {
+      "host": "api.derive.xyz",
+      "protocol": "wss"
+    },
+    "testnet": {
+      "host": "testnet.api.derive.xyz",
+      "protocol": "wss"
+    }
+  },
+  "channels": {
+    "publicLogin": {
+      "address": "/v3/ws",
+      "messages": {
+        "publicLoginRequest": {
+          "$ref": "#/components/messages/publicLoginRequest"
+        },
+        "publicLoginResponse": {
+          "$ref": "#/components/messages/publicLoginResponse"
+        }
+      },
+      "title": "Authenticate a WebSocket connection",
+      "description": "WebSocket-only method that authenticates the connection so subsequent private/* calls and private channel subscriptions act on your wallet without per-request headers. Pass the wallet address, a millisecond UTC timestamp, and an EIP-191 signature of that timestamp made by either the wallet itself or one of its registered session keys. Returns the subaccount ids the authenticated key can access.",
+      "tags": [
+        {
+          "name": "Methods"
+        }
+      ]
+    },
+    "subscribe": {
+      "address": "/v3/ws",
+      "messages": {
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "subscribeResponse": {
+          "$ref": "#/components/messages/subscribeResponse"
+        }
+      },
+      "title": "Subscribe to notification channels",
+      "description": "WebSocket-only method that subscribes the connection to one or more notification channels by name — see the Subscriptions section for the available channels and their address formats (e.g. orderbook.ETH-PERP.10.20). Duplicate names are deduplicated; private channels require a logged-in connection with access to the referenced subaccount. Returns a per-channel status map (\"ok\" or an error string) plus the connection's full set of subscriptions after the call.",
+      "tags": [
+        {
+          "name": "Methods"
+        }
+      ]
+    },
+    "unsubscribe": {
+      "address": "/v3/ws",
+      "messages": {
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        },
+        "unsubscribeResponse": {
+          "$ref": "#/components/messages/unsubscribeResponse"
+        }
+      },
+      "title": "Unsubscribe from notification channels",
+      "description": "WebSocket-only method that removes the connection's subscriptions for the given channel names; omit channels (or pass null) to unsubscribe from everything. Returns a per-channel status map (\"ok\" or an error string) plus the subscriptions that remain after the call.",
+      "tags": [
+        {
+          "name": "Methods"
+        }
+      ]
+    },
+    "privateSetCancelOnDisconnect": {
+      "address": "/v3/ws",
+      "messages": {
+        "privateSetCancelOnDisconnectRequest": {
+          "$ref": "#/components/messages/privateSetCancelOnDisconnectRequest"
+        },
+        "privateSetCancelOnDisconnectResponse": {
+          "$ref": "#/components/messages/privateSetCancelOnDisconnectResponse"
+        }
+      },
+      "title": "Enable or disable cancel on disconnect",
+      "description": "WebSocket-only method that toggles cancel on disconnect for the authenticated wallet. While enabled, dropping the WebSocket connection cancels the wallet's open orders, trigger and algo orders, and quotes. Pass enabled true or false; omitting it leaves the setting unchanged. Requires a session key with full trade scope; returns \"ok\".",
+      "tags": [
+        {
+          "name": "Methods"
+        }
+      ]
+    }
+  },
+  "operations": {
+    "send_publicLogin": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/publicLogin"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/publicLogin/messages/publicLoginRequest"
+        }
+      ]
+    },
+    "receive_publicLogin": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/publicLogin"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/publicLogin/messages/publicLoginResponse"
+        }
+      ]
+    },
+    "send_subscribe": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subscribe"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subscribe/messages/subscribeRequest"
+        }
+      ]
+    },
+    "receive_subscribe": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subscribe"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subscribe/messages/subscribeResponse"
+        }
+      ]
+    },
+    "send_unsubscribe": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/unsubscribe"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/unsubscribe/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "receive_unsubscribe": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/unsubscribe"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/unsubscribe/messages/unsubscribeResponse"
+        }
+      ]
+    },
+    "send_privateSetCancelOnDisconnect": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/privateSetCancelOnDisconnect"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/privateSetCancelOnDisconnect/messages/privateSetCancelOnDisconnectRequest"
+        }
+      ]
+    },
+    "receive_privateSetCancelOnDisconnect": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/privateSetCancelOnDisconnect"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/privateSetCancelOnDisconnect/messages/privateSetCancelOnDisconnectResponse"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "publicLoginRequest": {
+        "name": "publicLoginRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "public/login"
+            },
+            "params": {
+              "$ref": "#/components/schemas/LoginRequest"
+            }
+          }
+        }
+      },
+      "publicLoginResponse": {
+        "name": "publicLoginResponse",
+        "payload": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "result"
+              ],
+              "properties": {
+                "result": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/RPCError"
+                }
+              }
+            }
+          ],
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            }
+          }
+        }
+      },
+      "subscribeRequest": {
+        "name": "subscribeRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "subscribe"
+            },
+            "params": {
+              "$ref": "#/components/schemas/SubscribeParams"
+            }
+          }
+        }
+      },
+      "subscribeResponse": {
+        "name": "subscribeResponse",
+        "payload": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "result"
+              ],
+              "properties": {
+                "result": {
+                  "$ref": "#/components/schemas/SubscribeResult"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/RPCError"
+                }
+              }
+            }
+          ],
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            }
+          }
+        }
+      },
+      "unsubscribeRequest": {
+        "name": "unsubscribeRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "unsubscribe"
+            },
+            "params": {
+              "$ref": "#/components/schemas/UnsubscribeParams"
+            }
+          }
+        }
+      },
+      "unsubscribeResponse": {
+        "name": "unsubscribeResponse",
+        "payload": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "result"
+              ],
+              "properties": {
+                "result": {
+                  "$ref": "#/components/schemas/UnsubscribeResult"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/RPCError"
+                }
+              }
+            }
+          ],
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            }
+          }
+        }
+      },
+      "privateSetCancelOnDisconnectRequest": {
+        "name": "privateSetCancelOnDisconnectRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "private/set_cancel_on_disconnect"
+            },
+            "params": {
+              "$ref": "#/components/schemas/SetCancelOnDisconnectRequest"
+            }
+          }
+        }
+      },
+      "privateSetCancelOnDisconnectResponse": {
+        "name": "privateSetCancelOnDisconnectResponse",
+        "payload": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "result"
+              ],
+              "properties": {
+                "result": {
+                  "$ref": "#/components/schemas/SetCancelOnDisconnectResponse"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/RPCError"
+                }
+              }
+            }
+          ],
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "JsonRpcId": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "LoginRequest": {
+        "description": "Login params. The wallet/timestamp/signature fields are typically supplied via headers (`X-Derive*`) for REST and via the JSON body for websocket; all are optional on the wire and validated server-side.",
+        "type": "object",
+        "properties": {
+          "signature": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timestamp": {
+            "description": "Milliseconds since Unix epoch. Accepted as either a JSON number or a string-encoded integer.",
+            "default": null
+          },
+          "wallet": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RPCError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "data": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SetCancelOnDisconnectRequest": {
+        "description": "`private/set_cancel_on_disconnect` params. `wallet` is captured by the auth context.",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "description": "Whether to enable or disable cancel on disconnect.",
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "wallet": {
+            "description": "Wallet address.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SetCancelOnDisconnectResponse": {
+        "description": "The literal string `\"ok\"` returned on success.",
+        "type": "string",
+        "enum": [
+          "ok"
+        ]
+      },
+      "SubscribeParams": {
+        "description": "Params for `subscribe`. `channels` is the required list of channel names to subscribe to.",
+        "type": "object",
+        "required": [
+          "channels"
+        ],
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SubscribeResult": {
+        "description": "Result for `subscribe`. `status` maps each requested channel to `\"ok\"` or an error string; `current_subscriptions` is the full set of channels the connection is subscribed to after the operation.",
+        "type": "object",
+        "required": [
+          "current_subscriptions",
+          "status"
+        ],
+        "properties": {
+          "current_subscriptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "UnsubscribeParams": {
+        "description": "Params for `unsubscribe`. `channels` is optional.\n\nWhen omitted (or null) the connection unsubscribes from all channels.",
+        "type": "object",
+        "properties": {
+          "channels": {
+            "default": null,
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UnsubscribeResult": {
+        "description": "Result for `unsubscribe`. `status` maps each requested channel to `\"ok\"` or an error string; `remaining_subscriptions` is the set of channels the connection is still subscribed to after the operation.",
+        "type": "object",
+        "required": [
+          "remaining_subscriptions",
+          "status"
+        ],
+        "properties": {
+          "remaining_subscriptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}
