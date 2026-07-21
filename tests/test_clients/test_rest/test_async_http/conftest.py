@@ -7,7 +7,7 @@ from derive_client._clients.rest.async_http.client import AsyncHTTPClient
 from derive_client.data_types import Environment
 from derive_client.data_types.generated_models import Direction, OrderType
 from derive_client.data_types.utils import D
-from tests.conftest import ADMIN_TEST_WALLET, OWNER_TEST_WALLET, SESSION_KEY_PRIVATE_KEY
+from tests.conftest import ADMIN_TEST_WALLET, OWNER_TEST_WALLET, SESSION_KEY_PRIVATE_KEY, SUBACCOUNT_ID_75723
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +21,7 @@ async def client_owner_wallet():
     Client connected to a wallet where the session key is the owner.
     Full authority over the wallet is available, allowing owner-level operations.
     """
-    subaccount_id = 75723  # Prime Universe
+    subaccount_id = SUBACCOUNT_ID_75723
     client = AsyncHTTPClient(
         wallet=OWNER_TEST_WALLET,
         session_key=SESSION_KEY_PRIVATE_KEY,
@@ -42,7 +42,7 @@ async def client_admin_wallet():
     Client connected to a wallet where the session key is registered as admin.
     This wallet is NOT owned by the session key, so only admin-level operations are allowed.
     """
-    subaccount_id = 75723
+    subaccount_id = SUBACCOUNT_ID_75723
     client = AsyncHTTPClient(
         wallet=ADMIN_TEST_WALLET,
         session_key=SESSION_KEY_PRIVATE_KEY,
