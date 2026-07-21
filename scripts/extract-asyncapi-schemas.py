@@ -1,47 +1,3 @@
-"""
-Replaces merge-websocket-channels.py.
-
-The old pipeline merged hand-maintained per-channel JSON Schema files from
-specs/channels/*.json. Derive now publishes two official AsyncAPI 3.0 specs
-(subscriptions.asyncapi.json for pub/sub channels, websocket.asyncapi.json for
-WS-only RPC methods like login and set_cancel_on_disconnect) — this script
-extracts the equivalent JSON-Schema-shaped bundle from those instead, and
-feeds it into the *same* downstream pipeline (generate_models.py's existing
-InputFileType.JsonSchema call, then deduplicate_channel_models()).
-
-Approach:
-  1. Seed with schema names that are genuinely new (not already produced by
-     generated_models.py from the REST spec): every schema in
-     subscriptions.asyncapi.json's components.schemas not also present in
-     openapi-spec.json, plus LoginRequest/SetCancelOnDisconnectRequest from
-     websocket.asyncapi.json.
-  2. Transitively follow $ref across all three documents (REST spec included,
-     since a subs-only schema may reference a REST-overlap schema like
-     Direction or RPCError) and collect full definitions for everything
-     reached.
-  3. Write one merged {"definitions": {...}} bundle, same shape
-     merge-websocket-channels.py produced.
-
-Overlap with generated_models.py (e.g. a subs-only schema referencing
-Direction, which is already generated from the REST spec) is intentional,
-not a bug to avoid: generate_models.py's existing deduplicate_channel_models()
-step is exactly the mechanism designed to reconcile that, same as it already
-did for the old per-channel-file pipeline. Don't try to cleverly exclude
-REST-overlap refs here — include the full transitive closure and let dedup
-do its job downstream.
-
-Deliberately excluded: JsonRpcId, SubscribeParams, SubscribeResult,
-UnsubscribeParams, UnsubscribeResult, SetCancelOnDisconnectResponse.
-The first five are protocol-envelope types already hand-implemented in
-session.py (JSONRPCEnvelope, Subscribe), not per-channel payload types —
-same reason the old script excluded subscribe.json/unsubscribe.json.
-SetCancelOnDisconnectResponse is a singleton string enum (["ok"]); per the
-existing resolve_response_type() convention in generate-api.py, singleton
-enums resolve to a plain `str` return type inline rather than being
-generated as an importable class, since datamodel-code-generator emits no
-usable symbol for a single-value enum anyway.
-"""
-
 from __future__ import annotations
 
 import json
@@ -50,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent))
+import paths  # noqa: E402
 from patch_spec import patch_split_enums  # noqa: E402
 
 EXCLUDED_SCHEMAS = {
@@ -138,30 +95,16 @@ def transitive_closure(seeds: set[str], schema_index: dict[str, dict]) -> dict[s
 
 
 def main() -> None:
-    repo_root = Path(__file__).parent.parent
-    specs_dir = repo_root / "specs"
-
-    # patched, not raw: generated_models.py is built from the patched spec
-    # (erc20_details fix, split-enum collapse — see patch_spec.py), so any
-    # REST-overlap schema pulled in here needs to match byte-for-byte or the
-    # downstream deduplicate_channel_models() dedup-by-content-hash step
-    # won't recognize it as the same class and will incorrectly keep both.
-    raw_openapi = specs_dir / "openapi-spec.json"
-    openapi_path = raw_openapi.with_name(f"{raw_openapi.stem}.patched{raw_openapi.suffix}")
-    subs_path = specs_dir / "subscriptions.asyncapi.json"
-    ws_path = specs_dir / "websocket.asyncapi.json"
-    out_path = specs_dir / "websocket-channels.json"
-
-    for p in (openapi_path, subs_path, ws_path):
+    for p in (paths.OPENAPI_SPEC_PATCHED, paths.SUBSCRIPTIONS_ASYNCAPI, paths.WEBSOCKET_ASYNCAPI):
         if not p.exists():
             print(f"Error: {p} not found", file=sys.stderr)
-            if p == openapi_path:
+            if p == paths.OPENAPI_SPEC_PATCHED:
                 print("  (run `make generate-models`'s patch_spec.py step first)", file=sys.stderr)
             raise SystemExit(1)
 
-    openapi_spec = load(openapi_path)
-    subs_spec = load(subs_path)
-    ws_spec = load(ws_path)
+    openapi_spec = load(paths.OPENAPI_SPEC_PATCHED)
+    subs_spec = load(paths.SUBSCRIPTIONS_ASYNCAPI)
+    ws_spec = load(paths.WEBSOCKET_ASYNCAPI)
 
     schema_index = build_schema_index(openapi_spec, subs_spec, ws_spec)
 
@@ -188,13 +131,13 @@ def main() -> None:
     merged = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Derive WebSocket Channel Schemas",
-        "description": "Extracted from subscriptions.asyncapi.json and websocket.asyncapi.json (v3).",
+        "description": "Extracted from subscriptions.json and websocket.json (v3).",
         "definitions": definitions,
     }
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(merged, indent=2))
-    print(f"\n✓ Written to {out_path}", file=sys.stderr)
+    paths.WEBSOCKET_CHANNELS.parent.mkdir(parents=True, exist_ok=True)
+    paths.WEBSOCKET_CHANNELS.write_text(json.dumps(merged, indent=2))
+    print(f"\n✓ Written to {paths.WEBSOCKET_CHANNELS}", file=sys.stderr)
 
 
 if __name__ == "__main__":

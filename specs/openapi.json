@@ -17,19 +17,19 @@
   ],
   "tags": [
     {
-      "name": "Market Data",
-      "description": "Instruments, currencies, tickers, and market-wide feeds."
+      "name": "Subaccounts",
+      "description": "List, inspect, and label subaccounts, portfolios, positions, and collateral."
+    },
+    {
+      "name": "Session Keys",
+      "description": "Register, edit, and list delegated signing keys."
     },
     {
       "name": "Account",
       "description": "Wallet-level account information and settings."
     },
     {
-      "name": "Subaccounts",
-      "description": "List, inspect, and label subaccounts and portfolios."
-    },
-    {
-      "name": "Trading",
+      "name": "Orderbook",
       "description": "Place, replace, cancel, and query orders, trigger orders, and algos."
     },
     {
@@ -37,589 +37,49 @@
       "description": "Request-for-quote: send RFQs, quote, and execute block trades."
     },
     {
-      "name": "Positions & Collateral",
-      "description": "Open positions and collateral balances."
+      "name": "Vault Shareholders",
+      "description": "Deposit into and withdraw from vaults, and track shares, requests, and performance."
     },
     {
-      "name": "Transfers & Withdrawals",
-      "description": "Move collateral between subaccounts, to other wallets, and on-chain."
-    },
-    {
-      "name": "Vaults",
-      "description": "Curated vaults: shares, deposits, withdrawals, and curator actions."
-    },
-    {
-      "name": "Session Keys",
-      "description": "Register, edit, and list delegated signing keys."
-    },
-    {
-      "name": "Market Maker Protection",
-      "description": "Configure, read, and reset market-maker protection."
+      "name": "Vault Curators",
+      "description": "Create and operate curated vaults: settle deposit and withdrawal requests, and manage vault metadata."
     },
     {
       "name": "History",
       "description": "Per-account historical records: orders, trades, transfers, and settlements."
     },
     {
-      "name": "Referrals",
-      "description": "Referral codes and program performance."
+      "name": "Market Maker Protection",
+      "description": "Configure, read, and reset market-maker protection."
+    },
+    {
+      "name": "Transfers & Withdrawals",
+      "description": "Move collateral between subaccounts, to other wallets, and on-chain."
+    },
+    {
+      "name": "Onchain Actions",
+      "description": "L1 onchain actions submitted via OnchainActionManager: register deposit addresses, list pending deposits, and inspect onchain action history."
     },
     {
       "name": "System",
       "description": "Rate limits and transaction lookups."
     },
     {
-      "name": "Other",
-      "description": "Uncategorized."
+      "name": "Market Data",
+      "description": "Instruments, currencies, tickers, and market-wide feeds."
+    },
+    {
+      "name": "Referrals",
+      "description": "Referral codes and program performance."
     }
   ],
   "paths": {
-    "/private/burn_vault_shares": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Settle a queued vault withdrawal",
-        "operationId": "private_burn_vault_shares",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultSettleResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that settles a pending withdraw request by signing a burn approval at a quoted share price (USD per share). Takes the request id and the user's withdraw-action hash, burns the shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BurnSharesRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel a single order by id",
-        "operationId": "private_cancel",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels one resting order identified by order_id, subaccount_id and instrument_name. Requires any trade scope on the session; returns the cancelled order with its final status.",
-        "x-rate-limit-class": "matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelOrderRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_algo_order": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel an algo order by id",
-        "operationId": "private_cancel_algo_order",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels a single active algo order identified by order_id and subaccount_id, stopping any further child-order execution. Requires any trade scope; returns the cancelled order.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelAlgoOrderRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_all": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel all open orders for a subaccount",
-        "operationId": "private_cancel_all",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelAllResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels every open order on the given subaccount. Optional cancel_trigger_orders and cancel_algo_orders flags additionally clear the subaccount's trigger and algo orders in the same call. Requires any trade scope; returns \"ok\" on success.",
-        "x-rate-limit-class": "endpoint",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelAllRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_all_algo_orders": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel all algo orders for a subaccount",
-        "operationId": "private_cancel_all_algo_orders",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelAllAlgoOrdersResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels every active algo order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelAllAlgoOrdersRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_all_trigger_orders": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel all trigger orders for a subaccount",
-        "operationId": "private_cancel_all_trigger_orders",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelAllTriggerOrdersResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels every pending trigger order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelAllTriggerOrdersRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_all_vault_requests": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Cancel all of a wallet's vault requests",
-        "operationId": "private_cancel_all_vault_requests",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultCancelResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Submits a signed cancel action that drains all of the caller's pending deposit and withdraw requests for a given vault and posts the corresponding on-chain operation. Input is the vault subaccount; any subaccount the caller owns may sign. Requires the user-cancel permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelVaultRequestRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_batch_quotes": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Cancel multiple maker quotes by filter",
-        "operationId": "private_cancel_batch_quotes",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelBatchResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels all open quotes on a subaccount that match the supplied filters (any combination of quote_id, rfq_id, label, and nonce, applied together) in a single atomic operation. Omitting the optional filters targets all of the subaccount's open quotes. Returns the list of cancelled quote ids. Requires an RFQ trade scope.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelBatchQuotesRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_batch_rfqs": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Cancel multiple RFQs by filter",
-        "operationId": "private_cancel_batch_rfqs",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelBatchRfqsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels all open RFQs on a subaccount that match the supplied filters (any combination of rfq_id, label, and nonce, applied together), cascade-cancelling their quotes. Omitting the optional filters targets all of the subaccount's open RFQs. Returns the set of cancelled RFQs. Requires an RFQ trade scope.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelBatchRfqsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_by_instrument": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel all orders on an instrument",
-        "operationId": "private_cancel_by_instrument",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelByInstrumentResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels every open order for a subaccount on a single instrument. Requires any trade scope; returns the number of orders cancelled.",
-        "x-rate-limit-class": "matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelByInstrumentRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_by_label": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel orders matching a label",
-        "operationId": "private_cancel_by_label",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelByLabelResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels a subaccount's open orders that carry the given client label, optionally scoped to a single instrument_name. When an instrument is supplied the call is acknowledged with the number of orders cancelled; without one it runs as a bulk fire-and-forget cancel and returns a -1 sentinel count. Requires any trade scope.",
-        "x-rate-limit-class": "custom",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelByLabelRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_by_nonce": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel an order by nonce",
-        "operationId": "private_cancel_by_nonce",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelByNonceResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels a single order identified by its signing nonce, instrument_name and subaccount_id. The owning wallet is taken from the authenticated session rather than the request. Requires any trade scope; returns the cancelled order.",
-        "x-rate-limit-class": "matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelByNonceRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_quote": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Cancel a single maker quote by id",
-        "operationId": "private_cancel_quote",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Quote"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels one open quote owned by the subaccount, identified by quote_id (optionally further constrained by rfq_id, label, or nonce). Returns the cancelled quote, or a quote-not-found error if it does not exist or is no longer open. Requires an RFQ trade scope.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelQuoteRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_rfq": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Cancel a single RFQ by id",
-        "operationId": "private_cancel_rfq",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelRfqResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels one open RFQ owned by the given subaccount and cascade-cancels any quotes makers have submitted against it, notifying those makers. Identify the RFQ by its rfq_id. Returns \"ok\" on success. Requires an RFQ trade scope.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelRfqRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/cancel_trigger_order": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel a trigger order by id",
-        "operationId": "private_cancel_trigger_order",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Cancels a single pending trigger order identified by order_id and subaccount_id. Requires any trade scope; returns the cancelled order.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelTriggerOrderRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/change_subaccount_label": {
       "post": {
         "tags": [
           "Subaccounts"
         ],
-        "summary": "Set a subaccount's label",
+        "summary": "private/change_subaccount_label",
         "operationId": "private_change_subaccount_label",
         "responses": {
           "200": {
@@ -650,267 +110,12 @@
         }
       }
     },
-    "/private/create_session_key": {
-      "post": {
-        "tags": [
-          "Session Keys"
-        ],
-        "summary": "Register a scoped session key",
-        "operationId": "private_create_session_key",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PrivateCreateSessionKeyResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSessionKeyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/create_vault": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Create a new curated vault",
-        "operationId": "private_create_vault",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultCreateResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Registers a new vault on-chain from a signed action; the signing wallet becomes the vault's curator and seeds the initial deposit from its funding subaccount. Inputs set the deposit asset, initial deposit amount, initial share price, management/performance fee rates (in basis points), max slippage, redemption cooldown, an optional benchmark asset for the high-water mark, and the max sequencer fee authorized. Requires the vault curator-create permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateVaultRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/edit_session_key": {
-      "post": {
-        "tags": [
-          "Session Keys"
-        ],
-        "summary": "Edit a session key's off-chain settings",
-        "operationId": "private_edit_session_key",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionKey"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Updates an existing session key's label, IP allowlist, and/or off-chain scopes for a given wallet; it cannot change on-chain (protocol) scopes, for which you must re-register with private/create_session_key. Editing only the label needs account-info permission, while changing the IP allowlist or off-chain scopes requires admin/owner authorization. Returns the updated session key details.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EditSessionKeyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/execute_quote": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Execute a maker quote to fill an RFQ",
-        "operationId": "private_execute_quote",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteExecuteResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Taker-side call that accepts a specific maker quote and settles the trade atomically. You reference the rfq_id and quote_id and supply the taker's priced legs, direction, max fee, and EIP-712 signature (signer, signature, nonce, expiry), with an optional taker-protection flag. The signature is verified and the taker fill, maker quote, and RFQ are updated together in one atomic step. Requires trade scope for every instrument in the legs.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExecuteQuoteRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/force_burn": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Force-exit a shareholder from a vault",
-        "operationId": "private_force_burn",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultForceBurnResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that builds an on-chain action to forcibly redeem a given holder's entire share balance at the current mark-to-market share price. Inputs are the vault subaccount and the holder's wallet address. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForceBurnRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_account": {
-      "post": {
-        "tags": [
-          "Account"
-        ],
-        "summary": "Get account settings and fees for a wallet",
-        "operationId": "private_get_account",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PrivateGetAccountResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns account-level information for a given wallet address: the list of its subaccount IDs, WebSocket rate limits (matching, non-matching, perp, and option messages per second) and any per-endpoint overrides, cancel-on-disconnect and RFQ-maker flags, the account creation timestamp, and a fee_info block with fee discounts and per-instrument maker/taker fee overrides expressed as decimals. Returns an account-not-found error if the wallet has never been registered.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetAccountRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_algo_orders": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "List algo orders for a subaccount",
-        "operationId": "private_get_algo_orders",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Order"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns all active algo orders (e.g. time-sliced execution orders) for the given subaccount as a flat list. Read-only query.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetAlgoOrdersRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/get_all_portfolios": {
       "post": {
         "tags": [
           "Subaccounts"
         ],
-        "summary": "Get full portfolios for all of a wallet's subaccounts",
+        "summary": "private/get_all_portfolios",
         "operationId": "private_get_all_portfolios",
         "responses": {
           "200": {
@@ -947,9 +152,9 @@
     "/private/get_collaterals": {
       "post": {
         "tags": [
-          "Positions & Collateral"
+          "Subaccounts"
         ],
-        "summary": "Get collateral balances for a subaccount",
+        "summary": "private/get_collaterals",
         "operationId": "private_get_collaterals",
         "responses": {
           "200": {
@@ -980,483 +185,12 @@
         }
       }
     },
-    "/private/get_curated_vaults": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "List vaults a wallet curates",
-        "operationId": "private_get_curated_vaults",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultIdsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the subaccount ids of the vaults curated by the given wallet. The wallet parameter must match the authenticated connection. Read-only.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetCuratedVaultsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_deposit_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get deposit history for a subaccount",
-        "operationId": "private_get_deposit_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DepositHistoryResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns settled deposits for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the deposited amount as a decimal, the fee routed to the security module (the net credited amount is amount minus fee), and the resolved settlement batch and status.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetDepositHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_erc20_transfer_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get spot transfer history for a subaccount",
-        "operationId": "private_get_erc20_transfer_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferHistoryResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns settled spot (ERC-20) transfers involving a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the transfer amount and fee as decimals along with direction — the sender sees the gross amount plus fee, the receiver sees the net credit — plus the resolved settlement batch and status.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetErc20TransferHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_funding_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get perpetual funding history for a subaccount",
-        "operationId": "private_get_funding_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PerpSettlementHistoryResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a paginated history of perpetual funding (settlement) events for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window and filtered by perpetual instrument name. The response includes the funding events with their instrument name and settled amounts, plus pagination info with total count and page count.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetFundingHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_interest_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get interest history for a subaccount",
-        "operationId": "private_get_interest_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InterestHistoryResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns realized interest settlements per subaccount, for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry gives the settled interest as a decimal, where a negative value was paid (borrowed) and a positive value was received (supplied).",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetInterestHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_live_burn_requests": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Page a vault's pending withdrawal requests",
-        "operationId": "private_get_live_burn_requests",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that returns a FIFO page of a vault's pending withdraw (burn) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetLiveBurnRequestsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_live_mint_requests": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Page a vault's pending deposit requests",
-        "operationId": "private_get_live_mint_requests",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that returns a FIFO page of a vault's pending deposit (mint) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetLiveMintRequestsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_live_vault_requests": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "List a wallet's pending vault requests",
-        "operationId": "private_get_live_vault_requests",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the caller's currently-pending vault deposit and withdraw requests, read live from the vault queue. Not paginated (the live queue is bounded); settled and terminal history is served by get_vault_request_history. The wallet parameter must match the authenticated connection.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetLiveVaultRequestsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_mmp_config": {
-      "post": {
-        "tags": [
-          "Market Maker Protection"
-        ],
-        "summary": "Get market maker protection config",
-        "operationId": "private_get_mmp_config",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MmpConfigResult"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the market maker protection (MMP) settings for a subaccount, optionally filtered to a single currency. Each entry reports the amount and delta limits (as decimal strings), the rolling interval and freeze duration (in milliseconds), and the current freeze state, including whether MMP is currently frozen and the timestamp at which it unfreezes.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MmpScopeRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_open_orders": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "List open orders for a subaccount",
-        "operationId": "private_get_open_orders",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AggregatedOrdersResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns all currently open orders for the given subaccount, including each order's instrument, direction, prices, amounts and status. Read-only query.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOpenOrdersRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_option_settlement_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get option settlement history for a subaccount",
-        "operationId": "private_get_option_settlement_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OptionSettlementHistoryResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns option settlement (expiry) events for a single subaccount or an entire wallet (specify exactly one). Each settlement includes the reconstructed option instrument name and the settled amounts for that expired position.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOptionSettlementHistoryParams"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_order": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Look up a single order by id",
-        "operationId": "private_get_order",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns one order (active or completed) by order_id and subaccount_id; the subaccount filter enforces ownership. Returns the order or an order-does-not-exist error.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOrderRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_order_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get historical orders for a subaccount",
-        "operationId": "private_get_order_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedOrdersResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a paginated history of orders for a single subaccount or for an entire wallet (specify exactly one), optionally bounded by a from/to timestamp window. Each page includes the order records plus pagination info with the total count and number of pages.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOrderHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/get_positions": {
       "post": {
         "tags": [
-          "Positions & Collateral"
+          "Subaccounts"
         ],
-        "summary": "Get active positions for a subaccount",
+        "summary": "private/get_positions",
         "operationId": "private_get_positions",
         "responses": {
           "200": {
@@ -1487,120 +221,12 @@
         }
       }
     },
-    "/private/get_quotes": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "List a subaccount's quotes with history",
-        "operationId": "private_get_quotes",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteGetResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a paginated, merged view of a subaccount's quotes, combining currently open quotes with the archived history of filled, cancelled, and expired ones. Supports filtering by quote_id, rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes priced legs, direction, fees, liquidity role, and fill percentage.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetQuotesRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_rfqs": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "List a subaccount's RFQs with history",
-        "operationId": "private_get_rfqs",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RFQGetResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a paginated, merged view of a subaccount's RFQs, combining currently open RFQs with the archived history of filled, cancelled, and expired ones. Supports filtering by rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes legs, status, timestamps, cost bounds, and fill percentage.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetRfqsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_shareholder_vaults": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "List vaults a wallet holds shares in",
-        "operationId": "private_get_shareholder_vaults",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultIdsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the subaccount ids of the vaults in which the given wallet holds shares. The wallet parameter must match the authenticated connection. Read-only.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetShareholderVaultsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/get_subaccount": {
       "post": {
         "tags": [
           "Subaccounts"
         ],
-        "summary": "Get full portfolio for a subaccount",
+        "summary": "private/get_subaccount",
         "operationId": "private_get_subaccount",
         "responses": {
           "200": {
@@ -1636,7 +262,7 @@
         "tags": [
           "Subaccounts"
         ],
-        "summary": "List subaccount IDs for a wallet",
+        "summary": "private/get_subaccounts",
         "operationId": "private_get_subaccounts",
         "responses": {
           "200": {
@@ -1667,20 +293,20 @@
         }
       }
     },
-    "/private/get_trade_history": {
+    "/private/create_session_key": {
       "post": {
         "tags": [
-          "History"
+          "Session Keys"
         ],
-        "summary": "Get historical trades for a subaccount",
-        "operationId": "private_get_trade_history",
+        "summary": "private/create_session_key",
+        "operationId": "private_create_session_key",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedTradesResult"
+                  "$ref": "#/components/schemas/PrivateCreateSessionKeyResponse"
                 }
               }
             }
@@ -1689,14 +315,593 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns a paginated history of executed trades for a single subaccount or an entire wallet (specify exactly one), with optional filters for a time window, order id, instrument name, or quote id. The response includes the trade records and pagination info with total count and page count.",
+        "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetTradeHistoryRequest"
+                "$ref": "#/components/schemas/CreateSessionKeyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/edit_session_key": {
+      "post": {
+        "tags": [
+          "Session Keys"
+        ],
+        "summary": "private/edit_session_key",
+        "operationId": "private_edit_session_key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionKey"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Updates an existing session key's label, IP allowlist, and/or off-chain scopes for a given wallet; it cannot change on-chain (protocol) scopes, for which you must re-register with private/create_session_key. Editing only the label needs account-info permission, while changing the IP allowlist or off-chain scopes requires admin/owner authorization. Returns the updated session key details.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSessionKeyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/session_keys": {
+      "post": {
+        "tags": [
+          "Session Keys"
+        ],
+        "summary": "private/session_keys",
+        "operationId": "private_session_keys",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateSessionKeysResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns every session key registered to the given wallet, including expired and not-yet-activated keys, each with its public address, scopes, expiry, label, IP allowlist, and permitted subaccounts.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionKeysRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_wallets_from_session_key": {
+      "post": {
+        "tags": [
+          "Session Keys"
+        ],
+        "summary": "public/get_wallets_from_session_key",
+        "operationId": "public_get_wallets_from_session_key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGetWalletsFromSessionKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Public lookup that returns the wallet addresses a given session key is registered to, sorted by expiry, with expired keys omitted. An optional scope filter narrows results to keys holding that off-chain scope; returns an error if no matching, unexpired keys exist.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetWalletsFromSessionKeyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_account": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "private/get_account",
+        "operationId": "private_get_account",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateGetAccountResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns account-level information for a given wallet address: the list of its subaccount IDs, WebSocket rate limits (matching, non-matching, perp, and option messages per second) and any per-endpoint overrides, cancel-on-disconnect and RFQ-maker flags, the account creation timestamp, and a fee_info block with fee discounts and per-instrument maker/taker fee overrides expressed as decimals. Returns an account-not-found error if the wallet has never been registered.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAccountRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel",
+        "operationId": "private_cancel",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels one resting order identified by order_id, subaccount_id and instrument_name. Requires any trade scope on the session; returns the cancelled order with its final status.",
+        "x-rate-limit-class": "matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_algo_order": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_algo_order",
+        "operationId": "private_cancel_algo_order",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels a single active algo order identified by order_id and subaccount_id, stopping any further child-order execution. Requires any trade scope; returns the cancelled order.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAlgoOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_all": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_all",
+        "operationId": "private_cancel_all",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelAllResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels every open order on the given subaccount. Optional cancel_trigger_orders and cancel_algo_orders flags additionally clear the subaccount's trigger and algo orders in the same call. Requires any trade scope; returns \"ok\" on success.",
+        "x-rate-limit-class": "endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAllRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_all_algo_orders": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_all_algo_orders",
+        "operationId": "private_cancel_all_algo_orders",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelAllAlgoOrdersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels every active algo order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAllAlgoOrdersRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_all_trigger_orders": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_all_trigger_orders",
+        "operationId": "private_cancel_all_trigger_orders",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelAllTriggerOrdersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels every pending trigger order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAllTriggerOrdersRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_by_instrument": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_by_instrument",
+        "operationId": "private_cancel_by_instrument",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelByInstrumentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels every open order for a subaccount on a single instrument. Requires any trade scope; returns the number of orders cancelled.",
+        "x-rate-limit-class": "matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelByInstrumentRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_by_label": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_by_label",
+        "operationId": "private_cancel_by_label",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelByLabelResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels a subaccount's open orders that carry the given client label, optionally scoped to a single instrument_name. When an instrument is supplied the call is acknowledged with the number of orders cancelled; without one it runs as a bulk fire-and-forget cancel and returns a -1 sentinel count. Requires any trade scope.",
+        "x-rate-limit-class": "custom",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelByLabelRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_by_nonce": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_by_nonce",
+        "operationId": "private_cancel_by_nonce",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelByNonceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels a single order identified by its signing nonce, instrument_name and subaccount_id. The owning wallet is taken from the authenticated session rather than the request. Requires any trade scope; returns the cancelled order.",
+        "x-rate-limit-class": "matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelByNonceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_trigger_order": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/cancel_trigger_order",
+        "operationId": "private_cancel_trigger_order",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels a single pending trigger order identified by order_id and subaccount_id. Requires any trade scope; returns the cancelled order.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelTriggerOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_algo_orders": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/get_algo_orders",
+        "operationId": "private_get_algo_orders",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns all active algo orders (e.g. time-sliced execution orders) for the given subaccount as a flat list. Read-only query.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAlgoOrdersRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_open_orders": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/get_open_orders",
+        "operationId": "private_get_open_orders",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregatedOrdersResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns all currently open orders for the given subaccount, including each order's instrument, direction, prices, amounts and status. Read-only query.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOpenOrdersRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_order": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/get_order",
+        "operationId": "private_get_order",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns one order (active or completed) by order_id and subaccount_id; the subaccount filter enforces ownership. Returns the order or an order-does-not-exist error.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOrderRequest"
               }
             }
           }
@@ -1706,9 +911,9 @@
     "/private/get_trigger_orders": {
       "post": {
         "tags": [
-          "Trading"
+          "Orderbook"
         ],
-        "summary": "List trigger orders for a subaccount",
+        "summary": "private/get_trigger_orders",
         "operationId": "private_get_trigger_orders",
         "responses": {
           "200": {
@@ -1739,156 +944,12 @@
         }
       }
     },
-    "/private/get_vault_request_history": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Get a wallet's paginated vault request history",
-        "operationId": "private_get_vault_request_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedVaultActions"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the caller's full vault action history (deposits, withdrawals, force-withdrawals, and cancels) across every status — enqueued, requested, applied, cancelled, rejected, or expired — with one row per action at its latest state. Paginated by page and page_size; monetary amounts, prices, and share counts are decimal strings. The wallet parameter must match the authenticated connection.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetVaultRequestHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_vault_shares": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Get a wallet's vault share balances",
-        "operationId": "private_get_vault_shares",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultSharesResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the caller's share balance for every vault it holds shares in, each paired with the full enriched vault row (the same shape as public/get_vault). The wallet parameter must match the authenticated connection. Read-only.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetVaultSharesRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/get_withdrawal_history": {
-      "post": {
-        "tags": [
-          "History"
-        ],
-        "summary": "Get withdrawal history for a subaccount",
-        "operationId": "private_get_withdrawal_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WithdrawalHistoryResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns settled withdrawals for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the withdrawn amount as a decimal, the fee routed to the security module (the net amount sent to the recipient is amount minus fee), and the resolved settlement batch and status.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetWithdrawalHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/mint_vault_shares": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Settle a queued vault deposit",
-        "operationId": "private_mint_vault_shares",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultSettleResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that settles a pending deposit request by signing a mint approval at a quoted share price (USD per share). Takes the request id and the user's deposit-action hash, mints the corresponding shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MintSharesRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/order": {
       "post": {
         "tags": [
-          "Trading"
+          "Orderbook"
         ],
-        "summary": "Place a new order",
+        "summary": "private/order",
         "operationId": "private_order",
         "responses": {
           "200": {
@@ -1922,9 +983,9 @@
     "/private/order_debug": {
       "post": {
         "tags": [
-          "Trading"
+          "Orderbook"
         ],
-        "summary": "Preview an order's EIP-712 signing data",
+        "summary": "private/order_debug",
         "operationId": "private_order_debug",
         "responses": {
           "200": {
@@ -1958,9 +1019,9 @@
     "/private/order_quote": {
       "post": {
         "tags": [
-          "Trading"
+          "Orderbook"
         ],
-        "summary": "Estimate the cost and margin impact of an order",
+        "summary": "private/order_quote",
         "operationId": "private_order_quote",
         "responses": {
           "200": {
@@ -1991,12 +1052,336 @@
         }
       }
     },
+    "/private/replace": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "private/replace",
+        "operationId": "private_replace",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Atomically cancels a resting order (identified by order_id_to_cancel or nonce_to_cancel) and submits a replacement order in a single request. The payload is a full new-order specification plus the cancel target and an optional expected_filled_amount guard. Requires a signed order payload and Orderbook trade scope; returns both the cancelled and the newly created order.",
+        "x-rate-limit-class": "matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/order_quote": {
+      "post": {
+        "tags": [
+          "Orderbook"
+        ],
+        "summary": "public/order_quote",
+        "operationId": "public_order_quote",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderQuoteResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Public dry-run variant of order_quote that estimates fill price, fees, margin impact, projected order status and realized PnL for a prospective order without placing it, returning all values as decimal strings. Unlike private/order_quote it bypasses session scope checks, so it can be used to preview costs without account authentication.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderQuoteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_batch_quotes": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/cancel_batch_quotes",
+        "operationId": "private_cancel_batch_quotes",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelBatchResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels all open quotes on a subaccount that match the supplied filters (any combination of quote_id, rfq_id, label, and nonce, applied together) in a single atomic operation. Omitting the optional filters targets all of the subaccount's open quotes. Returns the list of cancelled quote ids. Requires an RFQ trade scope.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBatchQuotesRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_batch_rfqs": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/cancel_batch_rfqs",
+        "operationId": "private_cancel_batch_rfqs",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelBatchRfqsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels all open RFQs on a subaccount that match the supplied filters (any combination of rfq_id, label, and nonce, applied together), cascade-cancelling their quotes. Omitting the optional filters targets all of the subaccount's open RFQs. Returns the set of cancelled RFQs. Requires an RFQ trade scope.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBatchRfqsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_quote": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/cancel_quote",
+        "operationId": "private_cancel_quote",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels one open quote owned by the subaccount, identified by quote_id (optionally further constrained by rfq_id, label, or nonce). Returns the cancelled quote, or a quote-not-found error if it does not exist or is no longer open. Requires an RFQ trade scope.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelQuoteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_rfq": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/cancel_rfq",
+        "operationId": "private_cancel_rfq",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelRfqResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Cancels one open RFQ owned by the given subaccount and cascade-cancels any quotes makers have submitted against it, notifying those makers. Identify the RFQ by its rfq_id. Returns \"ok\" on success. Requires an RFQ trade scope.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRfqRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/execute_quote": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/execute_quote",
+        "operationId": "private_execute_quote",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteExecuteResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Taker-side call that accepts a specific maker quote and settles the trade atomically. You reference the rfq_id and quote_id and supply the taker's priced legs, direction, max fee, and EIP-712 signature (signer, signature, nonce, expiry), with an optional taker-protection flag. The signature is verified and the taker fill, maker quote, and RFQ are updated together in one atomic step. Requires trade scope for every instrument in the legs.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteQuoteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_quotes": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/get_quotes",
+        "operationId": "private_get_quotes",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteGetResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated, merged view of a subaccount's quotes, combining currently open quotes with the archived history of filled, cancelled, and expired ones. Supports filtering by quote_id, rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes priced legs, direction, fees, liquidity role, and fill percentage.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetQuotesRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_rfqs": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/get_rfqs",
+        "operationId": "private_get_rfqs",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFQGetResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated, merged view of a subaccount's RFQs, combining currently open RFQs with the archived history of filled, cancelled, and expired ones. Supports filtering by rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes legs, status, timestamps, cost bounds, and fill percentage.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetRfqsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/poll_quotes": {
       "post": {
         "tags": [
           "RFQ"
         ],
-        "summary": "Poll quotes received on a taker's RFQs",
+        "summary": "private/poll_quotes",
         "operationId": "private_poll_quotes",
         "responses": {
           "200": {
@@ -2032,7 +1417,7 @@
         "tags": [
           "RFQ"
         ],
-        "summary": "Poll RFQs visible to a maker",
+        "summary": "private/poll_rfqs",
         "operationId": "private_poll_rfqs",
         "responses": {
           "200": {
@@ -2063,84 +1448,12 @@
         }
       }
     },
-    "/private/reject_deposit_request": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Reject a pending vault deposit request",
-        "operationId": "private_reject_deposit_request",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultRequestAckResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Curator-only endpoint that removes a queued deposit request off-chain (no on-chain settlement), recording the rejection with an optional short reason. Takes the request id and returns an acknowledgement. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectDepositRequestRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/replace": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Cancel an existing order and place a new one",
-        "operationId": "private_replace",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReplaceOrderResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Atomically cancels a resting order (identified by order_id_to_cancel or nonce_to_cancel) and submits a replacement order in a single request. The payload is a full new-order specification plus the cancel target and an optional expected_filled_amount guard. Requires a signed order payload and Orderbook trade scope; returns both the cancelled and the newly created order.",
-        "x-rate-limit-class": "matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReplaceOrderRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/replace_quote": {
       "post": {
         "tags": [
           "RFQ"
         ],
-        "summary": "Cancel and resubmit a maker quote atomically",
+        "summary": "private/replace_quote",
         "operationId": "private_replace_quote",
         "responses": {
           "200": {
@@ -2171,120 +1484,12 @@
         }
       }
     },
-    "/private/request_vault_deposit": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Request a deposit into a vault",
-        "operationId": "private_request_vault_deposit",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultRequestAckResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Submits a signed deposit action from the user's source subaccount and enqueues it in the vault's pending-deposit queue for the curator to settle. Inputs are the target vault subaccount, the deposit asset, and the amount as a decimal string. Returns an acknowledgement with the queued request; requires the user-deposit permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestVaultDepositRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/request_vault_withdraw": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Request a withdrawal from a vault",
-        "operationId": "private_request_vault_withdraw",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultRequestAckResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Submits a signed withdraw action that enqueues a request to burn a given number of vault shares and redeem the proceeds to the user's subaccount. Inputs are the vault subaccount and the share quantity to burn (decimal string). Returns an acknowledgement with the queued request; requires the user-withdraw permission.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestVaultWithdrawRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/private/reset_mmp": {
-      "post": {
-        "tags": [
-          "Market Maker Protection"
-        ],
-        "summary": "Reset market maker protection freeze",
-        "operationId": "private_reset_mmp",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResetMmpResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Clears an active market maker protection freeze and resets the rolling MMP window for a subaccount, optionally scoped to a single currency. Use this to resume quoting after MMP has frozen a subaccount. Requires a trading-scoped session key and returns \"ok\" on success.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MmpScopeRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/rfq_get_best_quote": {
       "post": {
         "tags": [
           "RFQ"
         ],
-        "summary": "Preview the best quote for an RFQ",
+        "summary": "private/rfq_get_best_quote",
         "operationId": "private_rfq_get_best_quote",
         "responses": {
           "200": {
@@ -2320,7 +1525,7 @@
         "tags": [
           "RFQ"
         ],
-        "summary": "Submit a maker quote for an RFQ",
+        "summary": "private/send_quote",
         "operationId": "private_send_quote",
         "responses": {
           "200": {
@@ -2356,7 +1561,7 @@
         "tags": [
           "RFQ"
         ],
-        "summary": "Create a request for quote (RFQ)",
+        "summary": "private/send_rfq",
         "operationId": "private_send_rfq",
         "responses": {
           "200": {
@@ -2387,20 +1592,20 @@
         }
       }
     },
-    "/private/session_keys": {
+    "/public/execute_quote_debug": {
       "post": {
         "tags": [
-          "Session Keys"
+          "RFQ"
         ],
-        "summary": "List a wallet's session keys",
-        "operationId": "private_session_keys",
+        "summary": "public/execute_quote_debug",
+        "operationId": "public_execute_quote_debug",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrivateSessionKeysResponse"
+                  "$ref": "#/components/schemas/QuoteExecuteDebugResult"
                 }
               }
             }
@@ -2409,14 +1614,1133 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns every session key registered to the given wallet, including expired and not-yet-activated keys, each with its public address, scopes, expiry, label, IP allowlist, and permitted subaccounts.",
+        "description": "Public signing-preview helper that returns the taker's EIP-712 encoding artifacts (encoded data and hashes) plus the maker-side encoded legs and legs hash for a quote execution a client is about to sign. It does not verify signatures, persist anything, or execute the trade; use it to construct and check the exact payload before calling private/execute_quote.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SessionKeysRequest"
+                "$ref": "#/components/schemas/PublicExecuteQuoteDebugRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/send_quote_debug": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "public/send_quote_debug",
+        "operationId": "public_send_quote_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteSendDebugResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Public signing-preview helper that returns the EIP-712 encoding artifacts (encoded data, its hash, the action hash, and the typed-data hash) for a maker quote a client is about to sign. It does not verify signatures, persist anything, or place a quote; use it to construct and check the exact payload to sign before calling private/send_quote.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicSendQuoteDebugRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/cancel_all_vault_requests": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/cancel_all_vault_requests",
+        "operationId": "private_cancel_all_vault_requests",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultCancelResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Submits a signed cancel action that drains all of the caller's pending deposit and withdraw requests for a given vault and posts the corresponding on-chain operation. Input is the vault subaccount; any subaccount the caller owns may sign. Requires the user-cancel permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelVaultRequestRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_live_vault_requests": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/get_live_vault_requests",
+        "operationId": "private_get_live_vault_requests",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the caller's currently-pending vault deposit and withdraw requests, read live from the vault queue. Not paginated (the live queue is bounded); settled and terminal history is served by get_vault_request_history. The wallet parameter must match the authenticated connection.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiveVaultRequestsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_shareholder_vaults": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/get_shareholder_vaults",
+        "operationId": "private_get_shareholder_vaults",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultIdsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the subaccount ids of the vaults in which the given wallet holds shares. The wallet parameter must match the authenticated connection. Read-only.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetShareholderVaultsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_vault_request_history": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/get_vault_request_history",
+        "operationId": "private_get_vault_request_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedVaultActions"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the caller's full vault action history (deposits, withdrawals, force-withdrawals, and cancels) across every status — enqueued, requested, applied, cancelled, rejected, or expired — with one row per action at its latest state. Paginated by page and page_size; monetary amounts, prices, and share counts are decimal strings. The wallet parameter must match the authenticated connection.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultRequestHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_vault_shares": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/get_vault_shares",
+        "operationId": "private_get_vault_shares",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultSharesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the caller's share balance for every vault it holds shares in, each paired with the full enriched vault row (the same shape as public/get_vault). The wallet parameter must match the authenticated connection. Read-only.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultSharesRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/request_vault_deposit": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/request_vault_deposit",
+        "operationId": "private_request_vault_deposit",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultRequestAckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Submits a signed deposit action from the user's source subaccount and enqueues it in the vault's pending-deposit queue for the curator to settle. Inputs are the target vault subaccount, the deposit asset, and the amount as a decimal string. Returns an acknowledgement with the queued request; requires the user-deposit permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestVaultDepositRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/request_vault_withdraw": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "private/request_vault_withdraw",
+        "operationId": "private_request_vault_withdraw",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultRequestAckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Submits a signed withdraw action that enqueues a request to burn a given number of vault shares and redeem the proceeds to the user's subaccount. Inputs are the vault subaccount and the share quantity to burn (decimal string). Returns an acknowledgement with the queued request; requires the user-withdraw permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestVaultWithdrawRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_vault": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "public/get_vault",
+        "operationId": "public_get_vault",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vault"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the full vault record — on-chain state plus curator metadata — for one vault subaccount id. Unauthenticated and read-only.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_vault_action_history": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "public/get_vault_action_history",
+        "operationId": "public_get_vault_action_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedVaultActions"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events — including NAV, share price, high-water mark, and the fee-share split across management, performance, curator, and protocol — at the vault level (per-holder position details are omitted). Inputs are the vault subaccount, an optional event_type filter, and pagination. Amounts and prices are decimal strings. Unauthenticated.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultActionHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_vault_performance_history": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "public/get_vault_performance_history",
+        "operationId": "public_get_vault_performance_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultPerformanceHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a time series of a vault's mark-to-market performance (NAV, share price, total and curator shares, high-water mark, optional benchmark) sampled hourly and downsampled to the requested resolution (1h, 8h, 24h, or 1wk). Supports optional from/to unix-second bounds and a limit (newest first, default 1000, capped at 10000). Values are decimal strings, with live prices nullable. Unauthenticated.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultPerformanceHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_vaults": {
+      "post": {
+        "tags": [
+          "Vault Shareholders"
+        ],
+        "summary": "public/get_vaults",
+        "operationId": "public_get_vaults",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns every vault in the system, each paired with its subaccount id, paginated by page and page_size. Unauthenticated and read-only.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetVaultsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/burn_vault_shares": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/burn_vault_shares",
+        "operationId": "private_burn_vault_shares",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultSettleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that settles a pending withdraw request by signing a burn approval at a quoted share price (USD per share). Takes the request id and the user's withdraw-action hash, burns the shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BurnSharesRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/create_vault": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/create_vault",
+        "operationId": "private_create_vault",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultCreateResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Registers a new vault on-chain from a signed action; the signing wallet becomes the vault's curator and seeds the initial deposit from its funding subaccount. Inputs set the deposit asset, initial deposit amount, initial share price, management/performance fee rates (in basis points), max slippage, redemption cooldown, an optional benchmark asset for the high-water mark, and the max sequencer fee authorized. Requires the vault curator-create permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVaultRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/force_burn": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/force_burn",
+        "operationId": "private_force_burn",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultForceBurnResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that builds an on-chain action to forcibly redeem a given holder's entire share balance at the current mark-to-market share price. Inputs are the vault subaccount and the holder's wallet address. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForceBurnRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_curated_vaults": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/get_curated_vaults",
+        "operationId": "private_get_curated_vaults",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultIdsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the subaccount ids of the vaults curated by the given wallet. The wallet parameter must match the authenticated connection. Read-only.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCuratedVaultsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_live_burn_requests": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/get_live_burn_requests",
+        "operationId": "private_get_live_burn_requests",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that returns a FIFO page of a vault's pending withdraw (burn) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiveBurnRequestsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_live_mint_requests": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/get_live_mint_requests",
+        "operationId": "private_get_live_mint_requests",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleVaultRequestsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that returns a FIFO page of a vault's pending deposit (mint) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiveMintRequestsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/mint_vault_shares": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/mint_vault_shares",
+        "operationId": "private_mint_vault_shares",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultSettleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that settles a pending deposit request by signing a mint approval at a quoted share price (USD per share). Takes the request id and the user's deposit-action hash, mints the corresponding shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MintSharesRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/reject_deposit_request": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/reject_deposit_request",
+        "operationId": "private_reject_deposit_request",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultRequestAckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Curator-only endpoint that removes a queued deposit request off-chain (no on-chain settlement), recording the rejection with an optional short reason. Takes the request id and returns an acknowledgement. Requires the curator mint-and-burn permission.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectDepositRequestRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/update_vault_info": {
+      "post": {
+        "tags": [
+          "Vault Curators"
+        ],
+        "summary": "private/update_vault_info",
+        "operationId": "private_update_vault_info",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OffchainAckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Applies an off-chain patch to a vault the caller curates, updating any of its display name, description, advisory mark-to-market cap (a USD decimal), or whitelist-only flag. Only the fields supplied are changed. The caller must own the vault's subaccount (i.e. be its curator); description length is capped.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVaultInfoRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_deposit_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_deposit_history",
+        "operationId": "private_get_deposit_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns settled deposits for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the deposited amount as a decimal, the fee routed to the security module (the net credited amount is amount minus fee), and the resolved settlement batch and status.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetDepositHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_erc20_transfer_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_erc20_transfer_history",
+        "operationId": "private_get_erc20_transfer_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns settled spot (ERC-20) transfers involving a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the transfer amount and fee as decimals along with direction — the sender sees the gross amount plus fee, the receiver sees the net credit — plus the resolved settlement batch and status.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetErc20TransferHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_funding_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_funding_history",
+        "operationId": "private_get_funding_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpSettlementHistoryResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated history of perpetual funding (settlement) events for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window and filtered by perpetual instrument name. The response includes the funding events with their instrument name and settled amounts, plus pagination info with total count and page count.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetFundingHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_interest_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_interest_history",
+        "operationId": "private_get_interest_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterestHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns realized interest settlements per subaccount, for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry gives the settled interest as a decimal, where a negative value was paid (borrowed) and a positive value was received (supplied).",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetInterestHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_option_settlement_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_option_settlement_history",
+        "operationId": "private_get_option_settlement_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionSettlementHistoryResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns option settlement (expiry) events for a single subaccount or an entire wallet (specify exactly one). Each settlement includes the reconstructed option instrument name and the settled amounts for that expired position.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOptionSettlementHistoryParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_order_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_order_history",
+        "operationId": "private_get_order_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedOrdersResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated history of orders for a single subaccount or for an entire wallet (specify exactly one), optionally bounded by a from/to timestamp window. Each page includes the order records plus pagination info with the total count and number of pages.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetOrderHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_trade_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_trade_history",
+        "operationId": "private_get_trade_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTradesResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated history of executed trades for a single subaccount or an entire wallet (specify exactly one), with optional filters for a time window, order id, instrument name, or quote id. The response includes the trade records and pagination info with total count and page count.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetTradeHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_withdrawal_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "private/get_withdrawal_history",
+        "operationId": "private_get_withdrawal_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns settled withdrawals for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the withdrawn amount as a decimal, the fee routed to the security module (the net amount sent to the recipient is amount minus fee), and the resolved settlement batch and status.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetWithdrawalHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_mmp_config": {
+      "post": {
+        "tags": [
+          "Market Maker Protection"
+        ],
+        "summary": "private/get_mmp_config",
+        "operationId": "private_get_mmp_config",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MmpConfigResult"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the market maker protection (MMP) settings for a subaccount, optionally filtered to a single currency. Each entry reports the amount and delta limits (as decimal strings), the rolling interval and freeze duration (in milliseconds), and the current freeze state, including whether MMP is currently frozen and the timestamp at which it unfreezes.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MmpScopeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/reset_mmp": {
+      "post": {
+        "tags": [
+          "Market Maker Protection"
+        ],
+        "summary": "private/reset_mmp",
+        "operationId": "private_reset_mmp",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetMmpResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Clears an active market maker protection freeze and resets the rolling MMP window for a subaccount, optionally scoped to a single currency. Use this to resume quoting after MMP has frozen a subaccount. Requires a trading-scoped session key and returns \"ok\" on success.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MmpScopeRequest"
               }
             }
           }
@@ -2428,7 +2752,7 @@
         "tags": [
           "Market Maker Protection"
         ],
-        "summary": "Set market maker protection config",
+        "summary": "private/set_mmp_config",
         "operationId": "private_set_mmp_config",
         "responses": {
           "200": {
@@ -2464,7 +2788,7 @@
         "tags": [
           "Transfers & Withdrawals"
         ],
-        "summary": "Transfer positions between two subaccounts by RFQ",
+        "summary": "private/transfer_positions",
         "operationId": "private_transfer_positions",
         "responses": {
           "200": {
@@ -2500,7 +2824,7 @@
         "tags": [
           "Transfers & Withdrawals"
         ],
-        "summary": "Transfer a spot asset between your subaccounts",
+        "summary": "private/transfer_spot",
         "operationId": "private_transfer_spot",
         "responses": {
           "200": {
@@ -2536,7 +2860,7 @@
         "tags": [
           "Transfers & Withdrawals"
         ],
-        "summary": "Transfer a spot asset to another owner's subaccount",
+        "summary": "private/transfer_spot_external",
         "operationId": "private_transfer_spot_external",
         "responses": {
           "200": {
@@ -2567,48 +2891,12 @@
         }
       }
     },
-    "/private/update_vault_info": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Update a vault's off-chain metadata",
-        "operationId": "private_update_vault_info",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OffchainAckResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Applies an off-chain patch to a vault the caller curates, updating any of its display name, description, advisory mark-to-market cap (a USD decimal), or whitelist-only flag. Only the fields supplied are changed. The caller must own the vault's subaccount (i.e. be its curator); description length is capped.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateVaultInfoRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/update_whitelisted_recipients": {
       "post": {
         "tags": [
           "Transfers & Withdrawals"
         ],
-        "summary": "Update a wallet's whitelisted transfer recipients",
+        "summary": "private/update_whitelisted_recipients",
         "operationId": "private_update_whitelisted_recipients",
         "responses": {
           "200": {
@@ -2644,7 +2932,7 @@
         "tags": [
           "Transfers & Withdrawals"
         ],
-        "summary": "Withdraw an asset from a subaccount to L1",
+        "summary": "private/withdraw",
         "operationId": "private_withdraw",
         "responses": {
           "200": {
@@ -2675,20 +2963,54 @@
         }
       }
     },
-    "/public/execute_quote_debug": {
+    "/public/withdraw_debug": {
       "post": {
         "tags": [
-          "RFQ"
+          "Transfers & Withdrawals"
         ],
-        "summary": "Preview EIP-712 signing data for a quote execution",
-        "operationId": "public_execute_quote_debug",
+        "summary": "public/withdraw_debug",
+        "operationId": "public_withdraw_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Dry-run helper that returns the EIP-712 typed data and hashes that would be computed for the given withdrawal parameters, so clients can verify their own signing and hashing before submitting. Takes the same inputs as private/withdraw (subaccount, signer, nonce, amount, max fee, expiry, asset) but performs no state change and needs no signature.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicWithdrawDebugRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_onchain_action_history": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "public/get_onchain_action_history",
+        "operationId": "public_get_onchain_action_history",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuoteExecuteDebugResult"
+                  "$ref": "#/components/schemas/GetOnchainActionHistoryResponse"
                 }
               }
             }
@@ -2697,14 +3019,86 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Public signing-preview helper that returns the taker's EIP-712 encoding artifacts (encoded data and hashes) plus the maker-side encoded legs and legs hash for a quote execution a client is about to sign. It does not verify signatures, persist anything, or execute the trade; use it to construct and check the exact payload before calling private/execute_quote.",
+        "description": "Returns the lifecycle of onchain actions submitted via `OnchainActionManager.sol`. Public endpoint.\n\nOnchain actions are either applied directly or with a `fallback` flag. Each onchain action is affected by the `fallback` flag uniquely:\n\n- Deposits: sequencer moved the deposit into the `fallback_subaccount`\n- SetSessionKey: no-op\n- Admin actions: no-op\n\nThe onchain action can have several states:\n\n- `applied`: action was successfully applied by the sequencer\n- `applied_with_fallback`: action was applied by the sequencer with fallback=true\n- `instant_fallback`: action failed its initial attempt, will be re-submitted with fallback=true\n- `retry_then_fallback`: action failed its initial attempt, will be re-submitted with fallback=false until the retry budget is exceeded, then re-submitted with fallback=true\n- `never_escalate`: action failed its initial attempt but will retry until successful, never with fallback=true",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PublicExecuteQuoteDebugRequest"
+                "$ref": "#/components/schemas/GetOnchainActionHistoryParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_pending_deposits": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "public/get_pending_deposits",
+        "operationId": "public_get_pending_deposits",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPendingDepositsResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns deposits queued on L1 but not yet applied by the sequencer, indexed for a wallet and keyed by (tx_hash, log_index). Once a deposit is applied it moves to private/get_deposit_history; this endpoint covers the window in between. Public because a first-time depositor has no account (and thus no session key) until their deposit is applied.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPendingDepositsParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/register_deposit_address": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "public/register_deposit_address",
+        "operationId": "public_register_deposit_address",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterDepositAddressResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDepositAddressParams"
               }
             }
           }
@@ -2716,7 +3110,7 @@
         "tags": [
           "System"
         ],
-        "summary": "Get remaining rate limits for the connection",
+        "summary": "public/getRateLimits",
         "operationId": "public_getRateLimits",
         "responses": {
           "200": {
@@ -2747,12 +3141,84 @@
         }
       }
     },
+    "/public/get_time": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "public/get_time",
+        "operationId": "public_get_time",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the current server time in milliseconds since the UNIX epoch. Takes no parameters and requires no authentication. Use it to align the timestamps and nonces bound into signed actions with the server clock.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_transaction": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "public/get_transaction",
+        "operationId": "public_get_transaction",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTransactionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Looks up the settlement lifecycle of a previously submitted operation by its operation UUID (op_uuid). Returns the operation's serialized data along with its batch status, settlement transaction hash, and any error log; the status is null until the operation has been picked up for settlement.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetTransactionParams"
+              }
+            }
+          }
+        }
+      }
+    },
     "/public/get_all_currencies": {
       "post": {
         "tags": [
           "Market Data"
         ],
-        "summary": "List all supported currencies with details",
+        "summary": "public/get_all_currencies",
         "operationId": "public_get_all_currencies",
         "responses": {
           "200": {
@@ -2791,7 +3257,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "List instruments with pagination",
+        "summary": "public/get_all_instruments",
         "operationId": "public_get_all_instruments",
         "responses": {
           "200": {
@@ -2827,7 +3293,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "List names of all live instruments",
+        "summary": "public/get_all_live_instruments",
         "operationId": "public_get_all_live_instruments",
         "responses": {
           "200": {
@@ -2861,51 +3327,12 @@
         }
       }
     },
-    "/public/get_all_referral_codes": {
-      "post": {
-        "tags": [
-          "Referrals"
-        ],
-        "summary": "List all referral codes",
-        "operationId": "public_get_all_referral_codes",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Referrer"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns every registered referral code along with the owner's wallet address and, when configured, the wallet that receives referral rewards. Takes no parameters.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetAllReferralCodesParams"
-              }
-            }
-          }
-        }
-      }
-    },
     "/public/get_assets": {
       "post": {
         "tags": [
           "Market Data"
         ],
-        "summary": "List assets for a currency and type",
+        "summary": "public/get_assets",
         "operationId": "public_get_assets",
         "responses": {
           "200": {
@@ -2944,7 +3371,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get details for a single currency",
+        "summary": "public/get_currency",
         "operationId": "public_get_currency",
         "responses": {
           "200": {
@@ -2980,7 +3407,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get perp funding-rate candles",
+        "summary": "public/get_funding_rate_history",
         "operationId": "public_get_funding_rate_history",
         "responses": {
           "200": {
@@ -3016,7 +3443,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get spot index price candles",
+        "summary": "public/get_index_chart_data",
         "operationId": "public_get_index_chart_data",
         "responses": {
           "200": {
@@ -3055,7 +3482,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get a single tradeable instrument",
+        "summary": "public/get_instrument",
         "operationId": "public_get_instrument",
         "responses": {
           "200": {
@@ -3091,7 +3518,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get lending interest-rate candles",
+        "summary": "public/get_interest_rate_history",
         "operationId": "public_get_interest_rate_history",
         "responses": {
           "200": {
@@ -3127,7 +3554,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get latest signed oracle feeds",
+        "summary": "public/get_latest_signed_feeds",
         "operationId": "public_get_latest_signed_feeds",
         "responses": {
           "200": {
@@ -3158,48 +3585,12 @@
         }
       }
     },
-    "/public/get_onchain_action_history": {
-      "post": {
-        "tags": [
-          "System"
-        ],
-        "summary": "Get L1 onchain action history",
-        "operationId": "public_get_onchain_action_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetOnchainActionHistoryResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the lifecycle of onchain actions submitted via `OnchainActionManager.sol`. Public endpoint.\n\nOnchain actions are either applied directly or with a `fallback` flag. Each onchain action is affected by the `fallback` flag uniquely:\n\n- Deposits: sequencer moved the deposit into the `fallback_subaccount`\n- SetSessionKey: no-op\n- Admin actions: no-op\n\nThe onchain action can have several states:\n\n- `applied`: action was successfully applied by the sequencer\n- `applied_with_fallback`: action was applied by the sequencer with fallback=true\n- `instant_fallback`: action failed its initial attempt, will be re-submitted with fallback=true\n- `retry_then_fallback`: action failed its initial attempt, will be re-submitted with fallback=false until the retry budget is exceeded, then re-submitted with fallback=true\n- `never_escalate`: action failed its initial attempt but will retry until successful, never with fallback=true",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetOnchainActionHistoryParams"
-              }
-            }
-          }
-        }
-      }
-    },
     "/public/get_option_settlement_prices": {
       "post": {
         "tags": [
           "Market Data"
         ],
-        "summary": "Get settled option settlement prices",
+        "summary": "public/get_option_settlement_prices",
         "operationId": "public_get_option_settlement_prices",
         "responses": {
           "200": {
@@ -3230,20 +3621,23 @@
         }
       }
     },
-    "/public/get_pending_deposits": {
+    "/public/get_risk_universes": {
       "post": {
         "tags": [
-          "Other"
+          "Market Data"
         ],
-        "summary": "public/get_pending_deposits",
-        "operationId": "public_get_pending_deposits",
+        "summary": "public/get_risk_universes",
+        "operationId": "public_get_risk_universes",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPendingDepositsResult"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiskUniverse"
+                  }
                 }
               }
             }
@@ -3252,49 +3646,14 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
+        "description": "Returns every risk universe (the isolated risk-containment boundaries trades never cross), each with its display name and description, its managers — at most one Standard (`SM`) and one Portfolio (`PM2`), each listing the derivative instruments it risk-prices and the collateral assets it accepts with their margin discounts and deposit metadata — and its Security Module. The one call that answers which universe and manager to choose: pick a universe, pick a manager in it, and pass its `manager_id` when depositing to a new subaccount (the accepted collateral entries carry the `asset` address for the deposit). The no-margin fallback universe (id 0) is included; it custodies dead-lettered deposits and lists no tradeable instruments. Public endpoint, no authentication required.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetPendingDepositsParams"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_referral_performance": {
-      "post": {
-        "tags": [
-          "Referrals"
-        ],
-        "summary": "Get referral program performance",
-        "operationId": "public_get_referral_performance",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetReferralPerformanceResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns broker-program referral performance for a referral code, identified either by the code itself or by the referrer's wallet, over a requested time window (start_ms to end_ms, capped at 28 days). The response includes total notional volume, referred fees, fee rewards, builder fees collected, the applicable fee-share percentage, and a per-role/currency/instrument-type breakdown, all as decimal strings.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetReferralPerformanceParams"
+                "$ref": "#/components/schemas/EmptyRequest"
               }
             }
           }
@@ -3306,7 +3665,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get the ticker for one instrument",
+        "summary": "public/get_ticker",
         "operationId": "public_get_ticker",
         "responses": {
           "200": {
@@ -3342,7 +3701,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get tickers for a currency and type",
+        "summary": "public/get_tickers",
         "operationId": "public_get_tickers",
         "responses": {
           "200": {
@@ -3373,48 +3732,12 @@
         }
       }
     },
-    "/public/get_time": {
-      "post": {
-        "tags": [
-          "System"
-        ],
-        "summary": "Get the current server time",
-        "operationId": "public_get_time",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the current server time in milliseconds since the UNIX epoch. Takes no parameters and requires no authentication. Use it to align the timestamps and nonces bound into signed actions with the server clock.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/public/get_trade_history": {
       "post": {
         "tags": [
           "Market Data"
         ],
-        "summary": "Query anonymized public trade history",
+        "summary": "public/get_trade_history",
         "operationId": "public_get_trade_history",
         "responses": {
           "200": {
@@ -3450,7 +3773,7 @@
         "tags": [
           "Market Data"
         ],
-        "summary": "Get trade OHLCV candles for an instrument",
+        "summary": "public/get_tradingview_chart_data",
         "operationId": "public_get_tradingview_chart_data",
         "responses": {
           "200": {
@@ -3484,20 +3807,23 @@
         }
       }
     },
-    "/public/get_transaction": {
+    "/public/get_all_referral_codes": {
       "post": {
         "tags": [
-          "System"
+          "Referrals"
         ],
-        "summary": "Look up an operation's on-chain status",
-        "operationId": "public_get_transaction",
+        "summary": "public/get_all_referral_codes",
+        "operationId": "public_get_all_referral_codes",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetTransactionResult"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Referrer"
+                  }
                 }
               }
             }
@@ -3506,34 +3832,34 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Looks up the settlement lifecycle of a previously submitted operation by its operation UUID (op_uuid). Returns the operation's serialized data along with its batch status, settlement transaction hash, and any error log; the status is null until the operation has been picked up for settlement.",
+        "description": "Returns every registered referral code along with the owner's wallet address and, when configured, the wallet that receives referral rewards. Takes no parameters.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetTransactionParams"
+                "$ref": "#/components/schemas/GetAllReferralCodesParams"
               }
             }
           }
         }
       }
     },
-    "/public/get_vault": {
+    "/public/get_referral_performance": {
       "post": {
         "tags": [
-          "Vaults"
+          "Referrals"
         ],
-        "summary": "Get a single vault by subaccount",
-        "operationId": "public_get_vault",
+        "summary": "public/get_referral_performance",
+        "operationId": "public_get_referral_performance",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Vault"
+                  "$ref": "#/components/schemas/GetReferralPerformanceResult"
                 }
               }
             }
@@ -3542,300 +3868,14 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns the full vault record — on-chain state plus curator metadata — for one vault subaccount id. Unauthenticated and read-only.",
+        "description": "Returns broker-program referral performance for a referral code, identified either by the code itself or by the referrer's wallet, over a requested time window (start_ms to end_ms, capped at 28 days). The response includes total notional volume, referred fees, fee rewards, builder fees collected, the applicable fee-share percentage, and a per-role/currency/instrument-type breakdown, all as decimal strings.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetVaultRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_vault_action_history": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Get a vault's economic action history",
-        "operationId": "public_get_vault_action_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedVaultActions"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events — including NAV, share price, high-water mark, and the fee-share split across management, performance, curator, and protocol — at the vault level (per-holder position details are omitted). Inputs are the vault subaccount, an optional event_type filter, and pagination. Amounts and prices are decimal strings. Unauthenticated.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetVaultActionHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_vault_performance_history": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "Get a vault's sampled performance series",
-        "operationId": "public_get_vault_performance_history",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultPerformanceHistoryResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns a time series of a vault's mark-to-market performance (NAV, share price, total and curator shares, high-water mark, optional benchmark) sampled hourly and downsampled to the requested resolution (1h, 8h, 24h, or 1wk). Supports optional from/to unix-second bounds and a limit (newest first, default 1000, capped at 10000). Values are decimal strings, with live prices nullable. Unauthenticated.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetVaultPerformanceHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_vaults": {
-      "post": {
-        "tags": [
-          "Vaults"
-        ],
-        "summary": "List all vaults",
-        "operationId": "public_get_vaults",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VaultsResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns every vault in the system, each paired with its subaccount id, paginated by page and page_size. Unauthenticated and read-only.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetVaultsRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_wallets_from_session_key": {
-      "post": {
-        "tags": [
-          "Session Keys"
-        ],
-        "summary": "List wallets for a session key",
-        "operationId": "public_get_wallets_from_session_key",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicGetWalletsFromSessionKeyResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Public lookup that returns the wallet addresses a given session key is registered to, sorted by expiry, with expired keys omitted. An optional scope filter narrows results to keys holding that off-chain scope; returns an error if no matching, unexpired keys exist.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetWalletsFromSessionKeyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/order_quote": {
-      "post": {
-        "tags": [
-          "Trading"
-        ],
-        "summary": "Estimate order cost and margin without authentication",
-        "operationId": "public_order_quote",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderQuoteResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Public dry-run variant of order_quote that estimates fill price, fees, margin impact, projected order status and realized PnL for a prospective order without placing it, returning all values as decimal strings. Unlike private/order_quote it bypasses session scope checks, so it can be used to preview costs without account authentication.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrderQuoteRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/register_deposit_address": {
-      "post": {
-        "tags": [
-          "Transfers & Withdrawals"
-        ],
-        "summary": "Register a deterministic deposit address for a wallet",
-        "operationId": "public_register_deposit_address",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RegisterDepositAddressResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterDepositAddressParams"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/send_quote_debug": {
-      "post": {
-        "tags": [
-          "RFQ"
-        ],
-        "summary": "Preview EIP-712 signing data for a quote",
-        "operationId": "public_send_quote_debug",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteSendDebugResult"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Public signing-preview helper that returns the EIP-712 encoding artifacts (encoded data, its hash, the action hash, and the typed-data hash) for a maker quote a client is about to sign. It does not verify signatures, persist anything, or place a quote; use it to construct and check the exact payload to sign before calling private/send_quote.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicSendQuoteDebugRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/withdraw_debug": {
-      "post": {
-        "tags": [
-          "Transfers & Withdrawals"
-        ],
-        "summary": "Preview EIP-712 encoding for a withdrawal",
-        "operationId": "public_withdraw_debug",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Dry-run helper that returns the EIP-712 typed data and hashes that would be computed for the given withdrawal parameters, so clients can verify their own signing and hashing before submitting. Takes the same inputs as private/withdraw (subaccount, signer, nonce, amount, max fee, expiry, asset) but performs no state change and needs no signature.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicWithdrawDebugRequest"
+                "$ref": "#/components/schemas/GetReferralPerformanceParams"
               }
             }
           }
@@ -3973,30 +4013,6 @@
             "items": {
               "$ref": "#/components/schemas/Order"
             }
-          },
-          "positions_initial_margin": {
-            "title": "positions_initial_margin",
-            "type": "string",
-            "format": "decimal",
-            "description": "Total initial margin requirement of all positions"
-          },
-          "positions_maintenance_margin": {
-            "title": "positions_maintenance_margin",
-            "type": "string",
-            "format": "decimal",
-            "description": "Total maintenance margin requirement of all positions"
-          },
-          "positions_value": {
-            "title": "positions_value",
-            "type": "string",
-            "format": "decimal",
-            "description": "Total mark-to-market value of all positions"
-          },
-          "projected_margin_change": {
-            "title": "projected_margin_change",
-            "type": "string",
-            "format": "decimal",
-            "description": "Projected change in maintenance margin requirement between now and projected margin at 8:01 UTC. If this value plus current maintenance margin ise below zero, the account is at risk of being flagged for liquidation right after the upcoming expiry."
           },
           "subaccount_id": {
             "type": "integer",
@@ -4147,6 +4163,13 @@
             "type": "integer",
             "format": "uint32",
             "minimum": 0.0
+          },
+          "risk_universe_name": {
+            "description": "Display name of the universe (uppercase, e.g. \"PRIME\"); absent until set by the exchange.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -5349,11 +5372,12 @@
         }
       },
       "DepositType": {
-        "description": "Which cex-style deposit factory an address/deposit belongs to. `Slow` credits the depositor's own subaccount on-chain; `Fast` pools every deposit into an admin-set subaccount and the real owner is credited off-chain from the factory's `DepositProcessed` events.",
+        "description": "How a deposit reached the protocol. `Standard` and `Instant` are the two CEX deposit-address flows: `Standard` (formerly `slow`) credits the depositor's own subaccount on-chain via its factory; `Instant` (formerly `fast`) pools every deposit and credits the owner off-chain from the factory's `DepositProcessed` events. `Direct` is a plain wallet deposit straight into a subaccount — no escrow, no factory. Only `Standard`/`Instant` are factory-routed (and registerable / sweepable); `Direct` is a read-only provenance tag.",
         "type": "string",
         "enum": [
-          "slow",
-          "fast"
+          "standard",
+          "instant",
+          "direct"
         ]
       },
       "Direction": {
@@ -5725,6 +5749,15 @@
               "null"
             ],
             "format": "uint64",
+            "minimum": 0.0
+          },
+          "risk_universe_id": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
             "minimum": 0.0
           }
         }
@@ -7525,6 +7558,50 @@
           "taker"
         ]
       },
+      "ManagerCollateral": {
+        "description": "A spot asset the manager accepts as collateral, with deposit metadata and the manager's margin discounts for it (\"1\" = full credit, cash).",
+        "type": "object",
+        "required": [
+          "address",
+          "erc20",
+          "im_discount",
+          "min_deposit_usd",
+          "mm_discount",
+          "name"
+        ],
+        "properties": {
+          "address": {
+            "description": "EIP-55 checksummed protocol asset address — the `asset` argument when depositing.",
+            "type": "string"
+          },
+          "erc20": {
+            "$ref": "#/components/schemas/Erc20Details"
+          },
+          "im_discount": {
+            "description": "Initial-margin credit for the asset under this manager.",
+            "type": "string"
+          },
+          "min_deposit_usd": {
+            "type": "string"
+          },
+          "mm_discount": {
+            "description": "Maintenance-margin credit for the asset under this manager.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Registered asset name (e.g. \"USDC\").",
+            "type": "string"
+          }
+        }
+      },
+      "MarginType": {
+        "description": "Margin model applied by a manager: `SM` (standard, cross-collateral) or `PM2` (portfolio, scenario-based netting).",
+        "type": "string",
+        "enum": [
+          "SM",
+          "PM2"
+        ]
+      },
       "MarketType": {
         "type": "string",
         "enum": [
@@ -8793,7 +8870,7 @@
             "minimum": 0.0
           },
           "status": {
-            "description": "`pending` (seen at the fast head), `confirmed` (re-scraped at the safe head), or `reverted` (reorged out before its block became safe — or, fast only, uncreditable: no valid destination exists). Fast entries carved out of a deposit additionally show `crediting` (transfer in flight) and `credited` (paid out).",
+            "description": "`detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists) Fast deposits additionally show: `crediting` (transfer in flight), `credited` (paid out) `partial_revert` (reorged out after a chunk was paid)",
             "type": "string"
           },
           "subaccount_id": {
@@ -9515,28 +9592,20 @@
       },
       "PrivateTransferSpotExternalResponse": {
         "type": "object",
-        "properties": {
-          "result": {
-            "type": "object",
-            "required": [
-              "op_uuid",
-              "operation_id"
-            ],
-            "properties": {
-              "op_uuid": {
-                "type": "string"
-              },
-              "operation_id": {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0.0
-              }
-            }
-          }
-        },
         "required": [
-          "result"
-        ]
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
       },
       "PrivateTransferSpotRequest": {
         "type": "object",
@@ -11584,6 +11653,105 @@
           }
         }
       },
+      "RiskUniverse": {
+        "description": "One risk universe: its display metadata, managers (each with what it lets you trade and deposit), and the Security Module absorbing the universe's losses. The universe-first mirror of `public/get_all_currencies` — pick a universe, pick a manager in it, and the `manager_id` is what you pass when depositing to a new subaccount.",
+        "type": "object",
+        "required": [
+          "managers",
+          "risk_universe_id",
+          "security_module"
+        ],
+        "properties": {
+          "description": {
+            "description": "Short description of the universe; null until set by the exchange.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "managers": {
+            "description": "The universe's managers (at most one Standard and one Portfolio), each with the instruments it risk-prices and the collaterals it accepts.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskUniverseManager"
+            }
+          },
+          "name": {
+            "description": "Display name (e.g. \"PRIME\"), always uppercase; null until set by the exchange.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "risk_universe_id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "security_module": {
+            "$ref": "#/components/schemas/SecurityModuleDetails"
+          }
+        }
+      },
+      "RiskUniverseManager": {
+        "description": "A manager and what a subaccount created under it can trade and hold.",
+        "type": "object",
+        "required": [
+          "collaterals",
+          "instruments",
+          "manager_id",
+          "margin_type"
+        ],
+        "properties": {
+          "collaterals": {
+            "description": "Assets this manager accepts as deposit collateral.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagerCollateral"
+            }
+          },
+          "instruments": {
+            "description": "Live derivative asset names tradeable under this manager, sorted (e.g. \"BTC-OPTION\", \"BTC-PERP\"). An option entry names the family — fetch its individual listings via `public/get_all_instruments`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "manager_id": {
+            "description": "Pass this as `manager_id` when depositing to a new subaccount.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "margin_type": {
+            "$ref": "#/components/schemas/MarginType"
+          }
+        }
+      },
+      "SecurityModuleDetails": {
+        "description": "The universe's Security Module: the subaccount whose funds absorb insolvent losses before any socialization within the universe.",
+        "type": "object",
+        "required": [
+          "cash_asset",
+          "cash_currency",
+          "subaccount_id"
+        ],
+        "properties": {
+          "cash_asset": {
+            "description": "EIP-55 checksummed address of the universe's cash asset.",
+            "type": "string"
+          },
+          "cash_currency": {
+            "description": "Currency of the cash asset (e.g. \"USDC\").",
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "SendQuoteRequest": {
         "type": "object",
         "required": [
@@ -12912,6 +13080,13 @@
             "format": "uint32",
             "minimum": 0.0
           },
+          "risk_universe_name": {
+            "description": "Display name of the universe (uppercase, e.g. \"PRIME\"); absent until set by the exchange.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "sm": {
             "description": "SRM manager id risking this currency in the universe.",
             "type": [
@@ -13542,30 +13717,22 @@
         }
       },
       "VaultSettleResponse": {
+        "description": "Returned by `mint_vault_shares` / `burn_vault_shares`: identifiers to track the on-chain `MintShares` / `BurnShares` settlement.",
         "type": "object",
-        "properties": {
-          "result": {
-            "description": "Returned by `mint_vault_shares` / `burn_vault_shares`: identifiers to track the on-chain `MintShares` / `BurnShares` settlement.",
-            "type": "object",
-            "required": [
-              "op_uuid",
-              "operation_id"
-            ],
-            "properties": {
-              "op_uuid": {
-                "type": "string"
-              },
-              "operation_id": {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0.0
-              }
-            }
-          }
-        },
         "required": [
-          "result"
-        ]
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
       },
       "VaultShareEntryResponse": {
         "description": "One row of `get_vault_shares`: the caller's share balance in a vault plus the full enriched vault row (same shape as `public/get_vault`).",
@@ -13774,20 +13941,6 @@
             }
           }
         }
-      },
-      "OrderResult": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "$ref": "#/components/schemas/Order"
-          }
-        },
-        "additionalProperties": false
-      },
-      "PublicBuildRegisterSessionKeyTxResultSchema": {
-        "required": [
-          "result"
-        ]
       }
     }
   }

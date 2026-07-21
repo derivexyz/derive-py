@@ -1,5 +1,6 @@
 import ast
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,13 +12,6 @@ TIMEOUT = 10
 CUSTOM_HEADER = "# ruff: noqa: E741,E501"
 
 # class_name -> {readable_python_name: original_wire_key}
-#
-# Some of Derive's WS channel schemas (e.g. the slim ticker snapshot) use
-# single/double-letter JSON keys to cut payload size on high-frequency
-# streams — a reasonable wire-format choice, unreadable as a Python API.
-# _apply_field_renames() renames the field and attaches the corresponding
-# msgspec `rename=` mapping, so decode/encode against the real API is
-# unaffected: same bytes on the wire, readable attribute names in Python.
 FIELD_RENAMES: dict[str, dict[str, str]] = {
     "TickerSlimSnapshot": {
         "best_ask_price": "A",
@@ -70,7 +64,9 @@ def generate_models(
         use_subclass_enum=False,
         strict_nullable=True,
         use_double_quotes=True,
-        field_constraints=True,
+        # sub_id's format:uint128 + minimum crashes datamodel-code-generator's
+        # own root.jinja2 template ("list object has no element 0") when field_constraints=True
+        field_constraints=False,
         disable_timestamp=True,
         custom_file_header=CUSTOM_HEADER,
     )
@@ -190,6 +186,33 @@ def _apply_field_renames(node: ast.ClassDef) -> None:
     node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
 
 
+def annotation_allows_none(annotation: ast.expr) -> bool:
+    """Return True if the annotation already allows None."""
+    if isinstance(annotation, ast.Subscript) and isinstance(annotation.value, ast.Name):
+        if annotation.value.id == "Optional":
+            return True
+
+        if annotation.value.id == "Union":
+            slice_node = annotation.slice
+            elements = slice_node.elts if isinstance(slice_node, ast.Tuple) else [slice_node]
+            return any(isinstance(element, ast.Constant) and element.value is None for element in elements)
+
+    if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+        return annotation_allows_none(annotation.left) or annotation_allows_none(annotation.right)
+
+    return False
+
+
+def make_optional(annotation: ast.expr) -> ast.expr:
+    """Wrap an annotation in Optional[T]."""
+
+    return ast.Subscript(
+        value=ast.Name(id="Optional", ctx=ast.Load()),
+        slice=ast.Index(value=annotation),
+        ctx=ast.Load(),
+    )
+
+
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -204,9 +227,27 @@ class OptionalRewriter(ast.NodeTransformer):
 
         if not is_struct_class(node):
             return node
+
+        self._normalize_none_defaults(node)
         _apply_field_renames(node)
         node.body = reorder_fields(node.body)
         return node
+
+    def _normalize_none_defaults(self, node: ast.ClassDef) -> None:
+        for stmt in node.body:
+            if not isinstance(stmt, ast.AnnAssign):
+                continue
+
+            if stmt.value is None:
+                continue
+
+            if not (isinstance(stmt.value, ast.Constant) and stmt.value.value is None):
+                continue
+
+            if not annotation_allows_none(stmt.annotation):
+                stmt.annotation = make_optional(stmt.annotation)
+
+        ast.fix_missing_locations(node)
 
     def _is_str_enum(self, node: ast.ClassDef) -> bool:
         """Check if class inherits from both str and Enum."""
@@ -224,6 +265,63 @@ class OptionalRewriter(ast.NodeTransformer):
                         return
 
 
+def patch_bare_none_aliases(tree: ast.Module) -> int:
+    """
+    Rewrite bare module-level `NAME = None` assignments into `NAME: TypeAlias = None`.
+
+    datamodel-code-generator maps a JSON Schema `{"type": "null"}` (e.g. Derive's
+    EmptyRequest — "This method takes no parameters; send an empty object `{}`")
+    to a plain `NAME = None` assignment. That's the correct runtime value —
+    encode_json_exclude_none() already treats params=None as "encode to {}",
+    matching the schema's own description — but pyright rejects using a bare
+    variable as a type annotation ("Variable not allowed in type expression")
+    wherever generate-api.py emits `params: EmptyRequest`. An explicit
+    TypeAlias annotation is the fix; it doesn't change the runtime value,
+    pyright treats `X: TypeAlias = None` identically to the literal `None`
+    token in annotation position.
+
+    Scoped deliberately narrow (bare `= None` only) so this can't misfire on
+    unrelated module-level constants like TIMEOUT = 10 or CUSTOM_HEADER = "...".
+    """
+    count = 0
+    for i, node in enumerate(tree.body):
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and isinstance(node.value, ast.Constant)
+            and node.value.value is None
+        ):
+            new_node = ast.AnnAssign(
+                target=node.targets[0],
+                annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),
+                value=node.value,
+                simple=1,
+            )
+            ast.copy_location(new_node, node)
+            tree.body[i] = new_node
+            count += 1
+    return count
+
+
+def ensure_typing_import(tree: ast.Module, name: str) -> None:
+    """Ensure `from typing import {name}` is present, appending to an existing
+    `from typing import ...` if one exists rather than adding a duplicate."""
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.module == "typing":
+            if any(alias.name == name for alias in node.names):
+                return
+            node.names.append(ast.alias(name=name, asname=None))
+            return
+
+    insert_at = 0
+    for i, node in enumerate(tree.body):
+        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+            insert_at = i + 1
+    new_import = ast.ImportFrom(module="typing", names=[ast.alias(name=name, asname=None)], level=0)
+    tree.body.insert(insert_at, new_import)
+
+
 def patch_code(src: str) -> str:
     tree = ast.parse(src)
     tracker = EnumTracker()
@@ -232,6 +330,9 @@ def patch_code(src: str) -> str:
     fixer = DefaultValueFixer(tracker.enum_types, tracker.custom_types)
     tree = fixer.visit(tree)
     tree = OptionalRewriter().visit(tree)
+
+    if patch_bare_none_aliases(tree):
+        ensure_typing_import(tree, "TypeAlias")
 
     ast.fix_missing_locations(tree)
 
@@ -636,29 +737,27 @@ def deduplicate_channel_models(
 
 
 if __name__ == "__main__":
-    repo_root = Path(__file__).parent.parent
-    raw_input_path = repo_root / "specs" / "openapi-spec.json"
-    input_path = raw_input_path.with_name(f"{raw_input_path.stem}.patched{raw_input_path.suffix}")
-    output_path = repo_root / "derive_client" / "data_types" / "generated_models.py"
+    sys.path.insert(0, str(Path(__file__).parent))
+    import paths
 
-    if not input_path.exists():
+    if not paths.OPENAPI_SPEC_PATCHED.exists():
         raise SystemExit(
-            f"{input_path} not found. Run `poetry run python scripts/patch_spec.py "
-            f"{raw_input_path}` first (patches {raw_input_path.name} without modifying it)."
+            f"{paths.OPENAPI_SPEC_PATCHED} not found. Run `poetry run python scripts/patch_spec.py "
+            f"{paths.OPENAPI_SPEC}` first (patches {paths.OPENAPI_SPEC.name} without modifying it)."
         )
 
     generate_models(
-        input_path=input_path,
-        output_path=output_path,
+        input_path=paths.OPENAPI_SPEC_PATCHED,
+        output_path=paths.GENERATED_MODELS,
         input_file_type=InputFileType.OpenAPI,
     )
-    patch_pagination_to_optional(output_path)
-    patch_file(output_path)
+    patch_pagination_to_optional(paths.GENERATED_MODELS)
+    patch_file(paths.GENERATED_MODELS)
 
-    ws_input = repo_root / "specs" / "websocket-channels.json"
-    ws_output = repo_root / "derive_client" / "data_types" / "channel_models.py"
-    generate_models(input_path=ws_input, output_path=ws_output, input_file_type=InputFileType.JsonSchema)
-    patch_file(ws_output)
-    deduplicate_channel_models(generated_models_path=output_path, channel_models_path=ws_output)
+    generate_models(
+        input_path=paths.WEBSOCKET_CHANNELS, output_path=paths.CHANNEL_MODELS, input_file_type=InputFileType.JsonSchema
+    )
+    patch_file(paths.CHANNEL_MODELS)
+    deduplicate_channel_models(generated_models_path=paths.GENERATED_MODELS, channel_models_path=paths.CHANNEL_MODELS)
 
     print("Done.")

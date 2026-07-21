@@ -193,11 +193,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -228,7 +226,7 @@
                   "items": {
                     "type": "integer",
                     "format": "uint64",
-                    "minimum": 0
+                    "minimum": 0.0
                   }
                 }
               }
@@ -267,11 +265,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -336,11 +332,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -405,11 +399,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -482,22 +474,24 @@
         "type": "object",
         "properties": {
           "signature": {
+            "description": "EIP-191 signature of the `timestamp` string, signed by the wallet or session key.",
             "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "timestamp": {
             "description": "Milliseconds since Unix epoch. Accepted as either a JSON number or a string-encoded integer.",
-            "default": null
+            "default": null,
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0,
+            "nullable": true
           },
           "wallet": {
+            "description": "Owner of account (not the session key).",
             "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -513,10 +507,8 @@
             "format": "int64"
           },
           "data": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "message": {
             "type": "string"
@@ -530,18 +522,14 @@
           "enabled": {
             "description": "Whether to enable or disable cancel on disconnect.",
             "default": null,
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "type": "boolean",
+            "nullable": true
           },
           "wallet": {
             "description": "Wallet address.",
             "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -594,13 +582,11 @@
         "properties": {
           "channels": {
             "default": null,
-            "type": [
-              "array",
-              "null"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "nullable": true
           }
         }
       },

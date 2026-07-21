@@ -1,3 +1,7 @@
+
+specs/openapi.patched.json
+specs/websocket-channels.json
+
 ethereum_private_key.txt
 
 .envrc

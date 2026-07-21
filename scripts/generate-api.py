@@ -2,6 +2,7 @@
 
 import json
 import re
+import sys
 import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,16 +11,24 @@ from typing import Optional
 import libcst as cst
 from jinja2 import Environment, FileSystemLoader
 
-# Paths
-PACKAGE_DIR = Path(__file__).parent.parent / "derive_client"
-OPENAPI_SPEC = PACKAGE_DIR.parent / "specs" / "openapi-spec.json"
+sys.path.insert(0, str(Path(__file__).parent))
+import paths  # noqa: E402
+
+# Paths — sourced from paths.py (single source of truth across the codegen
+# pipeline); see that module's docstring for why. OPENAPI_SPEC points at the
+# *patched* spec, not the raw one — generated_models.py is built from the
+# patched version (erc20_details fix, split-enum collapse), so classifying
+# rest_schema_names against the raw spec instead would be inconsistent with
+# what's actually importable from generated_models.py.
+PACKAGE_DIR = paths.DERIVE_CLIENT_DIR
+OPENAPI_SPEC = paths.OPENAPI_SPEC_PATCHED
 CHANNELS_DIR = Path("specs") / "channels"  # legacy path, superseded by the two specs below
-SUBSCRIPTIONS_ASYNCAPI = PACKAGE_DIR.parent / "specs" / "subscriptions.asyncapi.json"
-WEBSOCKET_ASYNCAPI = PACKAGE_DIR.parent / "specs" / "websocket.asyncapi.json"
+SUBSCRIPTIONS_ASYNCAPI = paths.SUBSCRIPTIONS_ASYNCAPI
+WEBSOCKET_ASYNCAPI = paths.WEBSOCKET_ASYNCAPI
 TEMPLATES_DIR = PACKAGE_DIR / "data" / "templates"
 OUTPUT_DIR = PACKAGE_DIR / "_clients"
-GENERATED_MODELS_PATH = PACKAGE_DIR / "data_types" / "generated_models.py"
-CHANNEL_MODELS_PATH = PACKAGE_DIR / "data_types" / "channel_models.py"
+GENERATED_MODELS_PATH = paths.GENERATED_MODELS
+CHANNEL_MODELS_PATH = paths.CHANNEL_MODELS
 
 # Channel classifications from docs
 PUBLIC_CHANNELS = {

@@ -810,11 +810,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -855,11 +853,9 @@
           "properties": {
             "headers": {
               "description": "Non-standard; used by `auth/login`.",
-              "type": [
-                "object",
-                "null"
-              ],
-              "additionalProperties": true
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
             },
             "id": {
               "$ref": "#/components/schemas/JsonRpcId"
@@ -905,10 +901,8 @@
         ],
         "properties": {
           "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "estimated_bid_price": {
             "type": "string"
@@ -1125,7 +1119,7 @@
             "description": "Number of trades during last 24h",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0
+            "minimum": 0.0
           },
           "oi": {
             "description": "Current total open interest",
@@ -1339,25 +1333,19 @@
         ],
         "properties": {
           "algo_duration_sec": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32"
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "algo_num_slices": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32"
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "algo_slices_completed": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32"
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "algo_type": {
             "anyOf": [
@@ -1446,19 +1434,15 @@
           },
           "quote_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "replaced_order_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "signature": {
             "type": "string"
@@ -1469,11 +1453,9 @@
           },
           "signed_limit_price": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "signer": {
             "type": "string"
@@ -1487,11 +1469,9 @@
           },
           "trigger_price": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "trigger_price_type": {
             "anyOf": [
@@ -1504,10 +1484,8 @@
             ]
           },
           "trigger_reject_message": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "trigger_type": {
             "anyOf": [
@@ -1583,7 +1561,7 @@
           "publish_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0
+            "minimum": 0.0
           },
           "timestamp": {
             "type": "integer",
@@ -1717,11 +1695,9 @@
           },
           "fill_rate": {
             "description": "Lifetime taker fill rate as a decimal string; null until the wallet has enough lifetime RFQs for the rate to be meaningful.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "filled_direction": {
             "anyOf": [
@@ -1755,11 +1731,9 @@
           },
           "recent_fill_rate": {
             "description": "Decayed-recent taker fill rate as a decimal string; null until enough recent RFQ activity has accumulated for the rate to be meaningful.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "rfq_id": {
             "description": "UUID v4 string",
@@ -1775,11 +1749,9 @@
           },
           "total_cost": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "valid_until": {
             "type": "integer",
@@ -1816,16 +1788,12 @@
             "type": "string"
           },
           "quote_id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "rfq_id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "timestamp": {
             "type": "integer",
@@ -1961,10 +1929,8 @@
             "format": "int64"
           },
           "tx_hash": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "tx_status": {
             "anyOf": [
@@ -2014,10 +1980,8 @@
             "format": "int64"
           },
           "data": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "message": {
             "type": "string"
@@ -2058,11 +2022,9 @@
           },
           "down_liquidation_price": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "estimated_fee": {
             "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -2090,21 +2052,17 @@
             "format": "decimal"
           },
           "invalid_reason": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "is_valid": {
             "type": "boolean"
           },
           "orderbook_total_cost": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "post_initial_margin": {
             "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -2113,11 +2071,9 @@
           },
           "post_liquidation_price": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           },
           "pre_initial_margin": {
             "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -2131,11 +2087,9 @@
           },
           "up_liquidation_price": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "decimal"
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
           }
         }
       },
@@ -2195,11 +2149,9 @@
           },
           "quote_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "realized_pnl": {
             "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -2213,11 +2165,9 @@
           },
           "rfq_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "subaccount_id": {
             "type": "integer",
@@ -2389,10 +2339,8 @@
           },
           "f": {
             "description": "Current hourly funding rate (perpetuals only; `null` otherwise).",
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "maxp": {
             "description": "Maximum price at which an aggressive buyer can be matched. Any portion of a market order that would execute above this price is cancelled. A limit buy order with limit price above this value is treated as post only (i.e. it is rejected if it would cross any existing resting order).",
@@ -2504,11 +2452,9 @@
           },
           "quote_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "realized_pnl": {
             "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -2522,11 +2468,9 @@
           },
           "rfq_id": {
             "description": "Optional UUID v4 string",
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           },
           "subaccount_id": {
             "type": "integer",
@@ -2555,10 +2499,8 @@
             "format": "decimal"
           },
           "tx_hash": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "nullable": true
           },
           "tx_status": {
             "$ref": "#/components/schemas/TxStatus"
@@ -2628,13 +2570,11 @@
         "properties": {
           "channels": {
             "default": null,
-            "type": [
-              "array",
-              "null"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "nullable": true
           }
         }
       }
