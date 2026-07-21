@@ -8,19 +8,21 @@ from derive_client._clients.rest.http.api import PublicAPI
 from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type
 from derive_client.data_types import LoggerType
 from derive_client.data_types.generated_models import (
+    Asset,
     AssetType,
     Currency,
     GetAllInstrumentsRequest,
     GetAllInstrumentsResponse,
+    GetAssetsRequest,
     GetCurrencyRequest,
     GetInstrumentRequest,
+    GetLatestSignedFeedsRequest,
+    GetLatestSignedFeedsResponse,
     GetTickerRequest,
     GetTickersRequest,
     Instrument,
+    RiskUniverse,
     TickerSlimSnapshot,
-)
-from derive_client.data_types.generated_models import (
-    InstrumentType as AssetType,
 )
 
 
@@ -178,6 +180,7 @@ class MarketOperations:
         currency: Optional[str] = None,
         page: int = 1,
         page_size: int = 100,
+        risk_universe_id: Optional[int] = None,
     ) -> GetAllInstrumentsResponse:
         """Get a paginated history of all instruments."""
 
@@ -187,8 +190,49 @@ class MarketOperations:
             currency=currency,
             page=page,
             page_size=page_size,
+            risk_universe_id=risk_universe_id,
         )
         result = self._public_api.rpc.get_all_instruments(params)
+        return result
+
+    def get_all_live_instruments(self) -> list[str]:
+        """Returns a sorted list of the names of every currently live instrument."""
+
+        result = self._public_api.rpc.get_all_live_instruments(None)
+        return result
+
+    def get_assets(self, *, asset_type: AssetType, currency: str, expired: bool = False) -> list[Asset]:
+        """Returns the assets of a given asset_type (option, perp, or erc20) for a currency."""
+
+        params = GetAssetsRequest(
+            asset_type=asset_type,
+            currency=currency,
+            expired=expired,
+        )
+
+        result = self._public_api.rpc.get_assets(params)
+        return result
+
+    def get_latest_signed_feeds(
+        self,
+        *,
+        currency: Optional[str] = None,
+        expiry: Optional[int] = None,
+    ) -> GetLatestSignedFeedsResponse:
+        """Returns the most recent oracle-signed feed data."""
+
+        params = GetLatestSignedFeedsRequest(
+            currency=currency,
+            expiry=expiry,
+        )
+
+        result = self._public_api.rpc.get_latest_signed_feeds(params)
+        return result
+
+    def get_risk_universes(self) -> list[RiskUniverse]:
+        """List every universe with its managers and their accepted collaterals / instruments."""
+
+        result = self._public_api.rpc.get_risk_universes(None)
         return result
 
     def get_ticker(self, *, instrument_name: str) -> TickerSlimSnapshot:
