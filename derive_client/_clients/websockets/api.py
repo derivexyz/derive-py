@@ -1,33 +1,30 @@
 """Auto-generated API classes for WebSocket"""
 
 from enum import Enum
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Awaitable, Callable, Literal, TypeVar
 
 import msgspec
 
 from derive_client._clients.utils import decode_result
 from derive_client._clients.websockets.session import WebSocketSession
 from derive_client.data_types.channel_models import (
-    AssetType,
-    Data,
-    Data3,
-    Data6,
-    Datum,
-    Datum3,
-    Datum6,
-    Datum9,
-    Datum12,
-    Datum15,
-    Datum18,
-    Depth,
-    Group,
-    Interval,
-    TxStatus6,
+    AuctionResult,
+    BalanceUpdate,
+    BestQuoteChannelResult,
+    LoginRequest,
+    MarginWatchResult,
+    OrderbookSnapshot,
+    PublicTrade,
+    QuotePublishResult,
+    SetCancelOnDisconnectRequest,
+    SpotFeedPayload,
+    TickerSlimPayload,
 )
 from derive_client.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
     Asset,
+    AssetType,
     BurnSharesRequest,
     CancelAlgoOrderRequest,
     CancelAllAlgoOrdersRequest,
@@ -152,6 +149,7 @@ from derive_client.data_types.generated_models import (
     PrivateWithdrawResponse,
     PublicExecuteQuoteDebugRequest,
     PublicGetWalletsFromSessionKeyResponse,
+    PublicRfq,
     PublicSendQuoteDebugRequest,
     PublicTradesResult,
     PublicWithdrawDebugRequest,
@@ -184,12 +182,15 @@ from derive_client.data_types.generated_models import (
     SessionKeysRequest,
     SetMmpConfigRequest,
     SetMmpConfigResponse,
+    SettledTrade,
     Subaccount,
     TickerSlimSnapshot,
+    Trade,
     TradingviewCandle,
     TransferHistoryResult,
     TransferPositionsRequest,
     TransferPositionsResponse,
+    TxStatus,
     UpdateVaultInfoRequest,
     UpdateWhitelistedRecipientsRequest,
     UpdateWhitelistedRecipientsResponse,
@@ -805,6 +806,25 @@ class PublicRPC:
         method = "public/withdraw_debug"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, dict)
+
+        return result
+
+    async def login(
+        self,
+        params: LoginRequest,
+    ) -> list[int]:
+        """
+        WebSocket-only method that authenticates the connection so subsequent private/*
+        calls and private channel subscriptions act on your wallet without per-request
+        headers. Pass the wallet address, a millisecond UTC timestamp, and an EIP-191
+        signature of that timestamp made by either the wallet itself or one of its
+        registered session keys. Returns the subaccount ids the authenticated key can
+        access.
+        """
+
+        method = "public/login"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, list[int])
 
         return result
 
@@ -2055,6 +2075,24 @@ class PrivateRPC:
 
         return result
 
+    async def set_cancel_on_disconnect(
+        self,
+        params: SetCancelOnDisconnectRequest,
+    ) -> str:
+        """
+        WebSocket-only method that toggles cancel on disconnect for the authenticated
+        wallet. While enabled, dropping the WebSocket connection cancels the wallet's
+        open orders, trigger and algo orders, and quotes. Pass enabled true or false;
+        omitting it leaves the setting unchanged. Requires a session key with full trade
+        scope; returns "ok".
+        """
+
+        method = "private/set_cancel_on_disconnect"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, str)
+
+        return result
+
 
 # ============================================================================
 # Channel Subscription Classes
@@ -2069,10 +2107,12 @@ class PublicChannels:
 
     async def auctions_watch(
         self,
-        callback: Handler[list[Datum]],
+        callback: Handler[list[AuctionResult]],
     ) -> SubscriptionResult:
         """
-        Subscribe to state of ongoing auctions.
+        Channel name: `auctions.watch`. Public channel that streams the live state of
+        all ongoing liquidation and insolvency auctions across the exchange. Takes no
+        parameters.
 
         Args:
             callback: Callback function to handle notifications
@@ -2082,17 +2122,19 @@ class PublicChannels:
         """
 
         channel = "auctions.watch".format()
-        envelope = await self._session.subscribe(channel, callback, list[Datum])
+        envelope = await self._session.subscribe(channel, callback, list[AuctionResult])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
 
     async def margin_watch(
         self,
-        callback: Handler[list[Datum3]],
+        callback: Handler[list[MarginWatchResult]],
     ) -> SubscriptionResult:
         """
-        Subscribe to state of margin and MtM of all users.
+        Channel name: `margin.watch`. Public channel that streams margin and mark-to-
+        market state for all accounts, letting you monitor collateralization and
+        liquidation risk across the exchange. Takes no parameters.
 
         Args:
             callback: Callback function to handle notifications
@@ -2102,7 +2144,7 @@ class PublicChannels:
         """
 
         channel = "margin.watch".format()
-        envelope = await self._session.subscribe(channel, callback, list[Datum3])
+        envelope = await self._session.subscribe(channel, callback, list[MarginWatchResult])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2110,15 +2152,16 @@ class PublicChannels:
     async def orderbook_group_depth_by_instrument_name(
         self,
         instrument_name: str,
-        group: Group,
-        depth: Depth,
-        callback: Handler[Data],
+        group: Literal[1, 10, 100],
+        depth: Literal[1, 10, 20, 100],
+        callback: Handler[OrderbookSnapshot],
     ) -> SubscriptionResult:
         """
-        Periodically publishes bids and asks for an instrument.
-
-        The 100ms orderbook emits at 1s intervals if the orderbook is not changing,
-        otherwise emits at 100ms intervals.
+        Channel name: `orderbook.{instrument_name}.{group}.{depth}`. Public channel that
+        periodically publishes aggregated bids and asks for a single instrument, where
+        {instrument_name} is the market (e.g. ETH-PERP), {group} is the price-level
+        aggregation size (1, 10, or 100), and {depth} is the number of levels returned
+        per side (1, 10, 20, or 100).
 
         Args:
             instrument_name: Instrument Name
@@ -2135,7 +2178,7 @@ class PublicChannels:
             group=group.value if isinstance(group, Enum) else group,
             depth=depth.value if isinstance(depth, Enum) else depth,
         )
-        envelope = await self._session.subscribe(channel, callback, Data)
+        envelope = await self._session.subscribe(channel, callback, OrderbookSnapshot)
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2143,10 +2186,12 @@ class PublicChannels:
     async def spot_feed_by_currency(
         self,
         currency: str,
-        callback: Handler[Data3],
+        callback: Handler[SpotFeedPayload],
     ) -> SubscriptionResult:
         """
-        Periodically publishes spot index price by currency.
+        Channel name: `spot_feed.{currency}`. Public channel that streams the spot price
+        feed for a given underlying, where {currency} selects the asset (e.g. ETH or
+        BTC).
 
         Args:
             currency: Currency
@@ -2159,7 +2204,7 @@ class PublicChannels:
         channel = "spot_feed.{currency}".format(
             currency=currency.value if isinstance(currency, Enum) else currency,
         )
-        envelope = await self._session.subscribe(channel, callback, Data3)
+        envelope = await self._session.subscribe(channel, callback, SpotFeedPayload)
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2167,17 +2212,14 @@ class PublicChannels:
     async def ticker_slim_interval_by_instrument_name(
         self,
         instrument_name: str,
-        interval: Interval,
-        callback: Handler[Data6],
+        interval: Literal[100, 1000],
+        callback: Handler[TickerSlimPayload],
     ) -> SubscriptionResult:
         """
-        Periodically publishes ticker info (best bid / ask, instrument contraints, fees,
-        etc.) for a single instrument.
-
-        The 100ms ticker emits at 1s intervals if best bid / ask are not changing,
-        otherwise emits at 100ms interval.
-
-        The 1s ticker always emits at 1s intervals.
+        Channel name: `ticker_slim.{instrument_name}.{interval}`. Public channel that
+        streams a lightweight ticker (prices and key stats) for an instrument, where
+        {instrument_name} is the market and {interval} is the update cadence in
+        milliseconds (100 or 1000).
 
         Args:
             instrument_name: Instrument Name
@@ -2192,7 +2234,7 @@ class PublicChannels:
             instrument_name=instrument_name.value if isinstance(instrument_name, Enum) else instrument_name,
             interval=interval.value if isinstance(interval, Enum) else interval,
         )
-        envelope = await self._session.subscribe(channel, callback, Data6)
+        envelope = await self._session.subscribe(channel, callback, TickerSlimPayload)
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2200,10 +2242,12 @@ class PublicChannels:
     async def trades_by_instrument_name(
         self,
         instrument_name: str,
-        callback: Handler[list[Datum12]],
+        callback: Handler[list[PublicTrade]],
     ) -> SubscriptionResult:
         """
-        Subscribe to trades (order executions) for a given instrument name.
+        Channel name: `trades.{instrument_name}`. Public channel that streams the public
+        trade tape for a single instrument, where {instrument_name} is the market whose
+        fills you want to follow.
 
         Args:
             instrument_name: Instrument Name
@@ -2216,7 +2260,7 @@ class PublicChannels:
         channel = "trades.{instrument_name}".format(
             instrument_name=instrument_name.value if isinstance(instrument_name, Enum) else instrument_name,
         )
-        envelope = await self._session.subscribe(channel, callback, list[Datum12])
+        envelope = await self._session.subscribe(channel, callback, list[PublicTrade])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2225,10 +2269,13 @@ class PublicChannels:
         self,
         instrument_type: AssetType,
         currency: str,
-        callback: Handler[list[Datum15]],
+        callback: Handler[list[PublicTrade]],
     ) -> SubscriptionResult:
         """
-        Subscribe to trades (order executions) for a given instrument type and currency.
+        Channel name: `trades.{instrument_type}.{currency}`. Public channel that streams
+        public trades filtered by market category, where {instrument_type} is the kind
+        of instrument (erc20, option, or perp) and {currency} is the underlying asset
+        (e.g. ETH or BTC).
 
         Args:
             instrument_type: Instrument Type
@@ -2243,7 +2290,7 @@ class PublicChannels:
             instrument_type=instrument_type.value if isinstance(instrument_type, Enum) else instrument_type,
             currency=currency.value if isinstance(currency, Enum) else currency,
         )
-        envelope = await self._session.subscribe(channel, callback, list[Datum15])
+        envelope = await self._session.subscribe(channel, callback, list[PublicTrade])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2252,12 +2299,15 @@ class PublicChannels:
         self,
         instrument_type: AssetType,
         currency: str,
-        tx_status: TxStatus6,
-        callback: Handler[list[Datum18]],
+        tx_status: TxStatus,
+        callback: Handler[list[SettledTrade]],
     ) -> SubscriptionResult:
         """
-        Subscribe to the status on on-chain trade settlement events for a given
-        instrument type and currency.
+        Channel name: `trades.{instrument_type}.{currency}.{tx_status}`. Public channel
+        that streams public trades filtered by category, underlying, and settlement
+        outcome, where {instrument_type} is the instrument kind (erc20, option, or
+        perp), {currency} is the underlying asset, and {tx_status} is the on-chain
+        settlement state (settled, reverted, or timed_out).
 
         Args:
             instrument_type: Instrument Type
@@ -2274,7 +2324,7 @@ class PublicChannels:
             currency=currency.value if isinstance(currency, Enum) else currency,
             tx_status=tx_status.value if isinstance(tx_status, Enum) else tx_status,
         )
-        envelope = await self._session.subscribe(channel, callback, list[Datum18])
+        envelope = await self._session.subscribe(channel, callback, list[SettledTrade])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2289,23 +2339,12 @@ class PrivateChannels:
     async def balances_by_subaccount_id(
         self,
         subaccount_id: str,
-        callback: Handler[list[Datum6]],
+        callback: Handler[list[BalanceUpdate]],
     ) -> SubscriptionResult:
         """
-        Subscribe to changes in user's positions for a given subaccount ID.
-
-        For perpetuals, additional balance updates are emitted under the name
-        Q-{ccy}-PERP where Q stands for "quote".
-
-        This balance is a proxy for an on-chain state of lastMarkPrice.
-
-        Because of a synchronization lag with the on-chain state, the orderbook instead
-        keeps track of a running total cost of perpetual trades,
-
-        For example:
-
-        Q-ETH-PERP balance of $6,600 and an ETH-PERP balance of 3 means the
-        lastMarkPrice state is estimated to be $2,200.
+        Channel name: `{subaccount_id}.balances`. Private channel (requires
+        authentication) that streams balance and position updates for one of your
+        subaccounts, where {subaccount_id} is the numeric subaccount identifier.
 
         Args:
             subaccount_id: Subaccount Id
@@ -2318,7 +2357,7 @@ class PrivateChannels:
         channel = "{subaccount_id}.balances".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
         )
-        envelope = await self._session.subscribe(channel, callback, list[Datum6])
+        envelope = await self._session.subscribe(channel, callback, list[BalanceUpdate])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2326,13 +2365,12 @@ class PrivateChannels:
     async def best_quotes_by_subaccount_id(
         self,
         subaccount_id: str,
-        callback: Handler[list[Datum9]],
+        callback: Handler[list[BestQuoteChannelResult]],
     ) -> SubscriptionResult:
         """
-        Subscribe to best quote state for a given subaccount ID.
-
-        This will notify the user about the best quote available for the RFQ they have
-        sent.
+        Channel name: `{subaccount_id}.best.quotes`. Private channel (requires
+        authentication) that streams best-quote updates relevant to your subaccount,
+        where {subaccount_id} is the numeric subaccount identifier.
 
         Args:
             subaccount_id: Subaccount Id
@@ -2345,7 +2383,7 @@ class PrivateChannels:
         channel = "{subaccount_id}.best.quotes".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
         )
-        envelope = await self._session.subscribe(channel, callback, list[Datum9])
+        envelope = await self._session.subscribe(channel, callback, list[BestQuoteChannelResult])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2353,10 +2391,13 @@ class PrivateChannels:
     async def orders_by_subaccount_id(
         self,
         subaccount_id: str,
-        callback: Handler[list[dict[str, Any]]],
+        callback: Handler[list[Order]],
     ) -> SubscriptionResult:
         """
-        Subscribe to changes in user's orders for a given subaccount ID.
+        Channel name: `{subaccount_id}.orders`. Private channel (requires
+        authentication) that streams live order updates (opens, fills, cancels, and
+        status changes) for your subaccount, where {subaccount_id} is the numeric
+        subaccount identifier.
 
         Args:
             subaccount_id: Subaccount Id
@@ -2369,7 +2410,7 @@ class PrivateChannels:
         channel = "{subaccount_id}.orders".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
         )
-        envelope = await self._session.subscribe(channel, callback, list[dict[str, Any]])
+        envelope = await self._session.subscribe(channel, callback, list[Order])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2377,12 +2418,12 @@ class PrivateChannels:
     async def quotes_by_subaccount_id(
         self,
         subaccount_id: str,
-        callback: Handler[list[dict[str, Any]]],
+        callback: Handler[list[QuotePublishResult]],
     ) -> SubscriptionResult:
         """
-        Subscribe to quote state for a given subaccount ID.
-
-        This will notify the usser about the state change of the quotes they have sent.
+        Channel name: `{subaccount_id}.quotes`. Private channel (requires
+        authentication) that streams updates to your RFQ quotes for a subaccount, where
+        {subaccount_id} is the numeric subaccount identifier.
 
         Args:
             subaccount_id: Subaccount Id
@@ -2395,7 +2436,7 @@ class PrivateChannels:
         channel = "{subaccount_id}.quotes".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
         )
-        envelope = await self._session.subscribe(channel, callback, list[dict[str, Any]])
+        envelope = await self._session.subscribe(channel, callback, list[QuotePublishResult])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2403,10 +2444,12 @@ class PrivateChannels:
     async def trades_by_subaccount_id(
         self,
         subaccount_id: str,
-        callback: Handler[list[dict[str, Any]]],
+        callback: Handler[list[Trade]],
     ) -> SubscriptionResult:
         """
-        Subscribe to user's trades (order executions) for a given subaccount ID.
+        Channel name: `{subaccount_id}.trades`. Private channel (requires
+        authentication) that streams your subaccount's own trade fills as they occur,
+        where {subaccount_id} is the numeric subaccount identifier.
 
         Args:
             subaccount_id: Subaccount Id
@@ -2419,19 +2462,22 @@ class PrivateChannels:
         channel = "{subaccount_id}.trades".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
         )
-        envelope = await self._session.subscribe(channel, callback, list[dict[str, Any]])
+        envelope = await self._session.subscribe(channel, callback, list[Trade])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
 
     async def trades_tx_status_by_subaccount_id(
         self,
-        subaccount_id: int,
-        tx_status: TxStatus6,
-        callback: Handler[list[dict[str, Any]]],
+        subaccount_id: str,
+        tx_status: TxStatus,
+        callback: Handler[list[Trade]],
     ) -> SubscriptionResult:
         """
-        Subscribe to user's trade settlement for a given subaccount ID.
+        Channel name: `{subaccount_id}.trades.{tx_status}`. Private channel (requires
+        authentication) that streams your subaccount's trades filtered by on-chain
+        settlement outcome, where {subaccount_id} is the numeric subaccount identifier
+        and {tx_status} is the settlement state (settled, reverted, or timed_out).
 
         Args:
             subaccount_id: Subaccount Id
@@ -2446,7 +2492,7 @@ class PrivateChannels:
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
             tx_status=tx_status.value if isinstance(tx_status, Enum) else tx_status,
         )
-        envelope = await self._session.subscribe(channel, callback, list[dict[str, Any]])
+        envelope = await self._session.subscribe(channel, callback, list[Trade])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
@@ -2454,10 +2500,12 @@ class PrivateChannels:
     async def rfqs_by_wallet(
         self,
         wallet: str,
-        callback: Handler[list[dict[str, Any]]],
+        callback: Handler[list[PublicRfq]],
     ) -> SubscriptionResult:
         """
-        Subscribe to RFQs directed to a given wallet.
+        Channel name: `{wallet}.rfqs`. Private channel (requires authentication) that
+        streams RFQ (request-for-quote) updates for all subaccounts under a wallet,
+        where {wallet} is your wallet address.
 
         Args:
             wallet: Wallet
@@ -2470,7 +2518,7 @@ class PrivateChannels:
         channel = "{wallet}.rfqs".format(
             wallet=wallet.value if isinstance(wallet, Enum) else wallet,
         )
-        envelope = await self._session.subscribe(channel, callback, list[dict[str, Any]])
+        envelope = await self._session.subscribe(channel, callback, list[PublicRfq])
         result = decode_result(envelope, SubscriptionResult)
 
         return result
