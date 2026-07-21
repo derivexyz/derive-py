@@ -6,6 +6,9 @@ from derive_client.data_types.generated_models import (
     GetAllInstrumentsResponse,
     Instrument,
 )
+from derive_client.data_types.generated_models import (
+    InstrumentType as AssetType,
+)
 
 
 def test_markets_get_currency(client_admin_wallet):

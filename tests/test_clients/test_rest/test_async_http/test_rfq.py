@@ -21,6 +21,9 @@ from derive_client.data_types.generated_models import (
     RFQGetResponse,
     RFQPollResponse,
 )
+from derive_client.data_types.generated_models import (
+    InstrumentType as AssetType,
+)
 from tests.conftest import assert_api_calls
 
 

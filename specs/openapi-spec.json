@@ -3974,6 +3974,30 @@
               "$ref": "#/components/schemas/Order"
             }
           },
+          "positions_initial_margin": {
+            "title": "positions_initial_margin",
+            "type": "string",
+            "format": "decimal",
+            "description": "Total initial margin requirement of all positions"
+          },
+          "positions_maintenance_margin": {
+            "title": "positions_maintenance_margin",
+            "type": "string",
+            "format": "decimal",
+            "description": "Total maintenance margin requirement of all positions"
+          },
+          "positions_value": {
+            "title": "positions_value",
+            "type": "string",
+            "format": "decimal",
+            "description": "Total mark-to-market value of all positions"
+          },
+          "projected_margin_change": {
+            "title": "projected_margin_change",
+            "type": "string",
+            "format": "decimal",
+            "description": "Projected change in maintenance margin requirement between now and projected margin at 8:01 UTC. If this value plus current maintenance margin ise below zero, the account is at risk of being flagged for liquidation right after the upcoming expiry."
+          },
           "subaccount_id": {
             "type": "integer",
             "format": "int64"
@@ -13758,6 +13782,9 @@
             "$ref": "#/components/schemas/Order"
           }
         },
+        "additionalProperties": false
+      },
+      "PublicBuildRegisterSessionKeyTxResultSchema": {
         "required": [
           "result"
         ]

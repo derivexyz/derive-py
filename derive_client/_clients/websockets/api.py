@@ -366,6 +366,39 @@ class PublicRPC:
 
         return result
 
+    async def get_index_chart_data(
+        self,
+        params: PublicGetIndexChartDataParamsSchema,
+    ) -> list[SpotFeedHistoryCandlesResponseSchema]:
+        """
+        Get index chart data (spot OHLC candles from ClickHouse) by currency
+
+        DB: clickhouse read replica
+        """
+
+        method = "public/get_index_chart_data"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, list[SpotFeedHistoryCandlesResponseSchema])
+
+        return result
+
+    async def get_tradingview_chart_data(
+        self,
+        params: PublicGetTradingviewChartDataParamsSchema,
+    ) -> list[TradingviewChartDataResponseSchema]:
+        """
+        Get tradingview chart data (trades OHLCV candles from ClickHouse) by instrument
+        name
+
+        DB: clickhouse read replica
+        """
+
+        method = "public/get_tradingview_chart_data"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, list[TradingviewChartDataResponseSchema])
+
+        return result
+
     async def get_funding_rate_history(
         self,
         params: GetFundingRateHistoryRequest,
@@ -2267,7 +2300,7 @@ class PublicChannels:
 
     async def trades_by_instrument_type(
         self,
-        instrument_type: AssetType,
+        instrument_type: InstrumentType,
         currency: str,
         callback: Handler[list[PublicTrade]],
     ) -> SubscriptionResult:
@@ -2297,7 +2330,7 @@ class PublicChannels:
 
     async def trades_tx_status_by_instrument_type(
         self,
-        instrument_type: AssetType,
+        instrument_type: InstrumentType,
         currency: str,
         tx_status: TxStatus,
         callback: Handler[list[SettledTrade]],

@@ -19,6 +19,9 @@ from derive_client.data_types.generated_models import (
     Instrument,
     TickerSlimSnapshot,
 )
+from derive_client.data_types.generated_models import (
+    InstrumentType as AssetType,
+)
 
 
 class MarketOperations:

@@ -25,6 +25,9 @@ from derive_client.data_types.generated_models import (
     PricedLegParamsAndResponse,
     RPCError,
 )
+from derive_client.data_types.generated_models import (
+    InstrumentType as AssetType,
+)
 
 if TYPE_CHECKING:
     from websockets import Data
