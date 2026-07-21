@@ -2,20 +2,8 @@
 install:
 	@echo "📦 Installing dependencies..."
 	poetry install
-	@if [ -n "$$IN_NIX_SHELL" ]; then \
-		$(MAKE) -s nix-link-tools; \
-	else \
-		echo "No Nix shell detected — using poetry-managed ruff/pyright."; \
-	fi
 	@$(MAKE) -s hooks
 	@echo "✅ Installation complete!"
-
-.PHONY: nix-link-tools
-nix-link-tools:
-	@test -n "$$NIX_RUFF" || { echo "NIX_RUFF is unset. Enter your Nix dev shell (e.g. 'nix develop', or 'direnv reload' if you use direnv) and retry." >&2; exit 1; }
-	@test -n "$$NIX_PYRIGHT" || { echo "NIX_PYRIGHT is unset. Enter your Nix dev shell (e.g. 'nix develop', or 'direnv reload' if you use direnv) and retry." >&2; exit 1; }
-	@ln -sf "$$NIX_RUFF" .nix-venv/bin/ruff
-	@ln -sf "$$NIX_PYRIGHT" .nix-venv/bin/pyright
 
 .PHONY: hooks
 hooks:
