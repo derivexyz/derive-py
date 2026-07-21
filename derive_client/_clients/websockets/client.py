@@ -27,7 +27,7 @@ from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
 from derive_client.config import CONFIGS
 from derive_client.data_types import ChecksumAddress, Environment, LoggerType
-from derive_client.data_types.generated_models import PublicLoginParamsSchema
+from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
 
 
@@ -107,11 +107,17 @@ class WebSocketClient:
         await self._initialize_account_and_markets()
 
     async def _authenticate(self) -> None:
-        """Perform WebSocket authentication."""
-
-        params = PublicLoginParamsSchema(**self._auth.sign_ws_login())
-        subaccount_ids = await self._public_api.rpc.login(params=params)
-        self._logger.debug(f"WebSocket login returned subaccount ids: {subaccount_ids}")
+        """
+        Perform WebSocket authentication via `public/login`.
+        """
+        login_dict = self._auth.sign_ws_login()
+        login_params = LoginRequest(
+            wallet=login_dict["wallet"],
+            timestamp=login_dict["timestamp"],
+            signature=login_dict["signature"],
+        )
+        subaccount_ids = await self._public_api.rpc.login(login_params)
+        self._logger.info(f"WebSocket authenticated; accessible subaccounts: {subaccount_ids}")
 
         # Validate subaccount
         if self._subaccount_id not in subaccount_ids:
@@ -119,6 +125,13 @@ class WebSocketClient:
                 f"Subaccount {self._subaccount_id} does not exist for wallet {self._auth.wallet}. "
                 f"Available subaccounts: {subaccount_ids}"
             )
+
+    async def set_cancel_on_disconnect(self, enabled: bool = True) -> str:
+        """
+        Toggle cancel-on-disconnect for the authenticated wallet.
+        """
+        params = SetCancelOnDisconnectRequest(enabled=enabled)
+        return await self._private_api.rpc.set_cancel_on_disconnect(params)
 
     async def _initialize_account_and_markets(self) -> None:
         """Initialize account and fetch market data."""

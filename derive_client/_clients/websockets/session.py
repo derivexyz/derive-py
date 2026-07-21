@@ -409,7 +409,7 @@ class WebSocketSession:
             params_filtered = {}
         elif isinstance(params, msgspec.Struct):
             params_dict = msgspec.structs.asdict(params)
-            params_filtered = {k: v for k, v in params_dict.items() if v is not None}
+            params_filtered = {k: v for k, v in params_dict.items() if v is not None and v is not msgspec.UNSET}
         else:
             params_filtered = params
 
