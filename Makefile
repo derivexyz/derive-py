@@ -84,9 +84,9 @@ release:
 
 .PHONY: generate-models
 generate-models:
-	curl https://v3.docs.derive.xyz/openapi.json | jq > specs/openapi.json
-	curl https://v3.docs.derive.xyz/websocket.asyncapi.json | jq > specs/websocket.json
-	curl https://v3.docs.derive.xyz/subscriptions.asyncapi.json | jq > specs/subscriptions.json
+	curl https://v3.docs.derive.xyz/openapi.json | poetry run python scripts/pretty-json.py > specs/openapi.json
+	curl https://v3.docs.derive.xyz/websocket.asyncapi.json | poetry run python scripts/pretty-json.py > specs/websocket.json
+	curl https://v3.docs.derive.xyz/subscriptions.asyncapi.json | poetry run python scripts/pretty-json.py > specs/subscriptions.json
 	poetry run python scripts/patch_spec.py specs/openapi.json
 	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
