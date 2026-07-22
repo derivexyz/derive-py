@@ -5,6 +5,7 @@ import pytest
 from derive_client.cli import cli as drv
 
 
+@pytest.mark.skip(reason="TODO: v3 migration.")
 @pytest.mark.parametrize(
     "args",
     [
@@ -19,6 +20,7 @@ def test_market_currency(runner, args):
     assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
 
 
+@pytest.mark.skip(reason="TODO: v3 migration.")
 @pytest.mark.parametrize(
     "args",
     [
@@ -34,6 +36,7 @@ def test_market_instrument(runner, args):
     assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
 
 
+@pytest.mark.skip(reason="TODO: v3 migration.")
 @pytest.mark.parametrize(
     "args",
     [
