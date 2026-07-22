@@ -104,4 +104,4 @@ def test_markets_get_tickers(client_admin_wallet):
     )
 
     assert isinstance(tickers, dict)
-    assert all(isinstance(ticker, dict) for ticker in tickers.values())
+    assert all(isinstance(ticker, TickerSlimSnapshot) for ticker in tickers.values())

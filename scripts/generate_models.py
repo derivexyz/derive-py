@@ -186,33 +186,6 @@ def _apply_field_renames(node: ast.ClassDef) -> None:
     node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
 
 
-def annotation_allows_none(annotation: ast.expr) -> bool:
-    """Return True if the annotation already allows None."""
-    if isinstance(annotation, ast.Subscript) and isinstance(annotation.value, ast.Name):
-        if annotation.value.id == "Optional":
-            return True
-
-        if annotation.value.id == "Union":
-            slice_node = annotation.slice
-            elements = slice_node.elts if isinstance(slice_node, ast.Tuple) else [slice_node]
-            return any(isinstance(element, ast.Constant) and element.value is None for element in elements)
-
-    if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
-        return annotation_allows_none(annotation.left) or annotation_allows_none(annotation.right)
-
-    return False
-
-
-def make_optional(annotation: ast.expr) -> ast.expr:
-    """Wrap an annotation in Optional[T]."""
-
-    return ast.Subscript(
-        value=ast.Name(id="Optional", ctx=ast.Load()),
-        slice=ast.Index(value=annotation),
-        ctx=ast.Load(),
-    )
-
-
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -228,26 +201,9 @@ class OptionalRewriter(ast.NodeTransformer):
         if not is_struct_class(node):
             return node
 
-        self._normalize_none_defaults(node)
         _apply_field_renames(node)
         node.body = reorder_fields(node.body)
         return node
-
-    def _normalize_none_defaults(self, node: ast.ClassDef) -> None:
-        for stmt in node.body:
-            if not isinstance(stmt, ast.AnnAssign):
-                continue
-
-            if stmt.value is None:
-                continue
-
-            if not (isinstance(stmt.value, ast.Constant) and stmt.value.value is None):
-                continue
-
-            if not annotation_allows_none(stmt.annotation):
-                stmt.annotation = make_optional(stmt.annotation)
-
-        ast.fix_missing_locations(node)
 
     def _is_str_enum(self, node: ast.ClassDef) -> bool:
         """Check if class inherits from both str and Enum."""

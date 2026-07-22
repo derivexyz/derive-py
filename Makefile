@@ -134,4 +134,4 @@ check_diff:
 demo:
 	poetry run bash scripts/demos/all.sh
 
-all: codegen-all typecheck tests docs
+all: codegen-all fmt lint typecheck tests docs

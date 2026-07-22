@@ -1785,7 +1785,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedVaultActions"
+                  "$ref": "#/components/schemas/PaginatedVaultRequestHistory"
                 }
               }
             }
@@ -1965,7 +1965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedVaultActions"
+                  "$ref": "#/components/schemas/PaginatedVaultActionHistory"
                 }
               }
             }
@@ -4076,7 +4076,7 @@
           "erc20_details": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ERC20Details"
+                "$ref": "#/components/schemas/SpotPublicDetails"
               },
               {
                 "type": "null"
@@ -4336,10 +4336,19 @@
         ],
         "properties": {
           "label": {
-            "default": null
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "nonce": {
-            "default": null
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "quote_id": {
             "description": "Optional UUID v4 string",
@@ -4388,10 +4397,19 @@
         ],
         "properties": {
           "label": {
-            "default": null
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "nonce": {
-            "default": null
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "rfq_id": {
             "description": "Optional UUID v4 string",
@@ -4550,10 +4568,19 @@
         ],
         "properties": {
           "label": {
-            "default": null
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "nonce": {
-            "default": null
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "quote_id": {
             "description": "UUID v4 string",
@@ -5387,31 +5414,6 @@
           "sell"
         ]
       },
-      "ERC20Details": {
-        "type": "object",
-        "required": [
-          "borrow_index",
-          "decimals",
-          "supply_index",
-          "underlying_erc20_address"
-        ],
-        "properties": {
-          "borrow_index": {
-            "type": "string"
-          },
-          "decimals": {
-            "type": "integer",
-            "format": "uint8",
-            "minimum": 0.0
-          },
-          "supply_index": {
-            "type": "string"
-          },
-          "underlying_erc20_address": {
-            "type": "string"
-          }
-        }
-      },
       "EditSessionKeyRequest": {
         "type": "object",
         "required": [
@@ -5497,7 +5499,9 @@
             "default": "",
             "type": "string"
           },
-          "direction": true,
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
           "enable_taker_protection": {
             "default": false,
             "type": "boolean"
@@ -5506,13 +5510,21 @@
             "default": "",
             "type": "string"
           },
-          "legs": true,
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricedLegParamsAndResponse"
+            }
+          },
           "max_fee": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
             "format": "decimal"
           },
-          "nonce": true,
+          "nonce": {
+            "type": "integer",
+            "format": "int64"
+          },
           "quote_id": {
             "description": "UUID v4 string",
             "type": "string",
@@ -5527,9 +5539,16 @@
             "type": "string",
             "format": "uuid"
           },
-          "signature": true,
-          "signature_expiry_sec": true,
-          "signer": true,
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Address"
+          },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
@@ -6856,7 +6875,12 @@
             ]
           },
           "expiry_date": {
-            "default": null
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "instrument_type": {
             "$ref": "#/components/schemas/AssetType"
@@ -6872,7 +6896,9 @@
         "properties": {
           "tickers": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TickerSlimSnapshot"
+            }
           }
         }
       },
@@ -7339,7 +7365,7 @@
           "erc20_details": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ERC20Details"
+                "$ref": "#/components/schemas/SpotPublicDetails"
               },
               {
                 "type": "null"
@@ -8765,7 +8791,31 @@
           }
         }
       },
-      "PaginatedVaultActions": {
+      "PaginatedVaultActionHistory": {
+        "type": "object",
+        "required": [
+          "events",
+          "pagination",
+          "subaccount_id"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicVaultActionResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "PaginatedVaultRequestHistory": {
         "type": "object",
         "required": [
           "actions",
@@ -11221,7 +11271,9 @@
             "default": "",
             "type": "string"
           },
-          "direction": true,
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
           "extra_fee": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "default": "0",
@@ -11232,7 +11284,12 @@
             "default": "",
             "type": "string"
           },
-          "legs": true,
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricedLegParamsAndResponse"
+            }
+          },
           "max_fee": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
@@ -11242,9 +11299,17 @@
             "default": false,
             "type": "boolean"
           },
-          "nonce": true,
+          "nonce": {
+            "type": "integer",
+            "format": "int64"
+          },
           "nonce_to_cancel": {
-            "default": null
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
           },
           "quote_id_to_cancel": {
             "description": "Optional UUID v4 string",
@@ -11264,9 +11329,16 @@
             "type": "string",
             "format": "uuid"
           },
-          "signature": true,
-          "signature_expiry_sec": true,
-          "signer": true,
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Address"
+          },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
@@ -11524,13 +11596,39 @@
       "RfqGetBestQuoteRequest": {
         "type": "object",
         "required": [
-          "direction",
-          "legs",
           "subaccount_id"
         ],
         "properties": {
-          "direction": true,
-          "legs": true,
+          "client": {
+            "default": "",
+            "type": "string"
+          },
+          "direction": {
+            "default": "buy",
+            "$ref": "#/components/schemas/Direction"
+          },
+          "extra_fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "default": "0",
+            "type": "string",
+            "format": "decimal"
+          },
+          "legs": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LegUnpricedParams"
+            }
+          },
+          "rfq_id": {
+            "description": "RFQ ID to get best quote for.\n\nIf not provided, will return estimates based on mark prices.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
@@ -11859,7 +11957,12 @@
             "default": "",
             "type": "string"
           },
-          "legs": true,
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LegUnpricedParams"
+            }
+          },
           "max_total_cost": {
             "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
             "default": null,
@@ -12311,6 +12414,31 @@
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
+          }
+        }
+      },
+      "SpotPublicDetails": {
+        "type": "object",
+        "required": [
+          "borrow_index",
+          "decimals",
+          "supply_index",
+          "underlying_erc20_address"
+        ],
+        "properties": {
+          "borrow_index": {
+            "type": "string"
+          },
+          "decimals": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          },
+          "supply_index": {
+            "type": "string"
+          },
+          "underlying_erc20_address": {
+            "type": "string"
           }
         }
       },

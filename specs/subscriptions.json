@@ -1119,7 +1119,7 @@
             "description": "Number of trades during last 24h",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "oi": {
             "description": "Current total open interest",
@@ -1561,7 +1561,7 @@
           "publish_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",

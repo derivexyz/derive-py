@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
+
+import msgspec
 
 from derive_client._clients.rest.http.api import PublicAPI
 from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type
@@ -249,8 +251,8 @@ class MarketOperations:
         *,
         instrument_type: AssetType,
         currency: Optional[str] = None,
-        expiry_date: Optional[str] = None,
-    ) -> dict[str, Any]:
+        expiry_date: Optional[int] = None,
+    ) -> dict[str, TickerSlimSnapshot]:
         """
         Get tickers information (best bid / ask, stats, etc.) for multiple instruments.
 
@@ -266,7 +268,7 @@ class MarketOperations:
         params = GetTickersRequest(
             currency=currency,
             instrument_type=instrument_type,
-            expiry_date=expiry_date,
+            expiry_date=expiry_date or msgspec.UNSET,
         )
         result = self._public_api.rpc.get_tickers(params)
         return result.tickers

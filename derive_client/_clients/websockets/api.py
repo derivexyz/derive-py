@@ -131,7 +131,8 @@ from derive_client.data_types.generated_models import (
     OrderQuoteResponse,
     PaginatedOrdersResult,
     PaginatedTradesResult,
-    PaginatedVaultActions,
+    PaginatedVaultActionHistory,
+    PaginatedVaultRequestHistory,
     PerpSettlementHistoryResponse,
     PollQuotesRequest,
     PollRfqsRequest,
@@ -317,7 +318,7 @@ class PublicRPC:
     async def get_vault_action_history(
         self,
         params: GetVaultActionHistoryRequest,
-    ) -> PaginatedVaultActions:
+    ) -> PaginatedVaultActionHistory:
         """
         Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events
         — including NAV, share price, high-water mark, and the fee-share split across
@@ -329,7 +330,7 @@ class PublicRPC:
 
         method = "public/get_vault_action_history"
         envelope = await self._session._send_request(method, params=params)
-        result = decode_result(envelope, PaginatedVaultActions)
+        result = decode_result(envelope, PaginatedVaultActionHistory)
 
         return result
 
@@ -1601,7 +1602,7 @@ class PrivateRPC:
     async def get_vault_request_history(
         self,
         params: GetVaultRequestHistoryRequest,
-    ) -> PaginatedVaultActions:
+    ) -> PaginatedVaultRequestHistory:
         """
         Returns the caller's full vault action history (deposits, withdrawals, force-
         withdrawals, and cancels) across every status — enqueued, requested, applied,
@@ -1612,7 +1613,7 @@ class PrivateRPC:
 
         method = "private/get_vault_request_history"
         envelope = await self._session._send_request(method, params=params)
-        result = decode_result(envelope, PaginatedVaultActions)
+        result = decode_result(envelope, PaginatedVaultRequestHistory)
 
         return result
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+import msgspec
+
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
@@ -143,14 +145,16 @@ class LightAccount:
         public_session_key: str,
         ip_whitelist: Optional[list[str]] = None,
         label: Optional[str] = None,
+        offchain_scopes: Optional[list[str]] = None,
     ) -> SessionKey:
         """Edits session key parameters such as label and IP whitelist."""
 
         params = EditSessionKeyRequest(
             wallet=self.address,
             public_session_key=public_session_key,
-            ip_whitelist=ip_whitelist,
+            ip_whitelist=ip_whitelist or msgspec.UNSET,
             label=label,
+            offchain_scopes=offchain_scopes or msgspec.UNSET,
         )
         result = self._private_api.rpc.edit_session_key(params)
         return result
