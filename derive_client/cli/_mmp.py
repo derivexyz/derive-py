@@ -117,4 +117,4 @@ def reset(ctx, currency: str | None):
     result = subaccount.mmp.reset(currency=currency)
 
     print(f"\n=== Market Maker Protection Reset for subaccount {subaccount.id} ===")
-    print(f"MMP reset result: {result.value}")
+    print(f"MMP reset result: {result}")
