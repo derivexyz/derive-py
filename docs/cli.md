@@ -25,7 +25,6 @@ Derive Client
 ├── collateral........................ Manage collateral and margin.
 │   ├── deposit-to-subaccount......... Deposit an asset to your subaccount.
 │   ├── get........................... Get subaccount collaterals.
-│   ├── get-margin.................... Calculates margin for a given subaccount.
 │   └── withdraw-from-subaccount...... Withdraw an asset to your lightaccount wallet.
 ├── market............................ Query market data: currencies, instruments, tickers.
 │   ├── currency...................... Get currency details.
@@ -45,7 +44,7 @@ Derive Client
 │   ├── list.......................... List active positions of a subaccount.
 │   └── transfer...................... Transfers a positions from one subaccount to another, owned by the same wallet.
 ├── transaction....................... Query transaction status and details.
-│   └── get........................... Used for getting a transaction by its transaction id.
+│   └── get........................... Used for getting a transaction by its operation UUID.
 └── tree.............................. Print the command tree structure.
 ```
 

@@ -56,26 +56,7 @@ class PositionOperations:
         maker_nonce: Optional[int] = None,
         taker_nonce: Optional[int] = None,
     ) -> TransferPositionsResponse:
-        """Transfers multiple positions from one subaccount to another, owned by the same
-        wallet.
-
-        The transfer is executed as a an RFQ. A mock RFQ is first created from the taker
-        parameters, followed by a maker quote and a taker execute.
-
-        The leg amounts, prices and instrument name must be the same in both param
-        payloads.
-
-        Fee is not charged and a zero `max_fee` must be signed.
-
-        Every leg in the transfer must be a position reduction for either maker or taker
-        (or both).
-
-        History: for position transfer history, use the `private/get_trade_history` RPC
-        (not `private/get_erc20_transfer_history`).
-
-        v3 change: returns TransferPositionsResponse (maker_quote: Quote,
-        taker_quote: Quote), not the previous flat result shape.
-        """
+        """Transfers multiple positions from one subaccount to another, owned by the same wallet."""
 
         from_subaccount = self._subaccount.id
         positions = sort_by_instrument_name(positions)
