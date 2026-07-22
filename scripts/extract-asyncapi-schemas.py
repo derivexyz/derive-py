@@ -132,7 +132,7 @@ def main() -> None:
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Derive WebSocket Channel Schemas",
         "description": "Extracted from subscriptions.json and websocket.json (v3).",
-        "definitions": definitions,
+        "definitions": dict(sorted(definitions.items())),
     }
 
     paths.WEBSOCKET_CHANNELS.parent.mkdir(parents=True, exist_ok=True)

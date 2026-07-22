@@ -20,6 +20,7 @@ from derive_client.data_types.generated_models import (
 )
 
 DeriveWebsocketChannelSchemas: TypeAlias = Any
+Address: TypeAlias = str
 
 
 class AuctionDetails(Struct):
@@ -33,31 +34,6 @@ class AuctionDetails(Struct):
     min_price_limit: str
     subaccount_balances: str
     currency: str | None = None
-
-
-class SpotFeedEntry(Struct):
-    confidence: str
-    confidence_prev_daily: str
-    price: str
-    price_prev_daily: str
-    timestamp_prev_daily: int
-
-
-class MarginWatchResult(Struct):
-    collaterals: list[Any]
-    currency: str
-    initial_margin: str
-    maintenance_margin: str
-    margin_type: str
-    positions: list[Any]
-    subaccount_id: int
-    subaccount_value: str
-    valuation_timestamp: int
-
-
-class OrderSnapshot(Struct):
-    amount: str
-    price: str
 
 
 class AuctionStateType(StrEnum):
@@ -82,17 +58,27 @@ class BalanceUpdateType(StrEnum):
     double_revert = 'double_revert'
 
 
-class AuctionResult(Struct):
-    state: AuctionStateType
+class LoginRequest(Struct):
+    signature: str | None = None
+    timestamp: int | None = None
+    wallet: str | None = None
+
+
+class MarginWatchResult(Struct):
+    collaterals: list[Any]
+    currency: str
+    initial_margin: str
+    maintenance_margin: str
+    margin_type: str
+    positions: list[Any]
     subaccount_id: int
-    timestamp: int
-    details: AuctionDetails | None | UnsetType = UNSET
+    subaccount_value: str
+    valuation_timestamp: int
 
 
-class RPCError(Struct):
-    code: int
-    message: str
-    data: str | None = None
+class OrderSnapshot(Struct):
+    amount: str
+    price: str
 
 
 class OrderbookSnapshot(Struct):
@@ -101,36 +87,6 @@ class OrderbookSnapshot(Struct):
     instrument_name: str
     publish_id: int
     timestamp: int
-
-
-class Feeds(Struct):
-    field_key_: SpotFeedEntry | UnsetType = field(name='{key}', default=UNSET)
-
-
-class SpotFeedPayload(Struct):
-    feeds: Feeds
-    timestamp: int
-
-
-class LoginRequest(Struct):
-    signature: str | None = None
-    timestamp: int | None = None
-    wallet: str | None = None
-
-
-class BalanceUpdate(Struct):
-    name: str
-    new_balance: Decimal
-    previous_balance: Decimal
-    update_type: BalanceUpdateType
-
-
-class SetCancelOnDisconnectRequest(Struct):
-    enabled: bool | None = None
-    wallet: str | None = None
-
-
-Address: TypeAlias = str
 
 
 class PublicTrade(Struct):
@@ -144,6 +100,34 @@ class PublicTrade(Struct):
     trade_price: str
     quote_id: str | None = None
     rfq_id: str | None = None
+
+
+class RPCError(Struct):
+    code: int
+    message: str
+    data: str | None = None
+
+
+class SetCancelOnDisconnectRequest(Struct):
+    enabled: bool | None = None
+    wallet: str | None = None
+
+
+class SpotFeedEntry(Struct):
+    confidence: str
+    confidence_prev_daily: str
+    price: str
+    price_prev_daily: str
+    timestamp_prev_daily: int
+
+
+class Feeds(Struct):
+    field_key_: SpotFeedEntry | UnsetType = field(name='{key}', default=UNSET)
+
+
+class SpotFeedPayload(Struct):
+    feeds: Feeds
+    timestamp: int
 
 
 class TickerSlimSnapshot(
@@ -173,6 +157,20 @@ class TickerSlimSnapshot(
     timestamp: int
     funding_rate: str | None = None
     option_pricing: OptionPricing | None | UnsetType = UNSET
+
+
+class AuctionResult(Struct):
+    state: AuctionStateType
+    subaccount_id: int
+    timestamp: int
+    details: AuctionDetails | None | UnsetType = UNSET
+
+
+class BalanceUpdate(Struct):
+    name: str
+    new_balance: Decimal
+    previous_balance: Decimal
+    update_type: BalanceUpdateType
 
 
 class QuotePublishResult(Struct):
