@@ -28,9 +28,28 @@ SYNC_METHODS = {
     "sign_action",
 }
 
+# Identifiers renamed at every use site (constructor calls, imports, type
+# annotations) when generating the async version -- same mechanism as the
+# fetch_all_pages_of_instrument_type entry already handled this, just made
+# reusable instead of hardcoded to one name.
+ASYNC_RENAMES = {
+    "fetch_all_pages_of_instrument_type": "async_fetch_all_pages_of_instrument_type",
+    "WithdrawalResult": "AsyncWithdrawalResult",
+}
+
+# Methods on self._deposits whose sync generator return needs wrapping in
+# iterate_deposit_steps_in_thread when the calling method is made async --
+# see AsyncConverter._wrap_deposit_plan_return. Deposits itself stays sync
+# (see _web3), so "add await" alone is never the right fix for these.
+DEPOSIT_PLAN_METHODS = {"plan_deposit", "plan_new_subaccount"}
+
 
 class AsyncConverter(cst.CSTTransformer):
     """Convert sync client code to async."""
+
+    def __init__(self):
+        super().__init__()
+        self._used_deposit_plan_wrapper = False
 
     def leave_FunctionDef(
         self,
@@ -48,6 +67,8 @@ class AsyncConverter(cst.CSTTransformer):
         if not self._should_make_async(original_node):
             return updated_node
 
+        updated_node = self._wrap_deposit_plan_return(updated_node)
+
         return updated_node.with_changes(asynchronous=cst.Asynchronous(whitespace_after=cst.SimpleWhitespace(" ")))
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call | cst.Await:
@@ -62,10 +83,12 @@ class AsyncConverter(cst.CSTTransformer):
         original_node: cst.Name,
         updated_node: cst.Name,
     ) -> cst.Name:
-        """Add async_ prefix to specific utility functions."""
+        """Rename identifiers that need a distinct async counterpart --
+        constructor calls, import names, and type annotations alike, since
+        this fires on every Name node in the tree."""
 
-        if updated_node.value == "fetch_all_pages_of_instrument_type":
-            return updated_node.with_changes(value="async_fetch_all_pages_of_instrument_type")
+        if updated_node.value in ASYNC_RENAMES:
+            return updated_node.with_changes(value=ASYNC_RENAMES[updated_node.value])
         return updated_node
 
     def leave_ImportFrom(
@@ -130,6 +153,55 @@ class AsyncConverter(cst.CSTTransformer):
                 return updated_node.with_changes(annotation=new_annotation)
         return updated_node
 
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
+        """Inject the imports _wrap_deposit_plan_return's output needs --
+        iterate_deposit_steps_in_thread, AsyncDepositStep, AsyncIterator --
+        none of which exist in the sync source to be transformed from.
+        Only runs if that rewrite actually fired in this file."""
+
+        if not self._used_deposit_plan_wrapper:
+            return updated_node
+
+        new_imports = [
+            cst.SimpleStatementLine(
+                body=[
+                    cst.ImportFrom(
+                        module=cst.Attribute(
+                            value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("_web3")),
+                            attr=cst.Name("async_utils"),
+                        ),
+                        names=[
+                            cst.ImportAlias(name=cst.Name("AsyncDepositStep")),
+                            cst.ImportAlias(name=cst.Name("iterate_deposit_steps_in_thread")),
+                        ],
+                    )
+                ]
+            ),
+            cst.SimpleStatementLine(
+                body=[
+                    cst.ImportFrom(
+                        module=cst.Attribute(value=cst.Name("collections"), attr=cst.Name("abc")),
+                        names=[cst.ImportAlias(name=cst.Name("AsyncIterator"))],
+                    )
+                ]
+            ),
+        ]
+
+        insert_pos = 0
+        for i, statement in enumerate(updated_node.body):
+            if isinstance(statement, (cst.SimpleStatementLine, cst.Import, cst.ImportFrom)):
+                insert_pos = i + 1
+            elif isinstance(statement, cst.EmptyLine):
+                continue
+            else:
+                break
+
+        new_body = list(updated_node.body)
+        for offset, stmt in enumerate(new_imports):
+            new_body.insert(insert_pos + offset, stmt)
+
+        return updated_node.with_changes(body=new_body)
+
     def _should_make_async(self, node: cst.FunctionDef) -> bool:
         """Check if function should be made async."""
 
@@ -184,6 +256,96 @@ class AsyncConverter(cst.CSTTransformer):
         new_body = node.body.with_changes(body=new_statements)
 
         return node.with_changes(body=new_body)
+
+    def _match_deposit_plan_call(self, stmt: cst.BaseStatement) -> cst.Call | None:
+        """If `stmt` is `return self._deposits.<plan_method>(...)`, return the
+        Call node. Else None. Runs on the ALREADY-visited statement (leave_*
+        fires bottom-up), so the inner Call is already correctly left
+        un-awaited by leave_Call by the time this checks it."""
+
+        if not isinstance(stmt, cst.SimpleStatementLine) or len(stmt.body) != 1:
+            return None
+
+        small_stmt = stmt.body[0]
+        if not isinstance(small_stmt, cst.Return) or small_stmt.value is None:
+            return None
+
+        call = small_stmt.value
+        if not isinstance(call, cst.Call) or not isinstance(call.func, cst.Attribute):
+            return None
+
+        if call.func.attr.value not in DEPOSIT_PLAN_METHODS:
+            return None
+
+        receiver = call.func.value
+        is_self_deposits = (
+            isinstance(receiver, cst.Attribute)
+            and receiver.attr.value == "_deposits"
+            and isinstance(receiver.value, cst.Name)
+            and receiver.value.value == "self"
+        )
+        return call if is_self_deposits else None
+
+    def _wrap_deposit_plan_return(self, node: cst.FunctionDef) -> cst.FunctionDef:
+        """Turn `return self._deposits.plan_x(...)` into
+        `sync_plan = self._deposits.plan_x(...)` followed by
+        `async for step in iterate_deposit_steps_in_thread(sync_plan): yield step`.
+
+        This is what actually makes the function an async generator -- in
+        Python that's determined by the presence of `yield` in the body, not
+        a separate declaration, so adding `async` (already handled by the
+        caller) plus this rewrite is sufficient.
+        """
+
+        statements = list(node.body.body)
+        if not statements:
+            return node
+
+        call = self._match_deposit_plan_call(statements[-1])
+        if call is None:
+            return node
+
+        self._used_deposit_plan_wrapper = True
+
+        assign_stmt = cst.SimpleStatementLine(
+            body=[cst.Assign(targets=[cst.AssignTarget(target=cst.Name("sync_plan"))], value=call)]
+        )
+
+        async_for_stmt = cst.For(
+            target=cst.Name("step"),
+            iter=cst.Call(
+                func=cst.Name("iterate_deposit_steps_in_thread"),
+                args=[cst.Arg(value=cst.Name("sync_plan"))],
+            ),
+            body=cst.IndentedBlock(
+                body=[cst.SimpleStatementLine(body=[cst.Expr(value=cst.Yield(value=cst.Name("step")))])]
+            ),
+            asynchronous=cst.Asynchronous(),
+        )
+
+        new_body = node.body.with_changes(body=[*statements[:-1], assign_stmt, async_for_stmt])
+        new_returns = self._rewrite_iterator_annotation(node.returns)
+
+        return node.with_changes(body=new_body, returns=new_returns)
+
+    def _rewrite_iterator_annotation(self, returns: cst.Annotation | None) -> cst.Annotation | None:
+        """Iterator[DepositStep] -> AsyncIterator[AsyncDepositStep]. Narrow
+        and name-based on purpose -- only handles the one shape this codebase
+        actually uses; extend the match if a second shape shows up rather
+        than generalizing blind."""
+
+        if returns is None:
+            return returns
+
+        ann = returns.annotation
+        if isinstance(ann, cst.Subscript) and isinstance(ann.value, cst.Name) and ann.value.value == "Iterator":
+            new_ann = ann.with_changes(
+                value=cst.Name("AsyncIterator"),
+                slice=[cst.SubscriptElement(slice=cst.Index(value=cst.Name("AsyncDepositStep")))],
+            )
+            return returns.with_changes(annotation=new_ann)
+
+        return returns
 
     def _is_api_call(self, node: cst.Call) -> bool:
         """Check if this call should be awaited."""
