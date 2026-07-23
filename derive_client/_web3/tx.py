@@ -4,6 +4,7 @@ import statistics
 import time
 from typing import cast
 
+from eth_typing import ChecksumAddress as EthChecksumAddress
 from eth_typing import HexStr
 from web3 import Web3
 from web3.contract.contract import ContractFunction
@@ -12,6 +13,7 @@ from web3.types import TxParams
 
 from derive_client.config import GAS_FEE_BUFFER, MIN_PRIORITY_FEE
 from derive_client.data_types import (
+    ChecksumAddress,
     FeeEstimate,
     FeeEstimates,
     FeeHistory,
@@ -35,7 +37,11 @@ def estimate_fees(w3: Web3, blocks: int = 20) -> FeeEstimates:
     """Estimate EIP-1559 maxFeePerGas and maxPriorityFeePerGas from recent blocks for GasPriority percentiles."""
 
     percentiles = tuple(map(int, GasPriority))
-    fee_history = FeeHistory(**w3.eth.fee_history(blocks, "pending", percentiles))
+    raw_fee_history = w3.eth.fee_history(blocks, "pending", list(percentiles))
+    # web3.types.Wei and our own Wei are both int-based but nominally
+    # distinct NewTypes -- cast at this one boundary rather than fight it
+    # field-by-field.
+    fee_history = FeeHistory(**cast(dict, raw_fee_history))
     latest_base_fee = fee_history.base_fee_per_gas[-1]
 
     percentile_rewards: dict[int, list[Wei]] = {p: [] for p in percentiles}
@@ -58,12 +64,12 @@ def estimate_fees(w3: Web3, blocks: int = 20) -> FeeEstimates:
 
 def preflight_native_balance_check(
     w3: Web3,
-    account_address: str,
+    account_address: ChecksumAddress,
     fee_estimate: FeeEstimate,
     gas_limit: int,
     value: int,
 ) -> None:
-    balance = w3.eth.get_balance(account_address)
+    balance = w3.eth.get_balance(cast(EthChecksumAddress, account_address))
     max_cost = gas_limit * fee_estimate.max_fee_per_gas + value
 
     if balance < max_cost:
@@ -71,9 +77,9 @@ def preflight_native_balance_check(
             f"Insufficient native balance: balance={balance}, required={max_cost} "
             f"({balance / max_cost * 100:.2f}% available; gas_limit={gas_limit}, value={value})",
             balance=balance,
-            required=max_cost,
-            gas_limit=gas_limit,
-            value=value,
+            chain_id=w3.eth.chain_id,
+            assumed_gas_limit=gas_limit,
+            fee_estimate=fee_estimate,
         )
 
 
@@ -81,7 +87,7 @@ def prepare_transaction(
     func: ContractFunction,
     *,
     w3: Web3,
-    from_address: str,
+    from_address: ChecksumAddress,
     logger: LoggerType,
     value: int = 0,
     gas_priority: GasPriority = GasPriority.MEDIUM,
@@ -95,24 +101,32 @@ def prepare_transaction(
     response -- see wait_for_finality below, which uses it there.)
     """
 
-    nonce = w3.eth.get_transaction_count(from_address)
+    nonce = w3.eth.get_transaction_count(cast(EthChecksumAddress, from_address))
     fee_estimates = estimate_fees(w3, blocks=gas_blocks)
     fee_estimate = fee_estimates[gas_priority]
     logger.info(f"Fee estimate [{gas_priority.name}]: {fee_estimate}")
 
     tx = func.build_transaction(
-        {
-            "from": from_address,
-            "nonce": nonce,
-            "maxFeePerGas": fee_estimate.max_fee_per_gas,
-            "maxPriorityFeePerGas": fee_estimate.max_priority_fee_per_gas,
-            "chainId": w3.eth.chain_id,
-            "value": value,
-        }
+        cast(
+            TxParams,
+            {
+                "from": from_address,
+                "nonce": nonce,
+                "maxFeePerGas": fee_estimate.max_fee_per_gas,
+                "maxPriorityFeePerGas": fee_estimate.max_priority_fee_per_gas,
+                "chainId": w3.eth.chain_id,
+                "value": value,
+            },
+        )
     )
 
+    gas_limit = tx.get("gas")
+    if gas_limit is None:
+        # build_transaction() always populates this via eth_estimateGas
+        raise RuntimeError("build_transaction() did not return a 'gas' value, cannot preflight balance check.")
+
     preflight_native_balance_check(
-        w3=w3, account_address=from_address, fee_estimate=fee_estimate, gas_limit=tx["gas"], value=value
+        w3=w3, account_address=from_address, fee_estimate=fee_estimate, gas_limit=gas_limit, value=value
     )
 
     # Simulate against current state; raises with the revert reason if it would fail.

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import cast
 
 from web3 import Web3
 from web3.contract.contract import Contract
@@ -46,12 +47,12 @@ def resolve_manager_id(
     risk_universe = next((ru for ru in risk_universes if ru.name == universe_type.value), None)
     if risk_universe is None:
         raise ValueError(
-            f"No risk universe named {universe_type.value!r}. Known: {sorted(ru.name for ru in risk_universes)}"
+            f"No risk universe named {universe_type.value!r}. Known: {sorted(str(ru.name) for ru in risk_universes)}"
         )
 
     manager = next((m for m in risk_universe.managers if m.margin_type == margin_type), None)
     if manager is None:
-        known = sorted(m.margin_type for m in risk_universe.managers)
+        known = sorted(str(m.margin_type) for m in risk_universe.managers)
         raise ValueError(
             f"Universe {universe_type.value!r} has no manager with margin_type={margin_type}. Known: {known}"
         )
@@ -71,7 +72,7 @@ def resolve_collateral(risk_universes: list[RiskUniverse], *, manager_id: int, a
 
     collateral = next((c for c in manager.collaterals if c.name == asset_name), None)
     if collateral is None:
-        known = sorted(c.name for c in manager.collaterals)
+        known = sorted(str(c.name) for c in manager.collaterals)
         raise ValueError(f"No collateral {asset_name!r} for manager_id={manager_id}. Known: {known}")
 
     if not collateral.erc20.underlying_erc20:
@@ -82,8 +83,8 @@ def resolve_collateral(risk_universes: list[RiskUniverse], *, manager_id: int, a
 
     return ResolvedCollateral(
         manager_id=manager.manager_id,
-        protocol_asset_address=collateral.address,
-        erc20_address=collateral.erc20.underlying_erc20,
+        protocol_asset_address=ChecksumAddress(collateral.address),
+        erc20_address=ChecksumAddress(cast(str, collateral.erc20.underlying_erc20)),
         decimals=collateral.erc20.decimals,
         min_deposit_usd=collateral.min_deposit_usd,
     )
@@ -200,7 +201,7 @@ class Deposits:
         if approve_tx := prepare_approve(
             self._w3,
             token_address=collateral.erc20_address,
-            spender=self.contract.address,
+            spender=ChecksumAddress(self.contract.address),
             amount=native_amount,
             from_address=from_address,
             logger=self._logger,
@@ -245,7 +246,7 @@ class Deposits:
         if approve_tx := prepare_approve(
             self._w3,
             token_address=collateral.erc20_address,
-            spender=self.contract.address,
+            spender=ChecksumAddress(self.contract.address),
             amount=native_amount,
             from_address=from_address,
             logger=self._logger,

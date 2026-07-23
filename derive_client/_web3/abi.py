@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
+from eth_typing import ChecksumAddress as EthChecksumAddress
 from web3 import Web3
 from web3.contract.contract import Contract
 
@@ -40,6 +42,6 @@ class ContractRegistry:
         abi_path = _abi_dir(self._network) / f"{abi_source_address}.json"
         abi = json.loads(abi_path.read_text())
 
-        contract = self._w3.eth.contract(address=address, abi=abi)
+        contract = self._w3.eth.contract(address=cast(EthChecksumAddress, address), abi=abi)
         self._cache[name] = contract
         return contract

@@ -9,7 +9,17 @@ from derive_client._web3.deposits import DepositStep
 
 T = TypeVar("T")
 
-_STOP = object()
+
+class _Stop:
+    """Dedicated sentinel class, not object() -- isinstance narrows T | _Stop
+    down to T correctly after the check below; identity-checking a bare
+    object() instance doesn't narrow the same way, which is what pyright was
+    actually flagging (the yield type inferred as T | object, not T)."""
+
+    __slots__ = ()
+
+
+_STOP = _Stop()
 
 
 async def iterate_sync_generator_in_thread(sync_iterator: Iterator[T]) -> AsyncIterator[T]:
@@ -18,7 +28,7 @@ async def iterate_sync_generator_in_thread(sync_iterator: Iterator[T]) -> AsyncI
     # letting it surface directly inside a coroutine hits PEP 479,
     # so it's translated to a sentinel and checked here instead.
 
-    def _next():
+    def _next() -> T | _Stop:
         try:
             return next(sync_iterator)
         except StopIteration:
@@ -26,7 +36,7 @@ async def iterate_sync_generator_in_thread(sync_iterator: Iterator[T]) -> AsyncI
 
     while True:
         item = await asyncio.to_thread(_next)
-        if item is _STOP:
+        if isinstance(item, _Stop):
             return
         yield item
 

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from typing import cast
 
+from eth_typing import ChecksumAddress as EthChecksumAddress
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxParams
@@ -16,7 +18,7 @@ from derive_client.exceptions import InsufficientTokenBalance
 
 def get_erc20_contract(w3: Web3, token_address: ChecksumAddress) -> Contract:
     abi = json.loads((ABI_DATA_DIR / "erc20.json").read_text())
-    return w3.eth.contract(address=token_address, abi=abi)
+    return w3.eth.contract(address=cast(EthChecksumAddress, token_address), abi=abi)
 
 
 def get_balance(w3: Web3, *, token_address: ChecksumAddress, owner: ChecksumAddress) -> int:
@@ -48,7 +50,7 @@ def prepare_approve(
     logger: LoggerType,
     approve_amount: int | None = None,
     gas_priority: GasPriority = GasPriority.MEDIUM,
-) -> TxParams:
+) -> TxParams | None:
     """Unsigned approve() tx, or None if the current allowance already covers amount.
 
     approve_amount lets you approve more than this one call needs

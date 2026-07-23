@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from derive_action_signing import ModuleData
-from eth_abi import encode
+from eth_abi.abi import encode
 from web3 import Web3
 
 from derive_client.data_types import ChecksumAddress
@@ -58,7 +58,7 @@ class SessionKeyModuleData(ModuleData):
 
     def to_abi_encoded(self) -> bytes:
         return encode_create_session_key_action_data(
-            session_key=self.session_key,
+            session_key=ChecksumAddress(self.session_key),
             expiry_sec=self.expiry_sec,
             scopes=self.scopes,
             subaccount_ids=self.subaccount_ids,
