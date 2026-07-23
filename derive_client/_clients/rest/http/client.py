@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import contextlib
+from decimal import Decimal
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Iterator
 
 from pydantic import ConfigDict, validate_call
 from web3 import Web3
 
-from derive_client._bridge.client import BridgeClient
 from derive_client._clients.rest.http.account import LightAccount
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.collateral import CollateralOperations
@@ -21,9 +21,10 @@ from derive_client._clients.rest.http.subaccount import Subaccount
 from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext, load_client_config
+from derive_client._web3 import ContractRegistry, Deposits
+from derive_client._web3.deposits import DepositStep
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, LoggerType
-from derive_client.exceptions import BridgePrimarySignerRequiredError, NotConnectedError
+from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, UniverseType
 from derive_client.utils.logger import get_logger
 
 
@@ -69,7 +70,9 @@ class HTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        self._bridge_client: BridgeClient | None = None
+        network = "sepolia" if env == Environment.TEST else "ethereum"
+        self._contract_registry = ContractRegistry(w3=w3, network=network)
+        self._deposits = Deposits(self._contract_registry, w3=self._auth.w3, logger=self._logger)
 
     @classmethod
     def from_env(
@@ -90,6 +93,7 @@ class HTTPClient:
 
         self._light_account = self._instantiate_account()
         self._markets.fetch_all_instruments(expired=False)
+        self._markets.get_risk_universes()  # cache risk universes
 
         subaccount_ids = self._light_account.state.subaccount_ids
         if self._subaccount_id not in subaccount_ids:
@@ -111,6 +115,7 @@ class HTTPClient:
         self._markets._erc20_instruments_cache.clear()
         self._markets._perp_instruments_cache.clear()
         self._markets._option_instruments_cache.clear()
+        self._markets._risk_universes_cache.clear()
 
     def _instantiate_account(self) -> LightAccount:
         return LightAccount.from_api(
@@ -129,26 +134,10 @@ class HTTPClient:
             logger=self._logger,
             markets=self._markets,
             transactions=self._transactions,
+            deposits=self._deposits,
             public_api=self._public_api,
             private_api=self._private_api,
         )
-
-    def _initialize_bridge(self) -> BridgeClient:
-        """Initialize bridge client lazily."""
-        if self._env is not Environment.PROD:
-            raise NotConnectedError("Bridge module unavailable in non-prod environment.")
-
-        try:
-            bridge_client = BridgeClient(
-                env=self._env,
-                account=self._auth.account,
-                wallet=self._auth.wallet,
-                logger=self._logger,
-            )
-            bridge_client.connect()
-            return bridge_client
-        except BridgePrimarySignerRequiredError:
-            raise NotConnectedError("Bridge unavailable: requires signer to be the LightAccount owner.")
 
     @property
     def logger(self) -> LoggerType:
@@ -170,13 +159,30 @@ class HTTPClient:
             subaccount = self.fetch_subaccount(subaccount_id=self._subaccount_id)
         return subaccount
 
-    @property
-    def bridge(self) -> BridgeClient:
-        """Get the bridge client for cross-chain transfers."""
+    def plan_deposit_to_new_subaccount(
+        self,
+        *,
+        universe_type: UniverseType,
+        margin_type: MarginType,
+        asset_name: str,
+        amount: Decimal,
+        gas_priority: GasPriority = GasPriority.MEDIUM,
+    ) -> Iterator[DepositStep]:
+        """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
 
-        if not self._bridge_client:
-            self._bridge_client = self._initialize_bridge()
-        return self._bridge_client
+        risk_universes = self._markets._risk_universes_cache or self._markets.get_risk_universes()
+
+        return self._deposits.plan_new_subaccount(
+            risk_universes=risk_universes,
+            universe_type=universe_type,
+            margin_type=margin_type,
+            asset_name=asset_name,
+            amount=amount,
+            from_address=self._auth.account.address,
+            owner=self._auth.wallet,
+            private_key=self._auth.account.key.to_0x_hex(),
+            gas_priority=gas_priority,
+        )
 
     def fetch_subaccount(self, subaccount_id: int) -> Subaccount:
         """Fetch a subaccount from API and cache it."""

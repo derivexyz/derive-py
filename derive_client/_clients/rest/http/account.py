@@ -10,10 +10,12 @@ from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
 from derive_client.data_types.generated_models import (
+    CreateSessionKeyRequest,
     EditSessionKeyRequest,
     GetAccountRequest,
     GetAllPortfoliosRequest,
     GetSubaccountsRequest,
+    PrivateCreateSessionKeyResponse,
     PrivateGetAccountResponse,
     PrivateGetSubaccountsResponse,
     PrivateSessionKeysResponse,
@@ -21,6 +23,36 @@ from derive_client.data_types.generated_models import (
     SessionKeysRequest,
     Subaccount,
 )
+from derive_client.data_types.module_data import SessionKeyModuleData
+
+# Wire-string -> signed numeric code, from derive-ts's src/auth/scopes.ts.
+# offchain_scopes ("account_info", "delete_session_key") are NOT in here --
+# they're validated server-side only and never enter the signed payload.
+PROTOCOL_SCOPE_CODES: dict[str, int] = {
+    "admin": 0,
+    "withdraw": 1,
+    "trade:all": 2,
+    "trade:orderbook:all": 3,
+    "trade:orderbook:spot": 4,
+    "trade:orderbook:perp": 5,
+    "trade:orderbook:option": 6,
+    "trade:rfq:all": 7,
+    "trade:rfq:spot": 8,
+    "trade:rfq:perp": 9,
+    "trade:rfq:option": 10,
+    "transfer:all": 11,
+    "transfer:existing_subaccount": 12,
+    "transfer:new_subaccount": 13,
+    "transfer:different_owner_subaccount": 14,
+    "create_session_key": 15,
+    "liquidate": 16,
+    "vault:all": 17,
+    "vault:curator_create": 18,
+    "vault:curator_mint_and_burn": 19,
+    "vault:user_deposit": 20,
+    "vault:user_withdraw": 21,
+    "vault:user_cancel": 22,
+}
 
 
 class LightAccount:
@@ -137,6 +169,63 @@ class LightAccount:
 
         params = SessionKeysRequest(wallet=self.address)
         result = self._private_api.rpc.session_keys(params)
+        return result
+
+    def create_session_key(
+        self,
+        *,
+        expiry_sec: int,
+        public_session_key: str,
+        offchain_scopes: list[str],  # ["account_info", "delete_session_key"] only
+        protocol_scopes: list[str],
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+        ip_whitelist: list[str] | None = None,
+        label: str | None = None,
+        subaccount_ids: list[int] | None = None,
+    ) -> PrivateCreateSessionKeyResponse:
+        """Authorizes a new session key for a wallet from a signed action."""
+
+        if self._auth.account.address != self._auth.wallet:
+            raise ValueError("create_session_key must be signed by the owner wallet, not a session key.")
+
+        wallet = self._auth.wallet
+        resolved_subaccount_ids = subaccount_ids or []
+
+        scopes = [PROTOCOL_SCOPE_CODES[scope] for scope in protocol_scopes]
+
+        module_data = SessionKeyModuleData(
+            session_key=public_session_key,
+            expiry_sec=expiry_sec,
+            scopes=scopes,
+            subaccount_ids=resolved_subaccount_ids,
+        )
+
+        module_address = self._config.contracts.CREATE_SESSION_KEY_MODULE
+        signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = CreateSessionKeyRequest(
+            expiry_sec=expiry_sec,
+            nonce=str(signed_action.nonce),
+            offchain_scopes=offchain_scopes,
+            protocol_scopes=protocol_scopes,
+            public_session_key=public_session_key,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+            wallet=wallet,
+            ip_whitelist=ip_whitelist or msgspec.UNSET,
+            label=label or msgspec.UNSET,
+            subaccount_ids=subaccount_ids or msgspec.UNSET,
+        )
+
+        result = self._private_api.rpc.create_session_key(params)
         return result
 
     def edit_session_key(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
@@ -20,9 +20,11 @@ from web3 import AsyncWeb3, Web3
 from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
 from derive_client.data_types.generated_models import (
     AssetType,
+    BatchStatus,
     Instrument,
     LegUnpricedParams,
     PricedLegParamsAndResponse,
+    PrivateWithdrawResponse,
     RPCError,
 )
 
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
 
     from derive_client._clients.rest.async_http.markets import MarketOperations as AsyncMarketOperations
     from derive_client._clients.rest.http.markets import MarketOperations
+    from derive_client._clients.rest.http.transactions import TransactionOperations
 
 
 T = TypeVar("T")
@@ -404,3 +407,50 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
         subaccount_id=subaccount_id,
         env=env,
     )
+
+
+class WithdrawalFailed(Exception):
+    """Raised on any terminal *Error batch status -- these don't resolve on
+    their own, no point polling further."""
+
+
+class WithdrawalTimeout(Exception):
+    """Raised if neither Settled nor a terminal *Error status is reached
+    within the given timeout. Not necessarily a failure -- call
+    wait_for_settlement() again to keep waiting."""
+
+
+@dataclass
+class WithdrawalResult:
+    op_uuid: str
+    response: PrivateWithdrawResponse
+
+    _transactions: TransactionOperations = field(repr=False)
+
+    status: BatchStatus | None = field(default=None, init=False)
+    tx_result: object | None = field(default=None, init=False)  # whatever TransactionOperations.get() actually returns
+
+    def refresh(self) -> BatchStatus | None:
+        """One poll. Fetches current status, updates .status/.tx_result, returns the status."""
+
+        self.tx_result = self._transactions.get(op_uuid=self.op_uuid)
+        self.status = self.tx_result.status
+        return self.status
+
+    def wait_for_settlement(self, *, timeout: float = 300.0, poll_interval: float = 2.0):
+        """Poll until Settled or a terminal *Error status."""
+
+        start = time.monotonic()
+        while True:
+            status = self.refresh()
+
+            if status is not None and status.value.endswith("Error"):
+                raise WithdrawalFailed(f"Withdrawal {self.op_uuid} failed: {status.value}")
+
+            if status == BatchStatus.Settled:
+                return self.tx_result
+
+            if time.monotonic() - start > timeout:
+                raise WithdrawalTimeout(f"Withdrawal {self.op_uuid} still {status!r} after {timeout}s")
+
+            time.sleep(poll_interval)

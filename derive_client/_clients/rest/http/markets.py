@@ -44,6 +44,7 @@ class MarketOperations:
         self._erc20_instruments_cache: dict[str, Instrument] = {}
         self._perp_instruments_cache: dict[str, Instrument] = {}
         self._option_instruments_cache: dict[str, Instrument] = {}
+        self._risk_universes_cache: list[RiskUniverse] = []
 
     @property
     def erc20_instruments_cache(self) -> dict[str, Instrument]:
@@ -234,8 +235,8 @@ class MarketOperations:
     def get_risk_universes(self) -> list[RiskUniverse]:
         """List every universe with its managers and their accepted collaterals / instruments."""
 
-        result = self._public_api.rpc.get_risk_universes(None)
-        return result
+        self._risk_universes_cache = self._public_api.rpc.get_risk_universes(None)
+        return self._risk_universes_cache
 
     def get_ticker(self, *, instrument_name: str) -> TickerSlimSnapshot:
         """
