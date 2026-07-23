@@ -33,6 +33,17 @@ def get_public_members(module_path: str, class_name: str) -> list[str]:
     return public_members
 
 
+def get_classes_defined_in(module_path: str) -> list[str]:
+    """Get classes actually defined in this module."""
+
+    module = importlib.import_module(module_path)
+    classes = [
+        (name, obj) for name, obj in inspect.getmembers(module, inspect.isclass) if obj.__module__ == module_path
+    ]
+    classes.sort(key=lambda pair: inspect.getsourcelines(pair[1])[1])
+    return [name for name, _ in classes]
+
+
 def generate_client_docs(nav: mkdocs_gen_files.Nav):
     """Generate docs for HTTP/Async clients - show public interface only."""
 
@@ -91,35 +102,6 @@ def generate_account_docs(nav: mkdocs_gen_files.Nav):
             fd.write("      show_signature_annotations: true\n")
 
 
-def generate_bridge_docs(nav: mkdocs_gen_files.Nav):
-    """Generate docs for HTTP/Async bridge clients - show public interface only."""
-
-    clients = {
-        "BridgeClient": "derive_client._bridge.client",
-        "AsyncBridgeClient": "derive_client._bridge.async_client",
-    }
-
-    for display_name, module_path in clients.items():
-        doc_path = Path("bridge", f"{display_name.lower()}.md")
-        full_doc_path = Path("reference", doc_path)
-        nav[("Bridge", display_name)] = doc_path.as_posix()
-
-        public_members = get_public_members(module_path, display_name)
-
-        with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-            fd.write(f"# {display_name}\n\n")
-            fd.write(f"::: {module_path}.{display_name}\n")
-            fd.write("    options:\n")
-            fd.write("      show_root_heading: false\n")
-            fd.write("      heading_level: 2\n")
-            fd.write("      members_order: source\n")
-            fd.write(f"      members: {public_members}\n")
-            fd.write("      show_bases: false\n")
-            fd.write("      show_source: false\n")
-            fd.write("      inherited_members: false\n")
-            fd.write("      show_signature_annotations: true\n")
-
-
 def generate_operation_docs(nav: mkdocs_gen_files.Nav):
     """Generate docs for operation classes - show all public methods."""
 
@@ -162,18 +144,7 @@ def generate_datatype_docs(nav: mkdocs_gen_files.Nav):
     enums_parent_path = Path("reference", "data_types", "enums.md")
     nav[("Data Types", "Enums")] = Path("data_types", "enums.md").as_posix()
 
-    # Enums - document each enum class
-    enums = [
-        "ChainID",
-        "TxStatus",
-        "BridgeDirection",
-        "BridgeType",
-        "GasPriority",
-        "Currency",
-        "Environment",
-        "EthereumJSONRPCErrorCode",
-        "DeriveJSONRPCErrorCode",
-    ]
+    enums = get_classes_defined_in("derive_client.data_types.enums")
 
     with mkdocs_gen_files.open(enums_parent_path, "w") as fd:
         fd.write("# Enums\n\n")
@@ -200,14 +171,7 @@ def generate_datatype_docs(nav: mkdocs_gen_files.Nav):
     full_models_parent_path = Path("reference", models_parent_path)
     nav[("Data Types", "Models")] = models_parent_path.as_posix()
 
-    models = [
-        "EnvConfig",
-        "ChecksumAddress",
-        "BridgeTxDetails",
-        "PreparedBridgeTx",
-        "BridgeTxResult",
-        "PositionTransfer",
-    ]
+    models = get_classes_defined_in("derive_client.data_types.models")
 
     with mkdocs_gen_files.open(full_models_parent_path, "w") as fd:
         fd.write("# Models\n\n")
@@ -236,25 +200,7 @@ def generate_exceptions_docs(nav: mkdocs_gen_files.Nav):
     full_doc_path = Path("reference", doc_path)
     nav[("Exceptions",)] = doc_path.as_posix()
 
-    exceptions = [
-        "NotConnectedError",
-        "ApiException",
-        "EthereumJSONRPCException",
-        "DeriveJSONRPCException",
-        "BridgeEventParseError",
-        "BridgeRouteError",
-        "NoAvailableRPC",
-        "InsufficientNativeBalance",
-        "InsufficientTokenBalance",
-        "BridgePrimarySignerRequiredError",
-        "TxReceiptMissing",
-        "FinalityTimeout",
-        "TxPendingTimeout",
-        "TransactionDropped",
-        "BridgeEventTimeout",
-        "PartialBridgeResult",
-        "StandardBridgeRelayFailed",
-    ]
+    exceptions = get_classes_defined_in("derive_client.exceptions")
 
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         fd.write("# Exceptions\n\n")
@@ -284,7 +230,6 @@ def generate_cli_docs(nav: mkdocs_gen_files.Nav):
         fd.write("Run any command with `--help` to see detailed usage:\n\n")
         fd.write("```bash\n")
         fd.write("drv --help              # Show all commands\n")
-        fd.write("drv bridge --help       # Show bridge command options\n")
         fd.write("```\n\n")
 
         fd.write("## Command Tree\n\n")
@@ -304,7 +249,6 @@ def build_nav_and_files():
     # Generate each section with appropriate settings
     generate_client_docs(nav)
     generate_account_docs(nav)
-    generate_bridge_docs(nav)
     generate_operation_docs(nav)
     generate_datatype_docs(nav)
     generate_exceptions_docs(nav)
