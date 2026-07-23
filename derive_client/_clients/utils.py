@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
@@ -21,6 +22,7 @@ from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, E
 from derive_client.data_types.generated_models import (
     AssetType,
     BatchStatus,
+    GetTransactionResult,
     Instrument,
     LegUnpricedParams,
     PricedLegParamsAndResponse,
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from websockets import Data
 
     from derive_client._clients.rest.async_http.markets import MarketOperations as AsyncMarketOperations
+    from derive_client._clients.rest.async_http.transactions import TransactionOperations as AsyncTransactionOperations
     from derive_client._clients.rest.http.markets import MarketOperations
     from derive_client._clients.rest.http.transactions import TransactionOperations
 
@@ -96,7 +99,7 @@ def get_default_signature_expiry_sec() -> int:
 @dataclass
 class AuthContext:
     wallet: ChecksumAddress
-    w3: Web3 | AsyncWeb3
+    w3: Web3
     account: LocalAccount
     config: EnvConfig
 
@@ -428,13 +431,14 @@ class WithdrawalResult:
     _transactions: TransactionOperations = field(repr=False)
 
     status: BatchStatus | None = field(default=None, init=False)
-    tx_result: object | None = field(default=None, init=False)  # whatever TransactionOperations.get() actually returns
+    tx_result: GetTransactionResult | None = field(default=None, init=False)
 
     def refresh(self) -> BatchStatus | None:
         """One poll. Fetches current status, updates .status/.tx_result, returns the status."""
 
         self.tx_result = self._transactions.get(op_uuid=self.op_uuid)
-        self.status = self.tx_result.status
+        status = self.tx_result.status
+        self.status = None if status is msgspec.UNSET else status
         return self.status
 
     def wait_for_settlement(self, *, timeout: float = 300.0, poll_interval: float = 2.0):
@@ -454,3 +458,55 @@ class WithdrawalResult:
                 raise WithdrawalTimeout(f"Withdrawal {self.op_uuid} still {status!r} after {timeout}s")
 
             time.sleep(poll_interval)
+
+
+@dataclass
+class AsyncWithdrawalResult:
+    """Async counterpart to WithdrawalResult -- not a shared class, because
+    refresh()/wait_for_settlement() genuinely need different bodies here
+    (await self._transactions.get(...), asyncio.sleep) rather than a type
+    that could serve both. Renamed to this at generation time by
+    generate-rest-async-http.py's ASYNC_RENAMES table -- keep that in sync
+    if this class is ever renamed again.
+    """
+
+    op_uuid: str
+    response: PrivateWithdrawResponse
+
+    _transactions: AsyncTransactionOperations = field(repr=False)
+
+    status: BatchStatus | None = field(default=None, init=False)
+    tx_result: GetTransactionResult | None = field(default=None, init=False)
+
+    async def refresh(self) -> BatchStatus | None:
+        """One poll. Fetches current status, updates .status/.tx_result, returns the status."""
+
+        self.tx_result = await self._transactions.get(op_uuid=self.op_uuid)
+        status = self.tx_result.status
+        self.status = None if status is msgspec.UNSET else status
+        return self.status
+
+    async def wait_for_settlement(self, *, timeout: float = 300.0, poll_interval: float = 2.0):
+        """Poll until Settled or a terminal *Error status.
+
+        asyncio.sleep, not time.sleep -- a blocking sleep here would hang
+        the whole event loop for up to `timeout` seconds. No
+        asyncio.to_thread needed either, unlike deposits: this never
+        touches web3, it's a plain Derive API call the async client
+        already handles natively.
+        """
+
+        start = time.monotonic()
+        while True:
+            status = await self.refresh()
+
+            if status is not None and status.value.endswith("Error"):
+                raise WithdrawalFailed(f"Withdrawal {self.op_uuid} failed: {status.value}")
+
+            if status == BatchStatus.Settled:
+                return self.tx_result
+
+            if time.monotonic() - start > timeout:
+                raise WithdrawalTimeout(f"Withdrawal {self.op_uuid} still {status!r} after {timeout}s")
+
+            await asyncio.sleep(poll_interval)
