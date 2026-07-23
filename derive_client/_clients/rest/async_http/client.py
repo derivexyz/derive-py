@@ -73,9 +73,6 @@ class AsyncHTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        # Deposits is built on plain sync web3.Web3, deliberately -- not
-        # AsyncWeb3. Separate connection from self._auth.w3 (which stays
-        # async, for everything else this client does).
         sync_w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
         network = "sepolia" if env == Environment.TEST else "ethereum"
         self._contract_registry = ContractRegistry(w3=sync_w3, network=network)
