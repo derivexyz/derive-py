@@ -4,6 +4,16 @@ from enum import Enum, IntEnum, StrEnum
 from typing import Any
 
 
+class UniverseType(StrEnum):
+    """Universe type."""
+
+    FALLBACK = "FALLBACK"
+    PRIME = "PRIME"
+    HYPE = "HYPE"
+    ALTCOIN = "ALTCOIN"
+    RWA = "RWA"
+
+
 class ChainID(IntEnum):
     ETH = 1
     OPTIMISM = 10

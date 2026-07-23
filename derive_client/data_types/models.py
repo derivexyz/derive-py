@@ -47,6 +47,14 @@ class DeriveContractAddresses(BaseModel, frozen=True):
     EXTERNAL_TRANSFER_MODULE: ChecksumAddress
     WHITELISTED_RECIPIENT_MODULE: ChecksumAddress
     VAULT_MODULE: ChecksumAddress
+    LIQUIDATION_MODULE: ChecksumAddress
+    CREATE_SESSION_KEY_MODULE: ChecksumAddress
+
+    # addresses matching ABIs downloaded and stored in data/abis/<network>/contracts.json
+    ACTION_MANAGER: ChecksumAddress
+    VAPP: ChecksumAddress
+    WITHDRAWAL_OUTBOX: ChecksumAddress
+    SPOT_VAULT: ChecksumAddress
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -55,6 +63,7 @@ class DeriveContractAddresses(BaseModel, frozen=True):
 class EnvConfig(BaseModel, frozen=True):
     base_url: str
     ws_address: str
+    chain_id: int
     rpc_endpoint: str
     ACTION_TYPEHASH: str
     DOMAIN_SEPARATOR: str

@@ -12,10 +12,12 @@ from .enums import (
     EthereumJSONRPCErrorCode,
     GasPriority,
     TxStatus,
+    UniverseType,
 )
 from .generated_models import (
     AssetType,
     Direction,
+    MarginType,
     OrderType,
 )
 from .models import (
@@ -74,6 +76,7 @@ __all__ = [
     "FeeHistory",
     "FeeEstimate",
     "FeeEstimates",
+    "MarginType",
     "MintableTokenData",
     "NonMintableTokenData",
     "DeriveAddresses",
@@ -87,5 +90,6 @@ __all__ = [
     "TypedSignedTransaction",
     "TypedTransaction",
     "TypedTxReceipt",
+    "UniverseType",
     "Wei",
 ]
