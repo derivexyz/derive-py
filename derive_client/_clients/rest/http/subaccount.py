@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import functools
 from decimal import Decimal
-from typing import Iterator, Optional
+from typing import Iterator, Optional, cast
 
 from derive_action_signing import ModuleData, SignedAction
+from hexbytes import HexBytes
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.collateral import CollateralOperations
@@ -249,17 +250,17 @@ class Subaccount:
     ) -> Iterator[DepositStep]:
         """Deposit into this subaccount."""
 
-        risk_universes = self._markets._risk_universes_cache or self._markets.get_risk_universes()
+        risk_universes = self.markets._risk_universes_cache or self.markets.get_risk_universes()
 
         return self._deposits.plan_deposit(
             risk_universes=risk_universes,
-            manager_id=self._state.manager_id,
+            manager_id=self.state.manager_id,
             subaccount_id=self.id,
             asset_name=asset_name,
             amount=amount,
-            from_address=self._auth.account.address,
+            from_address=ChecksumAddress(self._auth.account.address),
             fallback_recipient=self._auth.wallet,
-            private_key=self._auth.account.key.to_0x_hex(),
+            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
             gas_priority=gas_priority,
         )
 
@@ -275,7 +276,7 @@ class Subaccount:
     ) -> WithdrawalResult:
         """Submits a signed request to withdraw a spot asset out of a subaccount."""
 
-        risk_universes = self._markets._risk_universes_cache or self._markets.get_risk_universes()
+        risk_universes = self.markets._risk_universes_cache or self.markets.get_risk_universes()
         collateral = resolve_collateral(risk_universes, manager_id=self.state.manager_id, asset_name=asset_name)
         recipient = self._auth.account.address  # signer MUST be the recipient
 
@@ -302,7 +303,7 @@ class Subaccount:
             amount_in_underlying=str(amount),
             max_fee_usd=max_fee_usd,
             force_batch=force_batch,
-            nonce=str(signed_action.nonce),
+            nonce=signed_action.nonce,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,

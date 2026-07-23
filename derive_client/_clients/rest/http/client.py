@@ -3,8 +3,9 @@ from __future__ import annotations
 import contextlib
 from decimal import Decimal
 from pathlib import Path
-from typing import Generator, Iterator
+from typing import Generator, Iterator, cast
 
+from hexbytes import HexBytes
 from pydantic import ConfigDict, validate_call
 from web3 import Web3
 
@@ -178,9 +179,9 @@ class HTTPClient:
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,
-            from_address=self._auth.account.address,
+            from_address=ChecksumAddress(self._auth.account.address),
             owner=self._auth.wallet,
-            private_key=self._auth.account.key.to_0x_hex(),
+            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
             gas_priority=gas_priority,
         )
 
