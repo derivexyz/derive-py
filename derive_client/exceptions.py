@@ -69,10 +69,6 @@ class InsufficientTokenBalance(Exception):
     """Raised when the token balance is insufficient for the requested operation."""
 
 
-class BridgePrimarySignerRequiredError(Exception):
-    """Raised when bridging is attempted with a secondary session-key signer."""
-
-
 class TxReceiptMissing(Exception):
     """Raised when a transaction receipt is required but not available."""
 
@@ -87,3 +83,11 @@ class TxPendingTimeout(Exception):
 
 class TransactionDropped(Exception):
     """Raised when the transaction the transaction is no longer in the mempool, likely dropped."""
+
+
+class WithdrawalFailed(Exception):
+    """Raised on any terminal *Error batch status."""
+
+
+class WithdrawalTimeout(Exception):
+    """Raised if neither Settled nor a terminal *Error status is reached within the given timeout."""

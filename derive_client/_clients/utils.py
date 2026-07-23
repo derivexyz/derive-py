@@ -29,6 +29,7 @@ from derive_client.data_types.generated_models import (
     PrivateWithdrawResponse,
     RPCError,
 )
+from derive_client.exceptions import WithdrawalFailed, WithdrawalTimeout
 
 if TYPE_CHECKING:
     from websockets import Data
@@ -410,17 +411,6 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
         subaccount_id=subaccount_id,
         env=env,
     )
-
-
-class WithdrawalFailed(Exception):
-    """Raised on any terminal *Error batch status -- these don't resolve on
-    their own, no point polling further."""
-
-
-class WithdrawalTimeout(Exception):
-    """Raised if neither Settled nor a terminal *Error status is reached
-    within the given timeout. Not necessarily a failure -- call
-    wait_for_settlement() again to keep waiting."""
 
 
 @dataclass
