@@ -1,6 +1,6 @@
-# PreparedBridgeTx
+# TypedTransaction
 
-::: derive_client.data_types.models.PreparedBridgeTx
+::: derive_client.data_types.models.TypedTransaction
     options:
       show_root_heading: false
       heading_level: 2

@@ -1,6 +1,6 @@
-# BridgeTxResult
+# PHexBytes
 
-::: derive_client.data_types.models.BridgeTxResult
+::: derive_client.data_types.models.PHexBytes
     options:
       show_root_heading: false
       heading_level: 2

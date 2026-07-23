@@ -1,6 +1,6 @@
-# TxStatus
+# FeeEstimates
 
-::: derive_client.data_types.enums.TxStatus
+::: derive_client.data_types.models.FeeEstimates
     options:
       show_root_heading: false
       heading_level: 2

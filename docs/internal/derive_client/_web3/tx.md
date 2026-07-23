@@ -1,3 +1,3 @@
-::: derive_client._bridge.w3
+::: derive_client._web3.tx
     options:
       show_root_heading: true

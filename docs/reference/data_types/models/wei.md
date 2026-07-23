@@ -1,6 +1,6 @@
-# ChainID
+# Wei
 
-::: derive_client.data_types.enums.ChainID
+::: derive_client.data_types.models.Wei
     options:
       show_root_heading: false
       heading_level: 2
