@@ -811,10 +811,10 @@ class PublicRPC:
         """
         Returns paginated, anonymized settled trades with optional filters: `trade_id`
         (a UUID, which overrides all other filters), `instrument_name`,
-        `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `tx_status`
-        (a batch-status name, default Settled), and `from_timestamp`/`to_timestamp`.
-        Each trade is enriched with its settlement status and transaction hash. Public
-        endpoint.
+        `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`,
+        `batch_status` (a batch-status name, default Settled), and
+        `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement
+        status and transaction hash. Public endpoint.
         """
 
         url = self._endpoints.get_trade_history

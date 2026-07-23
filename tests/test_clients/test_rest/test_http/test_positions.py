@@ -9,7 +9,6 @@ from derive_client.data_types.generated_models import (
     Direction,
     RFQStatus,
     TransferPositionsResponse,
-    TxStatus,
 )
 
 
@@ -48,8 +47,6 @@ def test_position_transfer(client_owner_wallet):
     assert taker_quote.status == RFQStatus.filled
     assert maker_quote.fill_pct == Decimal("1")
     assert taker_quote.fill_pct == Decimal("1")
-    assert maker_quote.tx_status == TxStatus.settled
-    assert taker_quote.tx_status == TxStatus.settled
 
     assert maker_quote.subaccount_id == source_account.id
     assert taker_quote.subaccount_id == target_account.id

@@ -196,12 +196,12 @@
         }
       ]
     },
-    "subaccountTradesTxStatus": {
+    "subaccountTradesBatchStatus": {
       "address": "/v3/ws",
-      "description": "Channel name: `{subaccount_id}.trades.{tx_status}`. Private channel (requires authentication) that streams your subaccount's trades filtered by on-chain settlement outcome, where {subaccount_id} is the numeric subaccount identifier and {tx_status} is the settlement state (settled, reverted, or timed_out).",
+      "description": "Channel name: `{subaccount_id}.trades.{batch_status}`. Private channel (requires authentication) that streams your subaccount's trades filtered by settlement batch status, where {subaccount_id} is the numeric subaccount identifier and {batch_status} is the batch lifecycle stage (e.g. Settled, or a ...Error stage).",
       "messages": {
-        "subaccountTradesTxStatusNotification": {
-          "$ref": "#/components/messages/subaccountTradesTxStatusNotification"
+        "subaccountTradesBatchStatusNotification": {
+          "$ref": "#/components/messages/subaccountTradesBatchStatusNotification"
         },
         "subscribeRequest": {
           "$ref": "#/components/messages/subscribeRequest"
@@ -276,12 +276,12 @@
         }
       ]
     },
-    "tradesByInstrumentTypeCurrencyTxStatus": {
+    "tradesByInstrumentTypeCurrencyBatchStatus": {
       "address": "/v3/ws",
-      "description": "Channel name: `trades.{instrument_type}.{currency}.{tx_status}`. Public channel that streams public trades filtered by category, underlying, and settlement outcome, where {instrument_type} is the instrument kind (erc20, option, or perp), {currency} is the underlying asset, and {tx_status} is the on-chain settlement state (settled, reverted, or timed_out).",
+      "description": "Channel name: `trades.{instrument_type}.{currency}.{batch_status}`. Public channel that streams public trades filtered by category, underlying, and settlement batch status, where {instrument_type} is the instrument kind (erc20, option, or perp), {currency} is the underlying asset, and {batch_status} is the batch lifecycle stage (e.g. Settled, or a ...Error stage).",
       "messages": {
-        "tradesByInstrumentTypeCurrencyTxStatusNotification": {
-          "$ref": "#/components/messages/tradesByInstrumentTypeCurrencyTxStatusNotification"
+        "tradesByInstrumentTypeCurrencyBatchStatusNotification": {
+          "$ref": "#/components/messages/tradesByInstrumentTypeCurrencyBatchStatusNotification"
         },
         "subscribeRequest": {
           "$ref": "#/components/messages/subscribeRequest"
@@ -417,14 +417,14 @@
         }
       ]
     },
-    "receive_subaccountTradesTxStatus": {
+    "receive_subaccountTradesBatchStatus": {
       "action": "send",
       "channel": {
-        "$ref": "#/channels/subaccountTradesTxStatus"
+        "$ref": "#/channels/subaccountTradesBatchStatus"
       },
       "messages": [
         {
-          "$ref": "#/channels/subaccountTradesTxStatus/messages/subaccountTradesTxStatusNotification"
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/subaccountTradesBatchStatusNotification"
         }
       ]
     },
@@ -461,14 +461,14 @@
         }
       ]
     },
-    "receive_tradesByInstrumentTypeCurrencyTxStatus": {
+    "receive_tradesByInstrumentTypeCurrencyBatchStatus": {
       "action": "send",
       "channel": {
-        "$ref": "#/channels/tradesByInstrumentTypeCurrencyTxStatus"
+        "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus"
       },
       "messages": [
         {
-          "$ref": "#/channels/tradesByInstrumentTypeCurrencyTxStatus/messages/tradesByInstrumentTypeCurrencyTxStatusNotification"
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/tradesByInstrumentTypeCurrencyBatchStatusNotification"
         }
       ]
     },
@@ -609,17 +609,17 @@
         }
       ]
     },
-    "send_subscribe_subaccountTradesTxStatus": {
+    "send_subscribe_subaccountTradesBatchStatus": {
       "action": "receive",
       "channel": {
-        "$ref": "#/channels/subaccountTradesTxStatus"
+        "$ref": "#/channels/subaccountTradesBatchStatus"
       },
       "messages": [
         {
-          "$ref": "#/channels/subaccountTradesTxStatus/messages/subscribeRequest"
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/subscribeRequest"
         },
         {
-          "$ref": "#/channels/subaccountTradesTxStatus/messages/unsubscribeRequest"
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/unsubscribeRequest"
         }
       ]
     },
@@ -665,17 +665,17 @@
         }
       ]
     },
-    "send_subscribe_tradesByInstrumentTypeCurrencyTxStatus": {
+    "send_subscribe_tradesByInstrumentTypeCurrencyBatchStatus": {
       "action": "receive",
       "channel": {
-        "$ref": "#/channels/tradesByInstrumentTypeCurrencyTxStatus"
+        "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus"
       },
       "messages": [
         {
-          "$ref": "#/channels/tradesByInstrumentTypeCurrencyTxStatus/messages/subscribeRequest"
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/subscribeRequest"
         },
         {
-          "$ref": "#/channels/tradesByInstrumentTypeCurrencyTxStatus/messages/unsubscribeRequest"
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/unsubscribeRequest"
         }
       ]
     },
@@ -757,8 +757,8 @@
         },
         "summary": "Pushed as a JSON array; each element has the fields below."
       },
-      "subaccountTradesTxStatusNotification": {
-        "name": "subaccountTradesTxStatusNotification",
+      "subaccountTradesBatchStatusNotification": {
+        "name": "subaccountTradesBatchStatusNotification",
         "payload": {
           "$ref": "#/components/schemas/Trade"
         },
@@ -784,8 +784,8 @@
         },
         "summary": "Pushed as a JSON array; each element has the fields below."
       },
-      "tradesByInstrumentTypeCurrencyTxStatusNotification": {
-        "name": "tradesByInstrumentTypeCurrencyTxStatusNotification",
+      "tradesByInstrumentTypeCurrencyBatchStatusNotification": {
+        "name": "tradesByInstrumentTypeCurrencyBatchStatusNotification",
         "payload": {
           "$ref": "#/components/schemas/SettledTrade"
         },
@@ -1836,6 +1836,16 @@
           "subaccount_id"
         ],
         "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cancel_reason": {
             "anyOf": [
               {
@@ -1931,16 +1941,6 @@
           "tx_hash": {
             "type": "string",
             "nullable": true
-          },
-          "tx_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TxStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         }
       },
@@ -2118,6 +2118,16 @@
           "wallet"
         ],
         "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "direction": {
             "$ref": "#/components/schemas/Direction"
           },
@@ -2197,16 +2207,6 @@
           },
           "tx_hash": {
             "type": "string"
-          },
-          "tx_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BatchStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "wallet": {
             "type": "string"
@@ -2404,10 +2404,20 @@
           "trade_amount",
           "trade_fee",
           "trade_id",
-          "trade_price",
-          "tx_status"
+          "trade_price"
         ],
         "properties": {
+          "batch_status": {
+            "description": "Settlement batch status; `null` if processed by sequencer.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "direction": {
             "$ref": "#/components/schemas/Direction"
           },
@@ -2501,9 +2511,6 @@
           "tx_hash": {
             "type": "string",
             "nullable": true
-          },
-          "tx_status": {
-            "$ref": "#/components/schemas/TxStatus"
           }
         }
       },
@@ -2519,49 +2526,6 @@
         "enum": [
           "stoploss",
           "takeprofit"
-        ]
-      },
-      "TxStatus": {
-        "oneOf": [
-          {
-            "type": "string",
-            "enum": [
-              "requested",
-              "pending",
-              "settled",
-              "reverted",
-              "ignored",
-              "timed_out"
-            ]
-          },
-          {
-            "description": "Applied off-chain; not yet included in an on-chain settlement batch.",
-            "type": "string",
-            "enum": [
-              "applied"
-            ]
-          },
-          {
-            "description": "Included in a settlement batch and executing.",
-            "type": "string",
-            "enum": [
-              "in_batch"
-            ]
-          },
-          {
-            "description": "Settlement proof in progress.",
-            "type": "string",
-            "enum": [
-              "proving"
-            ]
-          },
-          {
-            "description": "Settlement transaction broadcast on-chain; awaiting confirmation.",
-            "type": "string",
-            "enum": [
-              "submitted"
-            ]
-          }
         ]
       },
       "UnsubscribeParams": {

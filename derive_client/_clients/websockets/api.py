@@ -192,7 +192,6 @@ from derive_client.data_types.generated_models import (
     TransferHistoryResult,
     TransferPositionsRequest,
     TransferPositionsResponse,
-    TxStatus,
     UpdateVaultInfoRequest,
     UpdateWhitelistedRecipientsRequest,
     UpdateWhitelistedRecipientsResponse,
@@ -775,10 +774,10 @@ class PublicRPC:
         """
         Returns paginated, anonymized settled trades with optional filters: `trade_id`
         (a UUID, which overrides all other filters), `instrument_name`,
-        `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `tx_status`
-        (a batch-status name, default Settled), and `from_timestamp`/`to_timestamp`.
-        Each trade is enriched with its settlement status and transaction hash. Public
-        endpoint.
+        `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`,
+        `batch_status` (a batch-status name, default Settled), and
+        `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement
+        status and transaction hash. Public endpoint.
         """
 
         method = "public/get_trade_history"
@@ -2326,34 +2325,34 @@ class PublicChannels:
 
         return result
 
-    async def trades_tx_status_by_instrument_type(
+    async def trades_batch_status_by_instrument_type(
         self,
         instrument_type: AssetType,
         currency: str,
-        tx_status: TxStatus,
+        batch_status: str,
         callback: Handler[list[SettledTrade]],
     ) -> SubscriptionResult:
         """
-        Channel name: `trades.{instrument_type}.{currency}.{tx_status}`. Public channel
-        that streams public trades filtered by category, underlying, and settlement
-        outcome, where {instrument_type} is the instrument kind (erc20, option, or
-        perp), {currency} is the underlying asset, and {tx_status} is the on-chain
-        settlement state (settled, reverted, or timed_out).
+        Channel name: `trades.{instrument_type}.{currency}.{batch_status}`. Public
+        channel that streams public trades filtered by category, underlying, and
+        settlement batch status, where {instrument_type} is the instrument kind (erc20,
+        option, or perp), {currency} is the underlying asset, and {batch_status} is the
+        batch lifecycle stage (e.g. Settled, or a ...Error stage).
 
         Args:
             instrument_type: Instrument Type
             currency: Currency
-            tx_status: Tx Status
+            batch_status: Batch Status
             callback: Callback function to handle notifications
 
         Returns:
             Subscription result with status and current subscriptions
         """
 
-        channel = "trades.{instrument_type}.{currency}.{tx_status}".format(
+        channel = "trades.{instrument_type}.{currency}.{batch_status}".format(
             instrument_type=instrument_type.value if isinstance(instrument_type, Enum) else instrument_type,
             currency=currency.value if isinstance(currency, Enum) else currency,
-            tx_status=tx_status.value if isinstance(tx_status, Enum) else tx_status,
+            batch_status=batch_status.value if isinstance(batch_status, Enum) else batch_status,
         )
         envelope = await self._session.subscribe(channel, callback, list[SettledTrade])
         result = decode_result(envelope, SubscriptionResult)
@@ -2498,30 +2497,30 @@ class PrivateChannels:
 
         return result
 
-    async def trades_tx_status_by_subaccount_id(
+    async def trades_batch_status_by_subaccount_id(
         self,
         subaccount_id: str,
-        tx_status: TxStatus,
+        batch_status: str,
         callback: Handler[list[Trade]],
     ) -> SubscriptionResult:
         """
-        Channel name: `{subaccount_id}.trades.{tx_status}`. Private channel (requires
-        authentication) that streams your subaccount's trades filtered by on-chain
-        settlement outcome, where {subaccount_id} is the numeric subaccount identifier
-        and {tx_status} is the settlement state (settled, reverted, or timed_out).
+        Channel name: `{subaccount_id}.trades.{batch_status}`. Private channel (requires
+        authentication) that streams your subaccount's trades filtered by settlement
+        batch status, where {subaccount_id} is the numeric subaccount identifier and
+        {batch_status} is the batch lifecycle stage (e.g. Settled, or a ...Error stage).
 
         Args:
             subaccount_id: Subaccount Id
-            tx_status: Tx Status
+            batch_status: Batch Status
             callback: Callback function to handle notifications
 
         Returns:
             Subscription result with status and current subscriptions
         """
 
-        channel = "{subaccount_id}.trades.{tx_status}".format(
+        channel = "{subaccount_id}.trades.{batch_status}".format(
             subaccount_id=subaccount_id.value if isinstance(subaccount_id, Enum) else subaccount_id,
-            tx_status=tx_status.value if isinstance(tx_status, Enum) else tx_status,
+            batch_status=batch_status.value if isinstance(batch_status, Enum) else batch_status,
         )
         envelope = await self._session.subscribe(channel, callback, list[Trade])
         result = decode_result(envelope, SubscriptionResult)
