@@ -1,7 +1,6 @@
 """Enums used in the derive_client module."""
 
 from enum import Enum, IntEnum, StrEnum
-from typing import Any
 
 
 class UniverseType(StrEnum):
@@ -14,91 +13,10 @@ class UniverseType(StrEnum):
     RWA = "RWA"
 
 
-class ChainID(IntEnum):
-    ETH = 1
-    OPTIMISM = 10
-    DERIVE = LYRA = 957
-    BASE = 8453
-    MODE = 34443
-    ARBITRUM = 42161
-    BLAST = 81457
-
-    @classmethod
-    def _missing_(cls, value: Any):
-        try:
-            int_value = int(value)
-            return next(member for member in cls if member == int_value)
-        except (ValueError, TypeError, StopIteration):
-            return super()._missing_(value)
-
-
-class TxStatus(IntEnum):
-    FAILED = 0  # confirmed and status == 0 (on-chain revert)
-    SUCCESS = 1  # confirmed and status == 1
-    PENDING = 2  # not yet confirmed, no receipt
-
-
-class BridgeDirection(StrEnum):
-    DEPOSIT = "deposit"
-    WITHDRAW = "withdraw"
-
-
-class BridgeType(Enum):
-    SOCKET = "socket"
-    LAYERZERO = "layerzero"
-    STANDARD = "standard"
-
-
 class GasPriority(IntEnum):
     SLOW = 25
     MEDIUM = 50
     FAST = 75
-
-
-class Currency(Enum):
-    """Depositable currencies"""
-
-    ETH = "ETH"
-
-    WEETH = "WEETH"
-    RSWETH = "RSWETH"
-    RSETH = "RSETH"
-    USDE = "USDE"
-    DEUSD = "DEUSD"
-    PYUSD = "PYUSD"
-    SUSDE = "SUSDE"
-    SOLVBTC = "SOLVBTC"
-    SOLVBTCBBN = "SOLVBTCBBN"
-    LBTC = "LBTC"
-    OP = "OP"
-    DAI = "DAI"
-    SDAI = "SDAI"
-    CBBTC = "CBBTC"
-    EBTC = "EBTC"
-    AAVE = "AAVE"
-    OLAS = "OLAS"
-
-    # NOT IN PROD_LYRA_ADDRESSES.JSON
-    DRV = "DRV"
-
-    # OLD STYLE DEPOSITS
-    WBTC = "WBTC"
-    WETH = "WETH"
-    USDC = "USDC"
-    USDT = "USDT"
-    WSTETH = "WSTETH"
-    USDCE = "USDC.E"
-    SNX = "SNX"
-
-    @classmethod
-    def _missing_(cls, value: str):
-        """Enable case-insensitive lookup for Pydantic and general use."""
-
-        value_upper = value.upper()
-        if (member := next((m for m in cls if m.value == value_upper), None)) is not None:
-            return member
-
-        return super()._missing_(value)
 
 
 class Environment(Enum):

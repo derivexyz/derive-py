@@ -9,7 +9,6 @@ import rich_click as click
 from derive_client._clients.rest.http.client import HTTPClient
 
 from ._account import account
-from ._bridge import bridge
 from ._collateral import collateral
 from ._markets import market
 from ._mmp import mmp
@@ -46,7 +45,6 @@ def cli(ctx, session_key_path: Path | None, env_file: Path | None):
 
 
 cli.add_command(account)
-cli.add_command(bridge)
 cli.add_command(collateral)
 cli.add_command(market)
 cli.add_command(mmp)

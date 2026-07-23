@@ -2,7 +2,7 @@
 
 from enum import Enum, IntEnum
 
-from derive_client.data_types import ChecksumAddress, Currency
+from derive_client.data_types import ChecksumAddress
 
 
 class LayerZeroChainIDv2(IntEnum):
@@ -39,33 +39,3 @@ class DeriveTokenAddress(Enum):
 
     # impl: 0x340B51Cb46DBF63B55deD80a78a40aa75Dd4ceDF (DeriveL2)
     DERIVE = ChecksumAddress("0x2EE0fd70756EDC663AcC9676658A1497C247693A")
-
-
-CURRENCY_DECIMALS = {
-    Currency.ETH: 18,
-    Currency.WEETH: 18,
-    Currency.RSWETH: 18,
-    Currency.RSETH: 18,
-    Currency.USDE: 18,
-    Currency.DEUSD: 18,
-    Currency.PYUSD: 6,
-    Currency.SUSDE: 18,
-    Currency.SOLVBTC: 18,
-    Currency.SOLVBTCBBN: 18,
-    Currency.LBTC: 8,
-    Currency.OP: 18,
-    Currency.DAI: 18,
-    Currency.SDAI: 18,
-    Currency.CBBTC: 8,
-    Currency.EBTC: 8,
-    Currency.AAVE: 18,
-    Currency.OLAS: 18,
-    Currency.DRV: 18,
-    Currency.WBTC: 8,
-    Currency.WETH: 18,
-    Currency.USDC: 6,
-    Currency.USDT: 6,
-    Currency.WSTETH: 18,
-    Currency.USDCE: 6,
-    Currency.SNX: 18,
-}
