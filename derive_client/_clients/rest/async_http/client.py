@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+from decimal import Decimal
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import AsyncGenerator, AsyncIterator, cast
 
+from hexbytes import HexBytes
 from pydantic import ConfigDict, validate_call
-from web3 import AsyncWeb3
+from web3 import Web3
 
-from derive_client._bridge.async_client import AsyncBridgeClient
 from derive_client._clients.rest.async_http.account import LightAccount
 from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
 from derive_client._clients.rest.async_http.collateral import CollateralOperations
@@ -22,9 +23,11 @@ from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext, load_client_config
+from derive_client._web3 import ContractRegistry, Deposits
+from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, LoggerType
-from derive_client.exceptions import BridgePrimarySignerRequiredError, NotConnectedError
+from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, UniverseType
+from derive_client.exceptions import NotConnectedError
 from derive_client.utils.logger import get_logger
 
 
@@ -43,7 +46,7 @@ class AsyncHTTPClient:
         request_timeout: float = 10.0,
     ):
         config = CONFIGS[env]
-        w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(config.rpc_endpoint))
+        w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
         account = w3.eth.account.from_key(session_key)
 
         auth = AuthContext(
@@ -70,7 +73,13 @@ class AsyncHTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        self._bridge_client: AsyncBridgeClient | None = None
+        # Deposits is built on plain sync web3.Web3, deliberately -- not
+        # AsyncWeb3. Separate connection from self._auth.w3 (which stays
+        # async, for everything else this client does).
+        sync_w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
+        network = "sepolia" if env == Environment.TEST else "ethereum"
+        self._contract_registry = ContractRegistry(w3=sync_w3, network=network)
+        self._deposits = Deposits(self._contract_registry, w3=sync_w3, logger=self._logger)
 
     @classmethod
     def from_env(
@@ -84,13 +93,8 @@ class AsyncHTTPClient:
 
         return cls(**config.model_dump())
 
-    async def connect(self, initialize_bridge: bool = True) -> None:
-        """
-        Connect to Derive and validate credentials.
-
-        Args:
-            initialize_bridge: If True, attempt to initialize bridge client (requires owner signer)
-        """
+    async def connect(self) -> None:
+        """Connect to Derive and validate credentials, fetch and cache market instruments."""
 
         await self._session.open()
 
@@ -103,20 +107,7 @@ class AsyncHTTPClient:
         )
 
         await self._markets.fetch_all_instruments(expired=False)
-
-        if initialize_bridge and self._env is Environment.PROD:
-            try:
-                self._bridge_client = AsyncBridgeClient(
-                    env=self._env,
-                    account=self._auth.account,
-                    wallet=self._auth.wallet,
-                    logger=self._logger,
-                )
-                await self._bridge_client.connect()
-            except BridgePrimarySignerRequiredError:
-                self._logger.info("Bridge unavailable: requires signer to be the LightAccount owner.")
-        elif initialize_bridge:
-            self._logger.debug("Bridge module unavailable in non-prod environment.")
+        await self._markets.get_risk_universes()  # cache risk universes
 
         subaccount_ids = self._light_account.state.subaccount_ids
         if self._subaccount_id not in subaccount_ids:
@@ -138,6 +129,7 @@ class AsyncHTTPClient:
         self._markets._erc20_instruments_cache.clear()
         self._markets._perp_instruments_cache.clear()
         self._markets._option_instruments_cache.clear()
+        self._markets._risk_universes_cache.clear()
 
     async def _instantiate_subaccount(self, subaccount_id: int) -> Subaccount:
         return await Subaccount.from_api(
@@ -147,25 +139,10 @@ class AsyncHTTPClient:
             logger=self._logger,
             markets=self._markets,
             transactions=self._transactions,
+            deposits=self._deposits,
             public_api=self._public_api,
             private_api=self._private_api,
         )
-
-    async def _initialize_bridge(self) -> None:
-        """Initialize bridge client lazily."""
-        if self._env is not Environment.PROD:
-            raise NotConnectedError("Bridge module unavailable in non-prod environment.")
-
-        try:
-            self._bridge_client = AsyncBridgeClient(
-                env=self._env,
-                account=self._auth.account,
-                wallet=self._auth.wallet,
-                logger=self._logger,
-            )
-            await self._bridge_client.connect()
-        except BridgePrimarySignerRequiredError:
-            raise NotConnectedError("Bridge unavailable: requires signer to be the LightAccount owner.")
 
     @property
     def logger(self) -> LoggerType:
@@ -187,14 +164,33 @@ class AsyncHTTPClient:
             raise NotConnectedError("No active subaccount. Call connect() first and ensure subaccount exists.")
         return subaccount
 
-    @property
-    def bridge(self) -> AsyncBridgeClient:
-        """Get the bridge client for cross-chain transfers."""
+    async def plan_deposit_to_new_subaccount(
+        self,
+        *,
+        universe_type: UniverseType,
+        margin_type: MarginType,
+        asset_name: str,
+        amount: Decimal,
+        gas_priority: GasPriority = GasPriority.MEDIUM,
+    ) -> AsyncIterator[AsyncDepositStep]:
+        """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
 
-        if not self._bridge_client:
-            msg = "Bridge unavailable: call connect() and ensure session key is the LightAccount owner."
-            raise NotConnectedError(msg)
-        return self._bridge_client
+        risk_universes = self._markets._risk_universes_cache or await self._markets.get_risk_universes()
+
+        sync_plan = self._deposits.plan_new_subaccount(
+            risk_universes=risk_universes,
+            universe_type=universe_type,
+            margin_type=margin_type,
+            asset_name=asset_name,
+            amount=amount,
+            from_address=ChecksumAddress(self._auth.account.address),
+            owner=self._auth.wallet,
+            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            gas_priority=gas_priority,
+        )
+
+        async for step in iterate_deposit_steps_in_thread(sync_plan):
+            yield step
 
     async def fetch_subaccount(self, subaccount_id: int) -> Subaccount:
         """Fetch a subaccount from API and cache it."""
