@@ -26,6 +26,72 @@ class Environment(Enum):
     TEST = "test"
 
 
+class ProtocolScope(StrEnum):
+    """On-chain authority a session key holds."""
+
+    ADMIN = "admin"
+    WITHDRAW = "withdraw"
+    TRADE_ALL = "trade:all"
+    TRADE_ORDERBOOK_ALL = "trade:orderbook:all"
+    TRADE_ORDERBOOK_SPOT = "trade:orderbook:spot"
+    TRADE_ORDERBOOK_PERP = "trade:orderbook:perp"
+    TRADE_ORDERBOOK_OPTION = "trade:orderbook:option"
+    TRADE_RFQ_ALL = "trade:rfq:all"
+    TRADE_RFQ_SPOT = "trade:rfq:spot"
+    TRADE_RFQ_PERP = "trade:rfq:perp"
+    TRADE_RFQ_OPTION = "trade:rfq:option"
+    TRANSFER_ALL = "transfer:all"
+    TRANSFER_EXISTING_SUBACCOUNT = "transfer:existing_subaccount"
+    TRANSFER_NEW_SUBACCOUNT = "transfer:new_subaccount"
+    TRANSFER_DIFFERENT_OWNER_SUBACCOUNT = "transfer:different_owner_subaccount"
+    CREATE_SESSION_KEY = "create_session_key"
+    LIQUIDATE = "liquidate"
+    VAULT_ALL = "vault:all"
+    VAULT_CURATOR_CREATE = "vault:curator_create"
+    VAULT_CURATOR_MINT_AND_BURN = "vault:curator_mint_and_burn"
+    VAULT_USER_DEPOSIT = "vault:user_deposit"
+    VAULT_USER_WITHDRAW = "vault:user_withdraw"
+    VAULT_USER_CANCEL = "vault:user_cancel"
+
+    @property
+    def code(self) -> int:
+        return _PROTOCOL_SCOPE_CODES[self]
+
+
+_PROTOCOL_SCOPE_CODES: dict[ProtocolScope, int] = {
+    ProtocolScope.ADMIN: 0,
+    ProtocolScope.WITHDRAW: 1,
+    ProtocolScope.TRADE_ALL: 2,
+    ProtocolScope.TRADE_ORDERBOOK_ALL: 3,
+    ProtocolScope.TRADE_ORDERBOOK_SPOT: 4,
+    ProtocolScope.TRADE_ORDERBOOK_PERP: 5,
+    ProtocolScope.TRADE_ORDERBOOK_OPTION: 6,
+    ProtocolScope.TRADE_RFQ_ALL: 7,
+    ProtocolScope.TRADE_RFQ_SPOT: 8,
+    ProtocolScope.TRADE_RFQ_PERP: 9,
+    ProtocolScope.TRADE_RFQ_OPTION: 10,
+    ProtocolScope.TRANSFER_ALL: 11,
+    ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT: 12,
+    ProtocolScope.TRANSFER_NEW_SUBACCOUNT: 13,
+    ProtocolScope.TRANSFER_DIFFERENT_OWNER_SUBACCOUNT: 14,
+    ProtocolScope.CREATE_SESSION_KEY: 15,
+    ProtocolScope.LIQUIDATE: 16,
+    ProtocolScope.VAULT_ALL: 17,
+    ProtocolScope.VAULT_CURATOR_CREATE: 18,
+    ProtocolScope.VAULT_CURATOR_MINT_AND_BURN: 19,
+    ProtocolScope.VAULT_USER_DEPOSIT: 20,
+    ProtocolScope.VAULT_USER_WITHDRAW: 21,
+    ProtocolScope.VAULT_USER_CANCEL: 22,
+}
+
+
+class OffchainScope(StrEnum):
+    """Server-side-only capability."""
+
+    ACCOUNT_INFO = "account_info"
+    DELETE_SESSION_KEY = "delete_session_key"
+
+
 class EthereumJSONRPCErrorCode(IntEnum):
     # https://ethereum-json-rpc.com/errors
     PARSE_ERROR = -32700
