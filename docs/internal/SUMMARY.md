@@ -67,4 +67,3 @@
     * [utils](derive_client/utils/index.md)
         * [logger](derive_client/utils/logger.md)
         * [retry](derive_client/utils/retry.md)
-        * [w3](derive_client/utils/w3.md)

@@ -17,6 +17,8 @@
         * [UniverseType](data_types/enums/universetype.md)
         * [GasPriority](data_types/enums/gaspriority.md)
         * [Environment](data_types/enums/environment.md)
+        * [ProtocolScope](data_types/enums/protocolscope.md)
+        * [OffchainScope](data_types/enums/offchainscope.md)
         * [EthereumJSONRPCErrorCode](data_types/enums/ethereumjsonrpcerrorcode.md)
         * [DeriveJSONRPCErrorCode](data_types/enums/derivejsonrpcerrorcode.md)
     * [Models](data_types/models.md)
