@@ -23,7 +23,30 @@ FIELD_RENAMES: dict[str, dict[str, str]] = {
         "max_price": "maxp",
         "min_price": "minp",
         "timestamp": "t",
-        "funding_rate": "f",  # unverified — confirm against a live perp ticker payload
+        "funding_rate": "f",
+    },
+    "DailyTradingStatistics": {
+        "contract_volume_24h": "c",
+        "high_24h": "h",
+        "low_24h": "l",
+        "trade_count_24h": "n",
+        "open_interest": "oi",
+        "percent_change_24h": "p",
+        "premium_volume_24h": "pr",
+        "notional_volume_24h": "v",
+    },
+    "OptionPricing": {
+        "ask_iv": "ai",
+        "bid_iv": "bi",
+        "delta": "d",
+        "discount_factor": "df",
+        "forward_price": "f",
+        "gamma": "g",
+        "iv": "i",
+        "mark_price": "m",
+        "rho": "r",
+        "theta": "t",
+        "vega": "v",
     },
 }
 

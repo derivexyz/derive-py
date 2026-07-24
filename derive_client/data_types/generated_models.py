@@ -232,15 +232,27 @@ class CreateVaultRequest(Struct):
     benchmark_asset: Address | None | UnsetType = UNSET
 
 
-class DailyTradingStatistics(Struct):
-    c: Decimal
-    h: Decimal
-    l: Decimal
-    n: int
-    oi: Decimal
-    p: Decimal
-    pr: Decimal
-    v: Decimal
+class DailyTradingStatistics(
+    Struct,
+    rename={
+        'contract_volume_24h': 'c',
+        'high_24h': 'h',
+        'low_24h': 'l',
+        'trade_count_24h': 'n',
+        'open_interest': 'oi',
+        'percent_change_24h': 'p',
+        'premium_volume_24h': 'pr',
+        'notional_volume_24h': 'v',
+    },
+):
+    contract_volume_24h: Decimal
+    high_24h: Decimal
+    low_24h: Decimal
+    trade_count_24h: int
+    open_interest: Decimal
+    percent_change_24h: Decimal
+    premium_volume_24h: Decimal
+    notional_volume_24h: Decimal
 
 
 class DepositEntry(Struct):
@@ -718,18 +730,33 @@ class OptionDetails(Struct):
     settlement_price: str | None | UnsetType = UNSET
 
 
-class OptionPricing(Struct):
-    ai: str
-    bi: str
-    d: str
-    df: str
-    f: str
-    g: str
-    i: str
-    m: str
-    r: str
-    t: str
-    v: str
+class OptionPricing(
+    Struct,
+    rename={
+        'ask_iv': 'ai',
+        'bid_iv': 'bi',
+        'delta': 'd',
+        'discount_factor': 'df',
+        'forward_price': 'f',
+        'gamma': 'g',
+        'iv': 'i',
+        'mark_price': 'm',
+        'rho': 'r',
+        'theta': 't',
+        'vega': 'v',
+    },
+):
+    ask_iv: str
+    bid_iv: str
+    delta: str
+    discount_factor: str
+    forward_price: str
+    gamma: str
+    iv: str
+    mark_price: str
+    rho: str
+    theta: str
+    vega: str
 
 
 class OptionSettlementPricesResult(Struct):
