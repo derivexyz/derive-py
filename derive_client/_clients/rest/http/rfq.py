@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Protocol
 
 import msgspec
 from derive_action_signing import (
@@ -44,6 +44,15 @@ from derive_client.data_types.generated_models import (
 
 if TYPE_CHECKING:
     from .subaccount import Subaccount
+
+
+class ExecutableQuote(Protocol):
+    """Structural type for anything accept_quote() can act on."""
+
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
+    quote_id: str
+    rfq_id: str
 
 
 class RFQOperations:
@@ -358,6 +367,7 @@ class RFQOperations:
         label: str = "",
         signature_expiry_sec: Optional[int] = None,
         nonce: Optional[int] = None,
+        enable_taker_protection: bool = False,
     ) -> QuoteExecuteResponse:
         """Executes a quote."""
 
@@ -406,10 +416,37 @@ class RFQOperations:
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
+            enable_taker_protection=enable_taker_protection,
             label=label,
         )
         result = self._subaccount._private_api.rpc.execute_quote(params)
         return result
+
+    def accept_quote(
+        self,
+        *,
+        quote: ExecutableQuote,
+        max_fee: Decimal = Decimal("1000"),
+        label: str = "",
+        signature_expiry_sec: Optional[int] = None,
+        nonce: Optional[int] = None,
+        enable_taker_protection: bool = False,
+    ) -> QuoteExecuteResponse:
+        """Convenience wrapper over execute_quote() for the common case:
+        take a maker's quote exactly as offered, in full."""
+
+        direction = Direction.sell if quote.direction == Direction.buy else Direction.buy
+        return self.execute_quote(
+            direction=direction,
+            legs=quote.legs,
+            quote_id=quote.quote_id,
+            rfq_id=quote.rfq_id,
+            max_fee=max_fee,
+            label=label,
+            signature_expiry_sec=signature_expiry_sec,
+            nonce=nonce,
+            enable_taker_protection=enable_taker_protection,
+        )
 
     def get_best_quote(
         self,
