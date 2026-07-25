@@ -30,7 +30,7 @@ from derive_client._clients.websockets.session import WebSocketSession
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, UniverseType
+from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
 from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
 
@@ -224,7 +224,7 @@ class WebSocketClient:
     async def plan_deposit_to_new_subaccount(
         self,
         *,
-        universe_type: UniverseType,
+        risk_universe_id: RiskUniverseID,
         margin_type: MarginType,
         asset_name: str,
         amount: Decimal,
@@ -236,7 +236,7 @@ class WebSocketClient:
 
         sync_plan = self._deposits.plan_new_subaccount(
             risk_universes=risk_universes,
-            universe_type=universe_type,
+            risk_universe_id=risk_universe_id,
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,

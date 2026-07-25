@@ -3,14 +3,14 @@
 from enum import Enum, IntEnum, StrEnum
 
 
-class UniverseType(StrEnum):
-    """Universe type."""
+class RiskUniverseID(IntEnum):
+    """Risk universe ID."""
 
-    FALLBACK = "FALLBACK"
-    PRIME = "PRIME"
-    HYPE = "HYPE"
-    ALTCOIN = "ALTCOIN"
-    RWA = "RWA"
+    FALLBACK = 0
+    PRIME = 1
+    HYPE = 2
+    ALTCOIN = 3
+    RWA = 4
 
 
 class GasPriority(IntEnum):
