@@ -34,7 +34,7 @@ from decimal import Decimal as D
 from pathlib import Path
 
 from derive_client import HTTPClient
-from derive_client.data_types import MarginType, UniverseType
+from derive_client.data_types import MarginType, RiskUniverseID
 
 env_file = Path(__file__).parent.parent / ".env.template"
 client = HTTPClient.from_env(env_file=env_file)
@@ -56,7 +56,7 @@ existing = client.fetch_subaccounts()
 if not existing:
     print("No subaccounts yet -- depositing into a NEW one.")
     steps = client.plan_deposit_to_new_subaccount(
-        universe_type=UniverseType.PRIME,
+        risk_universe_id=RiskUniverseID.PRIME,
         margin_type=MarginType.SM,
         asset_name="USDC",
         amount=D("5"),
