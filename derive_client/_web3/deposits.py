@@ -20,9 +20,9 @@ from derive_client.data_types import (
     GasPriority,
     LoggerType,
     MarginType,
+    RiskUniverseID,
     TxHash,
     TypedTxReceipt,
-    UniverseType,
 )
 from derive_client.data_types.generated_models import RiskUniverse
 
@@ -37,25 +37,22 @@ class ResolvedCollateral:
 
 
 def resolve_manager_id(
-    risk_universes: list[RiskUniverse], *, universe_type: UniverseType, margin_type: MarginType
+    risk_universes: list[RiskUniverse], *, risk_universe_id: RiskUniverseID, margin_type: MarginType
 ) -> int:
-    """(universe_type, margin_type) -> manager_id. Only needed when creating
+    """(risk_universe_id, margin_type) -> manager_id. Only needed when creating
     a NEW subaccount -- an existing one already carries manager_id directly
     on its own state, more precisely (globally unique, sidesteps
     margin_type being typed differently across models)."""
 
-    risk_universe = next((ru for ru in risk_universes if ru.name == universe_type.value), None)
+    risk_universe = next((ru for ru in risk_universes if ru.risk_universe_id == risk_universe_id.value), None)
     if risk_universe is None:
-        raise ValueError(
-            f"No risk universe named {universe_type.value!r}. Known: {sorted(str(ru.name) for ru in risk_universes)}"
-        )
+        known_universes = sorted(RiskUniverseID(ru.risk_universe_id) for ru in risk_universes)
+        raise ValueError(f"No risk universe with id {risk_universe_id}. Known: {known_universes}")
 
     manager = next((m for m in risk_universe.managers if m.margin_type == margin_type), None)
     if manager is None:
         known = sorted(str(m.margin_type) for m in risk_universe.managers)
-        raise ValueError(
-            f"Universe {universe_type.value!r} has no manager with margin_type={margin_type}. Known: {known}"
-        )
+        raise ValueError(f"Universe {risk_universe_id} has no manager with margin_type={margin_type}. Known: {known}")
 
     return manager.manager_id
 
@@ -176,7 +173,7 @@ class Deposits:
         self,
         *,
         risk_universes: list[RiskUniverse],
-        universe_type: UniverseType,
+        risk_universe_id: RiskUniverseID,
         margin_type: MarginType,
         asset_name: str,
         amount: Decimal,
@@ -190,7 +187,7 @@ class Deposits:
         whether an approve() is needed -- inspect .tx_params, then
         .submit(), then .wait_for_finality() on each."""
 
-        manager_id = resolve_manager_id(risk_universes, universe_type=universe_type, margin_type=margin_type)
+        manager_id = resolve_manager_id(risk_universes, risk_universe_id=risk_universe_id, margin_type=margin_type)
         collateral = resolve_collateral(risk_universes, manager_id=manager_id, asset_name=asset_name)
         native_amount = self._validate_and_scale(amount, collateral, asset_name)
 
@@ -216,7 +213,7 @@ class Deposits:
             owner=owner,
             gas_priority=gas_priority,
         )
-        description = f"Deposit {amount} {asset_name} to a new {margin_type.value} subaccount in {universe_type.value}"
+        description = f"Deposit {amount} {asset_name} to a new {margin_type} subaccount in {risk_universe_id}"
         yield self._step("deposit", description, deposit_tx, private_key)
 
     def plan_deposit(

@@ -503,7 +503,7 @@ class GetQuotesRequest(Struct):
     quote_id: str | None | UnsetType = UNSET
     rfq_id: str | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class GetReferralPerformanceParams(Struct):
@@ -520,7 +520,7 @@ class GetRfqsRequest(Struct):
     page_size: int | UnsetType = 20
     rfq_id: str | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class GetShareholderVaultsRequest(GetCuratedVaultsRequest):
@@ -902,7 +902,7 @@ class PollRfqsRequest(Struct):
     rfq_id: str | None | UnsetType = UNSET
     rfq_subaccount_id: int | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class Position(Struct):
@@ -1928,7 +1928,7 @@ class OrderQuoteRequest(Struct):
     reduce_only: bool | UnsetType = False
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
     reject_post_only: bool | UnsetType = True
-    reject_timestamp: int | UnsetType = 9223372036854776000
+    reject_timestamp: int | UnsetType = 9223372036854775807
     time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
     trigger_price: Decimal | None | UnsetType = UNSET
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET

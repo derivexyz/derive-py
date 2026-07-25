@@ -57,7 +57,7 @@ if len(prime_subaccounts) < 2:
 # Need to have at least one subaccount with open positions to transfer from.
 prime_subaccounts_with_positions = ((s, p) for s in prime_subaccounts if (p := s.positions.list()))
 source_sub, source_positions = next(prime_subaccounts_with_positions, (None, None))
-if not source_sub:
+if not source_sub or not source_positions:
     raise SystemExit("No subaccount with open positions found.")
 
 target_sub = next(s for s in prime_subaccounts if s.id != source_sub.id)
