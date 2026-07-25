@@ -22,8 +22,10 @@ from derive_client.data_types.generated_models import (
     SessionKey,
     SessionKeysRequest,
     Subaccount,
+    UpdateWhitelistedRecipientsRequest,
+    UpdateWhitelistedRecipientsResponse,
 )
-from derive_client.data_types.module_data import SessionKeyModuleData
+from derive_client.data_types.module_data import SessionKeyModuleData, WhitelistedRecipientModuleData
 
 
 class LightAccount:
@@ -206,6 +208,43 @@ class LightAccount:
             offchain_scopes=list(map(str, offchain_scopes)) if offchain_scopes else msgspec.UNSET,
         )
         result = self._private_api.rpc.edit_session_key(params)
+        return result
+
+    def update_whitelisted_recipients(
+        self,
+        *,
+        add: list[str],
+        remove: list[str],
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+    ) -> UpdateWhitelistedRecipientsResponse:
+        """Adds and/or removes recipient wallet addresses on an account's
+        transfer whitelist. Resulting list is (current UNION add) MINUS remove."""
+
+        wallet = self._auth.wallet
+
+        module_data = WhitelistedRecipientModuleData(add=add, remove=remove)
+
+        module_address = self._config.contracts.WHITELISTED_RECIPIENT_MODULE
+        signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = UpdateWhitelistedRecipientsRequest(
+            add=add,
+            remove=remove,
+            nonce=signed_action.nonce,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+            wallet=wallet,
+        )
+
+        result = self._private_api.rpc.update_whitelisted_recipients(params)
         return result
 
     def get_all_portfolios(self) -> list[Subaccount]:
