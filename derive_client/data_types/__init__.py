@@ -9,7 +9,7 @@ from .enums import (
     GasPriority,
     OffchainScope,
     ProtocolScope,
-    UniverseType,
+    RiskUniverseID,
 )
 from .generated_models import (
     AssetType,
@@ -68,6 +68,6 @@ __all__ = [
     "TypedSignedTransaction",
     "TypedTransaction",
     "TypedTxReceipt",
-    "UniverseType",
+    "RiskUniverseID",
     "Wei",
 ]
