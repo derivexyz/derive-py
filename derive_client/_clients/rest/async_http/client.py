@@ -26,7 +26,7 @@ from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, UniverseType
+from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
 from derive_client.exceptions import NotConnectedError
 from derive_client.utils.logger import get_logger
 
@@ -164,7 +164,7 @@ class AsyncHTTPClient:
     async def plan_deposit_to_new_subaccount(
         self,
         *,
-        universe_type: UniverseType,
+        risk_universe_id: RiskUniverseID,
         margin_type: MarginType,
         asset_name: str,
         amount: Decimal,
@@ -176,7 +176,7 @@ class AsyncHTTPClient:
 
         sync_plan = self._deposits.plan_new_subaccount(
             risk_universes=risk_universes,
-            universe_type=universe_type,
+            risk_universe_id=risk_universe_id,
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,

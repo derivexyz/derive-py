@@ -34,7 +34,6 @@ SYNC_METHODS = {
 # reusable instead of hardcoded to one name.
 ASYNC_RENAMES = {
     "fetch_all_pages_of_instrument_type": "async_fetch_all_pages_of_instrument_type",
-    "WithdrawalResult": "AsyncWithdrawalResult",
 }
 
 # Methods on self._deposits whose sync generator return needs wrapping in

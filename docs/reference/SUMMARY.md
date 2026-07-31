@@ -14,7 +14,7 @@
     * [TransactionOperations](operations/transactionoperations.md)
 * Data Types
     * [Enums](data_types/enums.md)
-        * [UniverseType](data_types/enums/universetype.md)
+        * [RiskUniverseID](data_types/enums/riskuniverseid.md)
         * [GasPriority](data_types/enums/gaspriority.md)
         * [Environment](data_types/enums/environment.md)
         * [ProtocolScope](data_types/enums/protocolscope.md)

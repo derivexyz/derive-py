@@ -19,13 +19,14 @@ from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
-from derive_client._clients.utils import AsyncWithdrawalResult, AuthContext
+from derive_client._clients.utils import AuthContext
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client._web3.deposits import Deposits, resolve_collateral
-from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType
+from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
     GetSubaccountRequest,
     PrivateWithdrawRequest,
+    PrivateWithdrawResponse,
 )
 from derive_client.data_types.generated_models import Subaccount as SubaccountState
 from derive_client.data_types.module_data import WithdrawModuleData
@@ -158,6 +159,14 @@ class Subaccount:
         return self._state
 
     @property
+    def risk_universe_id(self) -> RiskUniverseID:
+        """
+        Risk Universe ID of subaccount.
+        """
+
+        return RiskUniverseID(self.state.risk_universe_id)
+
+    @property
     def margin_type(self) -> str:
         """
         Margin type of subaccount.
@@ -276,7 +285,7 @@ class Subaccount:
         force_batch: bool = False,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
-    ) -> AsyncWithdrawalResult:
+    ) -> PrivateWithdrawResponse:
         """Submits a signed request to withdraw a spot asset out of a subaccount."""
 
         risk_universes = self.markets._risk_universes_cache or await self.markets.get_risk_universes()
@@ -313,7 +322,7 @@ class Subaccount:
         )
 
         response = await self._private_api.rpc.withdraw(params)
-        return AsyncWithdrawalResult(op_uuid=response.op_uuid, response=response, _transactions=self._transactions)
+        return response
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__qualname__}({self.id}) object at {hex(id(self))}>"

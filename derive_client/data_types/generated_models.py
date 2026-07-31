@@ -232,15 +232,27 @@ class CreateVaultRequest(Struct):
     benchmark_asset: Address | None | UnsetType = UNSET
 
 
-class DailyTradingStatistics(Struct):
-    c: Decimal
-    h: Decimal
-    l: Decimal
-    n: int
-    oi: Decimal
-    p: Decimal
-    pr: Decimal
-    v: Decimal
+class DailyTradingStatistics(
+    Struct,
+    rename={
+        'contract_volume_24h': 'c',
+        'high_24h': 'h',
+        'low_24h': 'l',
+        'trade_count_24h': 'n',
+        'open_interest': 'oi',
+        'percent_change_24h': 'p',
+        'premium_volume_24h': 'pr',
+        'notional_volume_24h': 'v',
+    },
+):
+    contract_volume_24h: Decimal
+    high_24h: Decimal
+    low_24h: Decimal
+    trade_count_24h: int
+    open_interest: Decimal
+    percent_change_24h: Decimal
+    premium_volume_24h: Decimal
+    notional_volume_24h: Decimal
 
 
 class DepositEntry(Struct):
@@ -491,7 +503,7 @@ class GetQuotesRequest(Struct):
     quote_id: str | None | UnsetType = UNSET
     rfq_id: str | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class GetReferralPerformanceParams(Struct):
@@ -508,7 +520,7 @@ class GetRfqsRequest(Struct):
     page_size: int | UnsetType = 20
     rfq_id: str | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class GetShareholderVaultsRequest(GetCuratedVaultsRequest):
@@ -718,18 +730,33 @@ class OptionDetails(Struct):
     settlement_price: str | None | UnsetType = UNSET
 
 
-class OptionPricing(Struct):
-    ai: str
-    bi: str
-    d: str
-    df: str
-    f: str
-    g: str
-    i: str
-    m: str
-    r: str
-    t: str
-    v: str
+class OptionPricing(
+    Struct,
+    rename={
+        'ask_iv': 'ai',
+        'bid_iv': 'bi',
+        'delta': 'd',
+        'discount_factor': 'df',
+        'forward_price': 'f',
+        'gamma': 'g',
+        'iv': 'i',
+        'mark_price': 'm',
+        'rho': 'r',
+        'theta': 't',
+        'vega': 'v',
+    },
+):
+    ask_iv: str
+    bid_iv: str
+    delta: str
+    discount_factor: str
+    forward_price: str
+    gamma: str
+    iv: str
+    mark_price: str
+    rho: str
+    theta: str
+    vega: str
 
 
 class OptionSettlementPricesResult(Struct):
@@ -875,7 +902,7 @@ class PollRfqsRequest(Struct):
     rfq_id: str | None | UnsetType = UNSET
     rfq_subaccount_id: int | None | UnsetType = UNSET
     status: str | None | UnsetType = UNSET
-    to_timestamp: int | UnsetType = 9223372036854776000
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class Position(Struct):
@@ -1901,7 +1928,7 @@ class OrderQuoteRequest(Struct):
     reduce_only: bool | UnsetType = False
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
     reject_post_only: bool | UnsetType = True
-    reject_timestamp: int | UnsetType = 9223372036854776000
+    reject_timestamp: int | UnsetType = 9223372036854775807
     time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
     trigger_price: Decimal | None | UnsetType = UNSET
     trigger_price_type: TriggerPriceType | None | UnsetType = UNSET

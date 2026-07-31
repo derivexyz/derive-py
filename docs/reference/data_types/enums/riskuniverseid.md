@@ -1,6 +1,6 @@
-# UniverseType
+# RiskUniverseID
 
-::: derive_client.data_types.enums.UniverseType
+::: derive_client.data_types.enums.RiskUniverseID
     options:
       show_root_heading: false
       heading_level: 2
