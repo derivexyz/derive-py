@@ -232,15 +232,27 @@ class CreateVaultRequest(Struct):
     benchmark_asset: Address | None | UnsetType = UNSET
 
 
-class DailyTradingStatistics(Struct):
-    c: Decimal
-    h: Decimal
-    l: Decimal
-    n: int
-    oi: Decimal
-    p: Decimal
-    pr: Decimal
-    v: Decimal
+class DailyTradingStatistics(
+    Struct,
+    rename={
+        'contract_volume_24h': 'c',
+        'high_24h': 'h',
+        'low_24h': 'l',
+        'trade_count_24h': 'n',
+        'open_interest': 'oi',
+        'percent_change_24h': 'p',
+        'premium_volume_24h': 'pr',
+        'notional_volume_24h': 'v',
+    },
+):
+    contract_volume_24h: Decimal
+    high_24h: Decimal
+    low_24h: Decimal
+    trade_count_24h: int
+    open_interest: Decimal
+    percent_change_24h: Decimal
+    premium_volume_24h: Decimal
+    notional_volume_24h: Decimal
 
 
 class DepositEntry(Struct):
@@ -471,16 +483,16 @@ class GetPositionsRequest(CancelAllAlgoOrdersRequest):
 
 
 class GetPublicTradeHistoryRequest(Struct):
+    batch_status: BatchStatus | None | UnsetType = UNSET
     currency: str | None | UnsetType = UNSET
     from_timestamp: int | None | UnsetType = UNSET
     instrument_name: str | None | UnsetType = UNSET
-    instrument_type: str | None | UnsetType = UNSET
+    instrument_type: AssetType | None | UnsetType = UNSET
     page: int | None | UnsetType = UNSET
     page_size: int | None | UnsetType = UNSET
     subaccount_id: int | None | UnsetType = UNSET
     to_timestamp: int | None | UnsetType = UNSET
     trade_id: str | None | UnsetType = UNSET
-    tx_status: str | None | UnsetType = UNSET
 
 
 class GetQuotesRequest(Struct):
@@ -718,18 +730,33 @@ class OptionDetails(Struct):
     settlement_price: str | None | UnsetType = UNSET
 
 
-class OptionPricing(Struct):
-    ai: str
-    bi: str
-    d: str
-    df: str
-    f: str
-    g: str
-    i: str
-    m: str
-    r: str
-    t: str
-    v: str
+class OptionPricing(
+    Struct,
+    rename={
+        'ask_iv': 'ai',
+        'bid_iv': 'bi',
+        'delta': 'd',
+        'discount_factor': 'df',
+        'forward_price': 'f',
+        'gamma': 'g',
+        'iv': 'i',
+        'mark_price': 'm',
+        'rho': 'r',
+        'theta': 't',
+        'vega': 'v',
+    },
+):
+    ask_iv: str
+    bid_iv: str
+    delta: str
+    discount_factor: str
+    forward_price: str
+    gamma: str
+    iv: str
+    mark_price: str
+    rho: str
+    theta: str
+    vega: str
 
 
 class OptionSettlementPricesResult(Struct):
@@ -890,7 +917,7 @@ class Position(Struct):
     index_price: str
     initial_margin: str
     instrument_name: str
-    instrument_type: str
+    instrument_type: AssetType
     maintenance_margin: str
     mark_price: str
     mark_value: str
@@ -1335,7 +1362,7 @@ class SettledTrade(Struct):
     wallet: str
     quote_id: str | None = None
     rfq_id: str | None = None
-    tx_status: BatchStatus | None | UnsetType = UNSET
+    batch_status: BatchStatus | None | UnsetType = UNSET
 
 
 class SignedTransferQuoteRequest(Struct):
@@ -1412,6 +1439,32 @@ class TimeInForce(StrEnum):
     ioc = 'ioc'
 
 
+class Trade(Struct):
+    direction: Direction
+    expected_rebate: Decimal
+    extra_fee: Decimal
+    index_price: Decimal
+    instrument_name: str
+    is_transfer: bool
+    liquidity_role: LiquidityRole
+    mark_price: Decimal
+    op_uuid: str
+    order_id: str
+    realized_pnl: Decimal
+    realized_pnl_excl_fees: Decimal
+    subaccount_id: int
+    timestamp: int
+    trade_amount: Decimal
+    trade_fee: Decimal
+    trade_id: str
+    trade_price: Decimal
+    quote_id: str | None = None
+    rfq_id: str | None = None
+    batch_status: BatchStatus | None | UnsetType = UNSET
+    label: str | UnsetType = ''
+    tx_hash: str | None | UnsetType = UNSET
+
+
 class TradeHistoryResponse(Struct):
     direction: Direction
     expected_rebate: Decimal
@@ -1434,8 +1487,8 @@ class TradeHistoryResponse(Struct):
     trade_price: Decimal
     quote_id: str | None = None
     rfq_id: str | None = None
+    batch_status: BatchStatus | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
-    tx_status: BatchStatus | None | UnsetType = UNSET
 
 
 class TradingviewCandle(Struct):
@@ -1483,19 +1536,6 @@ class TriggerPriceType(StrEnum):
 class TriggerType(StrEnum):
     stoploss = 'stoploss'
     takeprofit = 'takeprofit'
-
-
-class TxStatus(StrEnum):
-    requested = 'requested'
-    pending = 'pending'
-    settled = 'settled'
-    reverted = 'reverted'
-    ignored = 'ignored'
-    timed_out = 'timed_out'
-    applied = 'applied'
-    in_batch = 'in_batch'
-    proving = 'proving'
-    submitted = 'submitted'
 
 
 class UniverseManagers(Struct):
@@ -1863,6 +1903,11 @@ class Order(Struct):
     trigger_type: TriggerType | None | UnsetType = UNSET
 
 
+class OrderCreatedResponse(Struct):
+    order: Order
+    trades: list[Trade]
+
+
 class OrderQuoteRequest(Struct):
     amount: Decimal
     direction: Direction
@@ -2004,8 +2049,8 @@ class Quote(Struct):
     signature_expiry_sec: int
     status: RFQStatus
     subaccount_id: int
+    batch_status: BatchStatus | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
-    tx_status: TxStatus | None | UnsetType = UNSET
 
 
 class QuoteExecuteResponse(Struct):
@@ -2096,6 +2141,13 @@ class ReplaceOrderRequest(Struct):
     trigger_type: TriggerType | None | UnsetType = UNSET
 
 
+class ReplaceOrderResponse(Struct):
+    cancelled_order: Order
+    create_order_error: RPCError | None | UnsetType = UNSET
+    order: Order | None | UnsetType = UNSET
+    trades: list[Trade] | UnsetType = UNSET
+
+
 class RfqGetBestQuoteResponse(Struct):
     direction: Direction
     estimated_fee: Decimal
@@ -2160,32 +2212,6 @@ class Subaccount(Struct):
     subaccount_id: int
     subaccount_value: str
     vault_deposit_holds: list[VaultDepositHold]
-
-
-class Trade(Struct):
-    direction: Direction
-    expected_rebate: Decimal
-    extra_fee: Decimal
-    index_price: Decimal
-    instrument_name: str
-    is_transfer: bool
-    liquidity_role: LiquidityRole
-    mark_price: Decimal
-    op_uuid: str
-    order_id: str
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    subaccount_id: int
-    timestamp: int
-    trade_amount: Decimal
-    trade_fee: Decimal
-    trade_id: str
-    trade_price: Decimal
-    tx_status: TxStatus
-    quote_id: str | None = None
-    rfq_id: str | None = None
-    label: str | UnsetType = ''
-    tx_hash: str | None | UnsetType = UNSET
 
 
 class TransferPositionsResponse(Struct):
@@ -2298,15 +2324,3 @@ class GetLatestSignedFeedsResponse(Struct):
 class MultipleVaultRequestsResponse(Struct):
     requests: list[VaultRequestResponse]
     total: int
-
-
-class OrderCreatedResponse(Struct):
-    order: Order
-    trades: list[Trade]
-
-
-class ReplaceOrderResponse(Struct):
-    cancelled_order: Order
-    create_order_error: RPCError | None | UnsetType = UNSET
-    order: Order | None | UnsetType = UNSET
-    trades: list[Trade] | UnsetType = UNSET

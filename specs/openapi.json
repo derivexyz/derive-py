@@ -316,7 +316,7 @@
           }
         },
         "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
           "content": {
@@ -3754,7 +3754,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns paginated, anonymized settled trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `tx_status` (a batch-status name, default Settled), and `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
+        "description": "Returns paginated, anonymized settled trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name, default Settled), and `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -6547,6 +6547,17 @@
       "GetPublicTradeHistoryRequest": {
         "type": "object",
         "properties": {
+          "batch_status": {
+            "default": null,
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "currency": {
             "default": null,
             "type": [
@@ -6571,9 +6582,13 @@
           },
           "instrument_type": {
             "default": null,
-            "type": [
-              "string",
-              "null"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetType"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "page": {
@@ -6611,13 +6626,6 @@
             "format": "int64"
           },
           "trade_id": {
-            "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "tx_status": {
             "default": null,
             "type": [
               "string",
@@ -9261,7 +9269,7 @@
             "type": "string"
           },
           "instrument_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/AssetType"
           },
           "leverage": {
             "type": [
@@ -10341,6 +10349,17 @@
           "subaccount_id"
         ],
         "properties": {
+          "batch_status": {
+            "description": "Settlement batch status (only for executed quotes).",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cancel_reason": {
             "$ref": "#/components/schemas/RFQCancelReason"
           },
@@ -10425,17 +10444,6 @@
             "type": [
               "string",
               "null"
-            ]
-          },
-          "tx_status": {
-            "description": "Blockchain transaction status (only for executed quotes).",
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TxStatus"
-              },
-              {
-                "type": "null"
-              }
             ]
           }
         }
@@ -12174,6 +12182,16 @@
           "wallet"
         ],
         "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "direction": {
             "$ref": "#/components/schemas/Direction"
           },
@@ -12257,16 +12275,6 @@
           },
           "tx_hash": {
             "type": "string"
-          },
-          "tx_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BatchStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "wallet": {
             "type": "string"
@@ -12719,10 +12727,20 @@
           "trade_amount",
           "trade_fee",
           "trade_id",
-          "trade_price",
-          "tx_status"
+          "trade_price"
         ],
         "properties": {
+          "batch_status": {
+            "description": "Settlement batch status; `null` if processed by sequencer.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "direction": {
             "$ref": "#/components/schemas/Direction"
           },
@@ -12822,14 +12840,11 @@
               "string",
               "null"
             ]
-          },
-          "tx_status": {
-            "$ref": "#/components/schemas/TxStatus"
           }
         }
       },
       "TradeHistoryResponse": {
-        "description": "A trade as returned by `private/get_trade_history`. Mirrors a private trades subscription event, except `tx_status` is the settlement status (`null` until the batch settles).",
+        "description": "A trade as returned by `private/get_trade_history`. Mirrors a private trades subscription event, except `batch_status` is the settlement status (`null` until the batch settles).",
         "type": "object",
         "required": [
           "direction",
@@ -12855,6 +12870,16 @@
           "trade_price"
         ],
         "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "direction": {
             "$ref": "#/components/schemas/Direction"
           },
@@ -12952,16 +12977,6 @@
             "type": [
               "string",
               "null"
-            ]
-          },
-          "tx_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BatchStatus"
-              },
-              {
-                "type": "null"
-              }
             ]
           }
         }
@@ -13142,49 +13157,6 @@
         "enum": [
           "stoploss",
           "takeprofit"
-        ]
-      },
-      "TxStatus": {
-        "oneOf": [
-          {
-            "type": "string",
-            "enum": [
-              "requested",
-              "pending",
-              "settled",
-              "reverted",
-              "ignored",
-              "timed_out"
-            ]
-          },
-          {
-            "description": "Applied off-chain; not yet included in an on-chain settlement batch.",
-            "type": "string",
-            "enum": [
-              "applied"
-            ]
-          },
-          {
-            "description": "Included in a settlement batch and executing.",
-            "type": "string",
-            "enum": [
-              "in_batch"
-            ]
-          },
-          {
-            "description": "Settlement proof in progress.",
-            "type": "string",
-            "enum": [
-              "proving"
-            ]
-          },
-          {
-            "description": "Settlement transaction broadcast on-chain; awaiting confirmation.",
-            "type": "string",
-            "enum": [
-              "submitted"
-            ]
-          }
         ]
       },
       "UniverseManagers": {

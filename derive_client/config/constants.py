@@ -11,7 +11,7 @@ UINT64_MAX: Final[int] = (1 << 64) - 1
 
 PKG_ROOT = Path(__file__).parent.parent
 DATA_DIR = PKG_ROOT / "data"
-ABI_DATA_DIR = DATA_DIR / "abi"
+ABI_DATA_DIR = DATA_DIR / "abis"
 
 PUBLIC_HEADERS = {"accept": "application/json", "content-type": "application/json"}
 
@@ -25,3 +25,6 @@ PAYLOAD_SIZE = 161
 TARGET_SPEED = "FAST"
 
 DEFAULT_RPC_ENDPOINTS = DATA_DIR / "rpc_endpoints.yaml"
+
+ETHEREUM_MAINNET_CHAIN_ID = 1
+SEPOLIA_CHAIN_ID = 11155111

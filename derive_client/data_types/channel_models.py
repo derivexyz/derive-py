@@ -8,6 +8,7 @@ from typing import Any, TypeAlias
 from msgspec import UNSET, Struct, UnsetType, field
 
 from derive_client.data_types.generated_models import (
+    BatchStatus,
     DailyTradingStatistics,
     Direction,
     LiquidityRole,
@@ -16,7 +17,6 @@ from derive_client.data_types.generated_models import (
     PublicQuote,
     RFQCancelReason,
     RFQStatus,
-    TxStatus,
 )
 
 DeriveWebsocketChannelSchemas: TypeAlias = Any
@@ -195,9 +195,9 @@ class QuotePublishResult(Struct):
     signer: str
     status: RFQStatus
     subaccount_id: int
+    batch_status: BatchStatus | None | UnsetType = UNSET
     cancel_reason: RFQCancelReason | None | UnsetType = UNSET
     tx_hash: str | None = None
-    tx_status: TxStatus | None | UnsetType = UNSET
 
 
 class RfqGetBestQuoteResponse(Struct):

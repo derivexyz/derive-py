@@ -22,20 +22,12 @@ from pydantic import (
     RootModel,
 )
 from pydantic_core import core_schema
-from web3 import AsyncWeb3
-from web3.contract.async_contract import AsyncContract, AsyncContractEvent
 from web3.types import FilterParams, LogReceipt, TxReceipt
 from web3.types import Wei as ETHWei
 
-from derive_client.exceptions import TxReceiptMissing
-
 from .enums import (
-    BridgeType,
-    ChainID,
-    Currency,
     Environment,
     GasPriority,
-    TxStatus,
 )
 
 
@@ -47,6 +39,14 @@ class DeriveContractAddresses(BaseModel, frozen=True):
     EXTERNAL_TRANSFER_MODULE: ChecksumAddress
     WHITELISTED_RECIPIENT_MODULE: ChecksumAddress
     VAULT_MODULE: ChecksumAddress
+    LIQUIDATION_MODULE: ChecksumAddress
+    CREATE_SESSION_KEY_MODULE: ChecksumAddress
+
+    # addresses matching ABIs downloaded and stored in data/abis/<network>/contracts.json
+    ACTION_MANAGER: ChecksumAddress
+    VAPP: ChecksumAddress
+    WITHDRAWAL_OUTBOX: ChecksumAddress
+    SPOT_VAULT: ChecksumAddress
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -55,6 +55,7 @@ class DeriveContractAddresses(BaseModel, frozen=True):
 class EnvConfig(BaseModel, frozen=True):
     base_url: str
     ws_address: str
+    chain_id: int
     rpc_endpoint: str
     ACTION_TYPEHASH: str
     DOMAIN_SEPARATOR: str
@@ -376,179 +377,6 @@ class TypedTransaction(BaseModel):
     blobVersionedHashes: list[PHexBytes] | None = None
 
 
-class TokenData(BaseModel):
-    isAppChain: bool
-    connectors: dict[ChainID, dict[str, ChecksumAddress]]
-    LyraTSAShareHandlerDepositHook: ChecksumAddress | None = None
-    LyraTSADepositHook: ChecksumAddress | None = None
-    isNewBridge: bool
-
-
-class MintableTokenData(TokenData):
-    Controller: ChecksumAddress
-    MintableToken: ChecksumAddress
-
-
-class NonMintableTokenData(TokenData):
-    Vault: ChecksumAddress
-    NonMintableToken: ChecksumAddress
-
-
-class DeriveAddresses(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    chains: dict[ChainID, dict[Currency, MintableTokenData | NonMintableTokenData]]
-
-
-@dataclass
-class BridgeContext:
-    currency: Currency
-    source_w3: AsyncWeb3
-    target_w3: AsyncWeb3
-    source_token: AsyncContract
-    source_event: AsyncContractEvent
-    target_event: AsyncContractEvent
-    source_chain: ChainID
-    target_chain: ChainID
-
-    @property
-    def bridge_type(self) -> BridgeType:
-        return BridgeType.LAYERZERO if self.currency == Currency.DRV else BridgeType.SOCKET
-
-
-class BridgeTxDetails(BaseModel):
-    contract: ChecksumAddress
-    fn_name: str
-    fn_kwargs: dict[str, Any]
-    tx: dict[str, Any]
-    signed_tx: TypedSignedTransaction
-
-    @property
-    def tx_hash(self) -> str:
-        """Pre-computed transaction hash."""
-        return self.signed_tx.hash.to_0x_hex()
-
-    @property
-    def nonce(self) -> int:
-        """Transaction nonce."""
-        return self.tx["nonce"]
-
-    @property
-    def gas(self) -> int:
-        """Gas limit"""
-        return self.tx["gas"]
-
-    @property
-    def max_fee_per_gas(self) -> int:
-        return self.tx["maxFeePerGas"]
-
-
-class PreparedBridgeTx(BaseModel):
-    amount: int
-    value: int
-    currency: Currency
-    source_chain: ChainID
-    target_chain: ChainID
-    bridge_type: BridgeType
-    tx_details: BridgeTxDetails
-
-    fee_value: int
-    fee_in_token: int
-
-    def __post_init_post_parse__(self) -> None:
-        # rule 1: don't allow both amount (erc20) and value (native) to be non-zero
-        if self.amount and self.value:
-            raise ValueError(
-                f"Both amount ({self.amount}) and value ({self.value}) are non-zero; "
-                "use `prepare_erc20_tx` or `prepare_eth_tx` instead."
-            )
-
-        # rule 2: don't allow both fee types to be non-zero simultaneously
-        if self.fee_value and self.fee_in_token:
-            raise ValueError(
-                f"Both fee_value ({self.fee_value}) and fee_in_token ({self.fee_in_token}) are non-zero; "
-                "fees must be expressed in only one currency."
-            )
-
-    @property
-    def tx_hash(self) -> str:
-        """Pre-computed transaction hash."""
-        return self.tx_details.tx_hash
-
-    @property
-    def nonce(self) -> int:
-        """Transaction nonce."""
-        return self.tx_details.nonce
-
-    @property
-    def gas(self) -> int:
-        return self.tx_details.gas
-
-    @property
-    def max_fee_per_gas(self) -> int:
-        return self.tx_details.max_fee_per_gas
-
-    @property
-    def max_total_fee(self) -> int:
-        return self.gas * self.max_fee_per_gas
-
-
-class TxResult(BaseModel):
-    tx_hash: TxHash
-    tx_receipt: TypedTxReceipt | None = None
-
-    @property
-    def status(self) -> TxStatus:
-        if self.tx_receipt is not None:
-            return TxStatus(int(self.tx_receipt.status))  # ∈ {0, 1} (EIP-658)
-        return TxStatus.PENDING
-
-
-class BridgeTxResult(BaseModel):
-    prepared_tx: PreparedBridgeTx
-    source_tx: TxResult
-    target_from_block: int
-    event_id: str | None = None
-    target_tx: TxResult | None = None
-
-    @property
-    def status(self) -> TxStatus:
-        if self.source_tx.status is not TxStatus.SUCCESS:
-            return self.source_tx.status
-        return self.target_tx.status if self.target_tx is not None else TxStatus.PENDING
-
-    @property
-    def currency(self) -> Currency:
-        return self.prepared_tx.currency
-
-    @property
-    def source_chain(self) -> ChainID:
-        return self.prepared_tx.source_chain
-
-    @property
-    def target_chain(self) -> ChainID:
-        return self.prepared_tx.target_chain
-
-    @property
-    def bridge_type(self) -> BridgeType:
-        return self.prepared_tx.bridge_type
-
-    @property
-    def gas_used(self) -> int:
-        if not self.source_tx.tx_receipt:
-            raise TxReceiptMissing("Source tx receipt not available")
-        return self.source_tx.tx_receipt.gasUsed
-
-    @property
-    def effective_gas_price(self) -> int:
-        if not self.source_tx.tx_receipt:
-            raise TxReceiptMissing("Source tx receipt not available")
-        return self.source_tx.tx_receipt.effectiveGasPrice
-
-    @property
-    def total_fee(self) -> int:
-        return self.gas_used * self.effective_gas_price
-
-
 class RPCEndpoints(BaseModel, frozen=True):
     ETH: list[HttpUrl] = Field(default_factory=list)
     OPTIMISM: list[HttpUrl] = Field(default_factory=list)
@@ -557,12 +385,6 @@ class RPCEndpoints(BaseModel, frozen=True):
     DERIVE: list[HttpUrl] = Field(default_factory=list)
     MODE: list[HttpUrl] = Field(default_factory=list)
     BLAST: list[HttpUrl] = Field(default_factory=list)
-
-    def __getitem__(self, key: ChainID | int | str) -> list[HttpUrl]:
-        chain = ChainID[key.upper()] if isinstance(key, str) else ChainID(key)
-        if not (urls := getattr(self, chain.name, [])):
-            raise ValueError(f"No RPC URLs configured for {chain.name}")
-        return urls
 
 
 class FeeHistory(BaseModel):
@@ -596,6 +418,3 @@ class PositionTransfer:
 
     instrument_name: str
     amount: Decimal  # Can be negative (sign indicates long/short)
-
-
-DeriveAddresses.model_rebuild()

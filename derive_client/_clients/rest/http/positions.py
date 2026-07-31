@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from derive_action_signing import (
     MakerTransferPositionsModuleData,
@@ -49,7 +49,7 @@ class PositionOperations:
     def transfer(
         self,
         *,
-        positions: List[PositionTransfer],
+        positions: list[PositionTransfer],
         direction: Direction,
         to_subaccount: int,
         signature_expiry_sec: Optional[int] = None,

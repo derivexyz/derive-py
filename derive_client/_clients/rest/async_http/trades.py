@@ -41,7 +41,7 @@ class TradeOperations:
         subaccount_id: int | None = None,
         to_timestamp: int = INT64_MAX,
         trade_id: str | None = None,
-        tx_status: Optional[BatchStatus] = BatchStatus.Settled,
+        batch_status: Optional[BatchStatus] = BatchStatus.Settled,
     ) -> list[SettledTrade]:
         """
         Get trade history for a subaccount, with filter parameters.
@@ -51,13 +51,13 @@ class TradeOperations:
             currency=currency,
             from_timestamp=from_timestamp,
             instrument_name=instrument_name,
-            instrument_type=instrument_type.value if instrument_type is not None else None,
+            instrument_type=instrument_type,
             page=page,
             page_size=page_size,
             subaccount_id=subaccount_id,
             to_timestamp=to_timestamp,
             trade_id=trade_id,
-            tx_status=tx_status.value if tx_status is not None else None,
+            batch_status=batch_status,
         )
         result = await self._subaccount._public_api.rpc.get_trade_history(params)
         return result.trades

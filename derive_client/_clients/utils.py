@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
@@ -20,15 +21,19 @@ from web3 import AsyncWeb3, Web3
 from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
 from derive_client.data_types.generated_models import (
     AssetType,
+    BatchStatus,
+    GetTransactionResult,
     Instrument,
     LegUnpricedParams,
     PricedLegParamsAndResponse,
     RPCError,
 )
+from derive_client.exceptions import WithdrawalFailed, WithdrawalTimeout
 
 if TYPE_CHECKING:
     from websockets import Data
 
+    from derive_client import AsyncHTTPClient, HTTPClient, WebSocketClient
     from derive_client._clients.rest.async_http.markets import MarketOperations as AsyncMarketOperations
     from derive_client._clients.rest.http.markets import MarketOperations
 
@@ -93,7 +98,7 @@ def get_default_signature_expiry_sec() -> int:
 @dataclass
 class AuthContext:
     wallet: ChecksumAddress
-    w3: Web3 | AsyncWeb3
+    w3: Web3
     account: LocalAccount
     config: EnvConfig
 
@@ -404,3 +409,57 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
         subaccount_id=subaccount_id,
         env=env,
     )
+
+
+def wait_for_settlement(
+    client: HTTPClient, op_uuid: str, timeout: int = 300, poll_interval: float = 2.0
+) -> GetTransactionResult:
+    """Poll until BatchStatus.Settled or a terminal *Error status."""
+
+    tx_hash = None
+    start = time.monotonic()
+    while True:
+        tx_result = client.transactions.get(op_uuid=op_uuid)
+        if tx_result.transaction_hash != tx_hash:
+            tx_hash = tx_result.transaction_hash
+            client.logger.info(f"Transaction hash for {op_uuid}: {tx_hash}")
+
+        if tx_result.status is not None and tx_result.status.value.endswith("Error"):
+            raise WithdrawalFailed(f"Withdrawal {op_uuid} failed: {tx_result.status}:\n{tx_result}")
+
+        if tx_result.status == BatchStatus.Settled:
+            return tx_result
+
+        if time.monotonic() - start > timeout:
+            raise WithdrawalTimeout(f"Withdrawal {op_uuid} still {tx_result.status} after {timeout}s:\n{tx_result}")
+
+        time.sleep(poll_interval)
+
+
+async def async_wait_for_settlement(
+    client: AsyncHTTPClient | WebSocketClient,
+    op_uuid: str,
+    timeout: int = 300,
+    poll_interval: float = 2.0,
+) -> GetTransactionResult:
+    """Poll until BatchStatus.Settled or a terminal *Error status."""
+
+    tx_hash = None
+    start = time.monotonic()
+    while True:
+        tx_result = await client.transactions.get(op_uuid=op_uuid)
+
+        if tx_result.transaction_hash != tx_hash:
+            tx_hash = tx_result.transaction_hash
+            client.logger.info(f"Transaction hash for {op_uuid}: {tx_hash}")
+
+        if tx_result.status is not None and tx_result.status.value.endswith("Error"):
+            raise WithdrawalFailed(f"Withdrawal {op_uuid} failed: {tx_result.status}:\n{tx_result}")
+
+        if tx_result.status == BatchStatus.Settled:
+            return tx_result
+
+        if time.monotonic() - start > timeout:
+            raise WithdrawalTimeout(f"Withdrawal {op_uuid} still {tx_result.status} after {timeout}s:\n{tx_result}")
+
+        await asyncio.sleep(poll_interval)

@@ -8,19 +8,24 @@ import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
-from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
+from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
+    CreateSessionKeyRequest,
     EditSessionKeyRequest,
     GetAccountRequest,
     GetAllPortfoliosRequest,
     GetSubaccountsRequest,
+    PrivateCreateSessionKeyResponse,
     PrivateGetAccountResponse,
     PrivateGetSubaccountsResponse,
     PrivateSessionKeysResponse,
     SessionKey,
     SessionKeysRequest,
     Subaccount,
+    UpdateWhitelistedRecipientsRequest,
+    UpdateWhitelistedRecipientsResponse,
 )
+from derive_client.data_types.module_data import SessionKeyModuleData, WhitelistedRecipientModuleData
 
 
 class LightAccount:
@@ -128,15 +133,61 @@ class LightAccount:
         return self
 
     def session_keys(self) -> PrivateSessionKeysResponse:
-        """
-        Registered session keys, including details (expiry, scope, IP whitelist)
-
-        A session key is simply an Ethereum wallet.
-        Account owners can give other Ethereum wallets temporary access to their accounts via session keys.
-        """
+        """Registered session keys, including details (expiry, scope, IP whitelist)."""
 
         params = SessionKeysRequest(wallet=self.address)
         result = self._private_api.rpc.session_keys(params)
+        return result
+
+    def create_session_key(
+        self,
+        *,
+        expiry_sec: int,
+        public_session_key: str,
+        offchain_scopes: list[OffchainScope],
+        protocol_scopes: list[ProtocolScope],
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+        ip_whitelist: list[str] | None = None,
+        label: str | None = None,
+        subaccount_ids: list[int] | None = None,
+    ) -> PrivateCreateSessionKeyResponse:
+        """Authorizes a new session key for a wallet from a signed action."""
+
+        wallet = self._auth.wallet
+
+        module_data = SessionKeyModuleData(
+            session_key=public_session_key,
+            expiry_sec=expiry_sec,
+            scopes=[scope.code for scope in protocol_scopes],
+            subaccount_ids=subaccount_ids or [],
+        )
+
+        module_address = self._config.contracts.CREATE_SESSION_KEY_MODULE
+        signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = CreateSessionKeyRequest(
+            expiry_sec=expiry_sec,
+            nonce=str(signed_action.nonce),
+            offchain_scopes=list(map(str, offchain_scopes)),
+            protocol_scopes=list(map(str, protocol_scopes)),
+            public_session_key=public_session_key,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+            wallet=wallet,
+            ip_whitelist=ip_whitelist or msgspec.UNSET,
+            label=label or msgspec.UNSET,
+            subaccount_ids=subaccount_ids or msgspec.UNSET,
+        )
+
+        result = self._private_api.rpc.create_session_key(params)
         return result
 
     def edit_session_key(
@@ -145,7 +196,7 @@ class LightAccount:
         public_session_key: str,
         ip_whitelist: Optional[list[str]] = None,
         label: Optional[str] = None,
-        offchain_scopes: Optional[list[str]] = None,
+        offchain_scopes: Optional[list[OffchainScope]] = None,
     ) -> SessionKey:
         """Edits session key parameters such as label and IP whitelist."""
 
@@ -154,9 +205,46 @@ class LightAccount:
             public_session_key=public_session_key,
             ip_whitelist=ip_whitelist or msgspec.UNSET,
             label=label,
-            offchain_scopes=offchain_scopes or msgspec.UNSET,
+            offchain_scopes=list(map(str, offchain_scopes)) if offchain_scopes else msgspec.UNSET,
         )
         result = self._private_api.rpc.edit_session_key(params)
+        return result
+
+    def update_whitelisted_recipients(
+        self,
+        *,
+        add: list[str],
+        remove: list[str],
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+    ) -> UpdateWhitelistedRecipientsResponse:
+        """Adds and/or removes recipient wallet addresses on an account's
+        transfer whitelist. Resulting list is (current UNION add) MINUS remove."""
+
+        wallet = self._auth.wallet
+
+        module_data = WhitelistedRecipientModuleData(add=add, remove=remove)
+
+        module_address = self._config.contracts.WHITELISTED_RECIPIENT_MODULE
+        signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = UpdateWhitelistedRecipientsRequest(
+            add=add,
+            remove=remove,
+            nonce=signed_action.nonce,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+            wallet=wallet,
+        )
+
+        result = self._private_api.rpc.update_whitelisted_recipients(params)
         return result
 
     def get_all_portfolios(self) -> list[Subaccount]:

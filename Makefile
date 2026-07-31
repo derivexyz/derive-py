@@ -105,12 +105,6 @@ generate-rest-async-http:
 	poetry run ruff format tests/test_clients/test_rest/test_async_http
 	poetry run ruff check --fix tests/test_clients/test_rest/test_async_http
 
-.PHONY: generate-sync-bridge-client
-generate-sync-bridge-client:
-	python scripts/generate-sync-bridge-client.py
-	poetry run ruff format derive_client/_bridge/client.py
-	poetry run ruff check --fix derive_client/_bridge/client.py
-
 .PHONY: sync-ws-tests
 sync-ws-tests:
 	@echo "Syncing http tests -> websocket tests"
@@ -123,10 +117,10 @@ sync-ws-tests:
 		tests/test_clients/test_websocket/
 	@echo "Done."
 
-codegen-all: generate-models generate-api generate-rest-async-http generate-sync-bridge-client sync-ws-tests fmt lint
+codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
 typecheck:
-	poetry run pyright derive_client tests
+	poetry run pyright derive_client tests examples
 
 check_diff:
 	@git diff --exit-code
