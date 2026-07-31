@@ -73,7 +73,7 @@ docs: clean-docs
 	poetry run python scripts/generate-internal-pages.py
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
-		
+
 
 release:
 	$(eval current_version := $(shell poetry run tbump current-version))
@@ -84,9 +84,11 @@ release:
 
 .PHONY: generate-models
 generate-models:
-	curl https://docs.derive.xyz/openapi/rest-api.json | jq > specs/openapi-spec.json
-	poetry run python scripts/patch_spec.py specs/openapi-spec.json
-	poetry run python scripts/merge-websocket-channels.py
+	curl https://v3.docs.derive.xyz/openapi.json | poetry run python scripts/pretty-json.py > specs/openapi.json
+	curl https://v3.docs.derive.xyz/websocket.asyncapi.json | poetry run python scripts/pretty-json.py > specs/websocket.json
+	curl https://v3.docs.derive.xyz/subscriptions.asyncapi.json | poetry run python scripts/pretty-json.py > specs/subscriptions.json
+	poetry run python scripts/patch_spec.py specs/openapi.json
+	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
 	poetry run ruff format derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
 	poetry run ruff check --fix derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
@@ -103,12 +105,6 @@ generate-rest-async-http:
 	poetry run ruff format tests/test_clients/test_rest/test_async_http
 	poetry run ruff check --fix tests/test_clients/test_rest/test_async_http
 
-.PHONY: generate-sync-bridge-client
-generate-sync-bridge-client:
-	python scripts/generate-sync-bridge-client.py
-	poetry run ruff format derive_client/_bridge/client.py
-	poetry run ruff check --fix derive_client/_bridge/client.py
-
 .PHONY: sync-ws-tests
 sync-ws-tests:
 	@echo "Syncing http tests -> websocket tests"
@@ -121,10 +117,10 @@ sync-ws-tests:
 		tests/test_clients/test_websocket/
 	@echo "Done."
 
-codegen-all: generate-models generate-api generate-rest-async-http generate-sync-bridge-client sync-ws-tests fmt lint
+codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
 typecheck:
-	poetry run pyright derive_client tests
+	poetry run pyright derive_client tests examples
 
 check_diff:
 	@git diff --exit-code
@@ -132,6 +128,4 @@ check_diff:
 demo:
 	poetry run bash scripts/demos/all.sh
 
-all: codegen-all typecheck tests docs
-
-
+all: codegen-all fmt lint typecheck tests docs

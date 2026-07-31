@@ -1,0 +1,2547 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Derive v3 API",
+    "version": "0.2.0",
+    "description": "Generated AsyncAPI 3.0 spec for the Derive v3 WebSocket + HTTP POST API."
+  },
+  "servers": {
+    "production": {
+      "host": "api.derive.xyz",
+      "protocol": "wss"
+    },
+    "testnet": {
+      "host": "testnet.api.derive.xyz",
+      "protocol": "wss"
+    }
+  },
+  "channels": {
+    "auctionsWatch": {
+      "address": "/v3/ws",
+      "description": "Channel name: `auctions.watch`. Public channel that streams the live state of all ongoing liquidation and insolvency auctions across the exchange. Takes no parameters.",
+      "messages": {
+        "auctionsWatchNotification": {
+          "$ref": "#/components/messages/auctionsWatchNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "marginWatch": {
+      "address": "/v3/ws",
+      "description": "Channel name: `margin.watch`. Public channel that streams margin and mark-to-market state for all accounts, letting you monitor collateralization and liquidation risk across the exchange. Takes no parameters.",
+      "messages": {
+        "marginWatchNotification": {
+          "$ref": "#/components/messages/marginWatchNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "orderbook": {
+      "address": "/v3/ws",
+      "description": "Channel name: `orderbook.{instrument_name}.{group}.{depth}`. Public channel that periodically publishes aggregated bids and asks for a single instrument, where {instrument_name} is the market (e.g. ETH-PERP), {group} is the price-level aggregation size (1, 10, or 100), and {depth} is the number of levels returned per side (1, 10, 20, or 100).",
+      "messages": {
+        "orderbookNotification": {
+          "$ref": "#/components/messages/orderbookNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "spotFeed": {
+      "address": "/v3/ws",
+      "description": "Channel name: `spot_feed.{currency}`. Public channel that streams the spot price feed for a given underlying, where {currency} selects the asset (e.g. ETH or BTC).",
+      "messages": {
+        "spotFeedNotification": {
+          "$ref": "#/components/messages/spotFeedNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountBalances": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.balances`. Private channel (requires authentication) that streams balance and position updates for one of your subaccounts, where {subaccount_id} is the numeric subaccount identifier.",
+      "messages": {
+        "subaccountBalancesNotification": {
+          "$ref": "#/components/messages/subaccountBalancesNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountBestQuotes": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.best.quotes`. Private channel (requires authentication) that streams best-quote updates relevant to your subaccount, where {subaccount_id} is the numeric subaccount identifier.",
+      "messages": {
+        "subaccountBestQuotesNotification": {
+          "$ref": "#/components/messages/subaccountBestQuotesNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountOrders": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.orders`. Private channel (requires authentication) that streams live order updates (opens, fills, cancels, and status changes) for your subaccount, where {subaccount_id} is the numeric subaccount identifier.",
+      "messages": {
+        "subaccountOrdersNotification": {
+          "$ref": "#/components/messages/subaccountOrdersNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountQuotes": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.quotes`. Private channel (requires authentication) that streams updates to your RFQ quotes for a subaccount, where {subaccount_id} is the numeric subaccount identifier.",
+      "messages": {
+        "subaccountQuotesNotification": {
+          "$ref": "#/components/messages/subaccountQuotesNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountTrades": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.trades`. Private channel (requires authentication) that streams your subaccount's own trade fills as they occur, where {subaccount_id} is the numeric subaccount identifier.",
+      "messages": {
+        "subaccountTradesNotification": {
+          "$ref": "#/components/messages/subaccountTradesNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "subaccountTradesBatchStatus": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{subaccount_id}.trades.{batch_status}`. Private channel (requires authentication) that streams your subaccount's trades filtered by settlement batch status, where {subaccount_id} is the numeric subaccount identifier and {batch_status} is the batch lifecycle stage (e.g. Settled, or a ...Error stage).",
+      "messages": {
+        "subaccountTradesBatchStatusNotification": {
+          "$ref": "#/components/messages/subaccountTradesBatchStatusNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "tickerSlim": {
+      "address": "/v3/ws",
+      "description": "Channel name: `ticker_slim.{instrument_name}.{interval}`. Public channel that streams a lightweight ticker (prices and key stats) for an instrument, where {instrument_name} is the market and {interval} is the update cadence in milliseconds (100 or 1000).",
+      "messages": {
+        "tickerSlimNotification": {
+          "$ref": "#/components/messages/tickerSlimNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "tradesByInstrument": {
+      "address": "/v3/ws",
+      "description": "Channel name: `trades.{instrument_name}`. Public channel that streams the public trade tape for a single instrument, where {instrument_name} is the market whose fills you want to follow.",
+      "messages": {
+        "tradesByInstrumentNotification": {
+          "$ref": "#/components/messages/tradesByInstrumentNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "tradesByInstrumentTypeCurrency": {
+      "address": "/v3/ws",
+      "description": "Channel name: `trades.{instrument_type}.{currency}`. Public channel that streams public trades filtered by market category, where {instrument_type} is the kind of instrument (erc20, option, or perp) and {currency} is the underlying asset (e.g. ETH or BTC).",
+      "messages": {
+        "tradesByInstrumentTypeCurrencyNotification": {
+          "$ref": "#/components/messages/tradesByInstrumentTypeCurrencyNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "tradesByInstrumentTypeCurrencyBatchStatus": {
+      "address": "/v3/ws",
+      "description": "Channel name: `trades.{instrument_type}.{currency}.{batch_status}`. Public channel that streams public trades filtered by category, underlying, and settlement batch status, where {instrument_type} is the instrument kind (erc20, option, or perp), {currency} is the underlying asset, and {batch_status} is the batch lifecycle stage (e.g. Settled, or a ...Error stage).",
+      "messages": {
+        "tradesByInstrumentTypeCurrencyBatchStatusNotification": {
+          "$ref": "#/components/messages/tradesByInstrumentTypeCurrencyBatchStatusNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    },
+    "walletRfqs": {
+      "address": "/v3/ws",
+      "description": "Channel name: `{wallet}.rfqs`. Private channel (requires authentication) that streams RFQ (request-for-quote) updates for all subaccounts under a wallet, where {wallet} is your wallet address.",
+      "messages": {
+        "walletRfqsNotification": {
+          "$ref": "#/components/messages/walletRfqsNotification"
+        },
+        "subscribeRequest": {
+          "$ref": "#/components/messages/subscribeRequest"
+        },
+        "unsubscribeRequest": {
+          "$ref": "#/components/messages/unsubscribeRequest"
+        }
+      },
+      "tags": [
+        {
+          "name": "Channels"
+        }
+      ]
+    }
+  },
+  "operations": {
+    "receive_auctionsWatch": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/auctionsWatch"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/auctionsWatch/messages/auctionsWatchNotification"
+        }
+      ]
+    },
+    "receive_marginWatch": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/marginWatch"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/marginWatch/messages/marginWatchNotification"
+        }
+      ]
+    },
+    "receive_orderbook": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/orderbook"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/orderbook/messages/orderbookNotification"
+        }
+      ]
+    },
+    "receive_spotFeed": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/spotFeed"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/spotFeed/messages/spotFeedNotification"
+        }
+      ]
+    },
+    "receive_subaccountBalances": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountBalances"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountBalances/messages/subaccountBalancesNotification"
+        }
+      ]
+    },
+    "receive_subaccountBestQuotes": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountBestQuotes"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountBestQuotes/messages/subaccountBestQuotesNotification"
+        }
+      ]
+    },
+    "receive_subaccountOrders": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountOrders"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountOrders/messages/subaccountOrdersNotification"
+        }
+      ]
+    },
+    "receive_subaccountQuotes": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountQuotes"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountQuotes/messages/subaccountQuotesNotification"
+        }
+      ]
+    },
+    "receive_subaccountTrades": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountTrades"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountTrades/messages/subaccountTradesNotification"
+        }
+      ]
+    },
+    "receive_subaccountTradesBatchStatus": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/subaccountTradesBatchStatus"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/subaccountTradesBatchStatusNotification"
+        }
+      ]
+    },
+    "receive_tickerSlim": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/tickerSlim"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tickerSlim/messages/tickerSlimNotification"
+        }
+      ]
+    },
+    "receive_tradesByInstrument": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrument"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrument/messages/tradesByInstrumentNotification"
+        }
+      ]
+    },
+    "receive_tradesByInstrumentTypeCurrency": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrumentTypeCurrency"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrency/messages/tradesByInstrumentTypeCurrencyNotification"
+        }
+      ]
+    },
+    "receive_tradesByInstrumentTypeCurrencyBatchStatus": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/tradesByInstrumentTypeCurrencyBatchStatusNotification"
+        }
+      ]
+    },
+    "receive_walletRfqs": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/walletRfqs"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/walletRfqs/messages/walletRfqsNotification"
+        }
+      ]
+    },
+    "send_subscribe_auctionsWatch": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/auctionsWatch"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/auctionsWatch/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/auctionsWatch/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_marginWatch": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/marginWatch"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/marginWatch/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/marginWatch/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_orderbook": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/orderbook"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/orderbook/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/orderbook/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_spotFeed": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/spotFeed"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/spotFeed/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/spotFeed/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountBalances": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountBalances"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountBalances/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountBalances/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountBestQuotes": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountBestQuotes"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountBestQuotes/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountBestQuotes/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountOrders": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountOrders"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountOrders/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountOrders/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountQuotes": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountQuotes"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountQuotes/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountQuotes/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountTrades": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountTrades"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountTrades/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountTrades/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_subaccountTradesBatchStatus": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/subaccountTradesBatchStatus"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/subaccountTradesBatchStatus/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_tickerSlim": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/tickerSlim"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tickerSlim/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/tickerSlim/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_tradesByInstrument": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrument"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrument/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/tradesByInstrument/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_tradesByInstrumentTypeCurrency": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrumentTypeCurrency"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrency/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrency/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_tradesByInstrumentTypeCurrencyBatchStatus": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/tradesByInstrumentTypeCurrencyBatchStatus/messages/unsubscribeRequest"
+        }
+      ]
+    },
+    "send_subscribe_walletRfqs": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/walletRfqs"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/walletRfqs/messages/subscribeRequest"
+        },
+        {
+          "$ref": "#/channels/walletRfqs/messages/unsubscribeRequest"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "auctionsWatchNotification": {
+        "name": "auctionsWatchNotification",
+        "payload": {
+          "$ref": "#/components/schemas/AuctionResult"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "marginWatchNotification": {
+        "name": "marginWatchNotification",
+        "payload": {
+          "$ref": "#/components/schemas/MarginWatchResult"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "orderbookNotification": {
+        "name": "orderbookNotification",
+        "payload": {
+          "$ref": "#/components/schemas/OrderbookSnapshot"
+        }
+      },
+      "spotFeedNotification": {
+        "name": "spotFeedNotification",
+        "payload": {
+          "$ref": "#/components/schemas/SpotFeedPayload"
+        }
+      },
+      "subaccountBalancesNotification": {
+        "name": "subaccountBalancesNotification",
+        "payload": {
+          "$ref": "#/components/schemas/BalanceUpdate"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subaccountBestQuotesNotification": {
+        "name": "subaccountBestQuotesNotification",
+        "payload": {
+          "$ref": "#/components/schemas/BestQuoteChannelResult"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subaccountOrdersNotification": {
+        "name": "subaccountOrdersNotification",
+        "payload": {
+          "$ref": "#/components/schemas/Order"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subaccountQuotesNotification": {
+        "name": "subaccountQuotesNotification",
+        "payload": {
+          "$ref": "#/components/schemas/QuotePublishResult"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subaccountTradesNotification": {
+        "name": "subaccountTradesNotification",
+        "payload": {
+          "$ref": "#/components/schemas/Trade"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subaccountTradesBatchStatusNotification": {
+        "name": "subaccountTradesBatchStatusNotification",
+        "payload": {
+          "$ref": "#/components/schemas/Trade"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "tickerSlimNotification": {
+        "name": "tickerSlimNotification",
+        "payload": {
+          "$ref": "#/components/schemas/TickerSlimPayload"
+        }
+      },
+      "tradesByInstrumentNotification": {
+        "name": "tradesByInstrumentNotification",
+        "payload": {
+          "$ref": "#/components/schemas/PublicTrade"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "tradesByInstrumentTypeCurrencyNotification": {
+        "name": "tradesByInstrumentTypeCurrencyNotification",
+        "payload": {
+          "$ref": "#/components/schemas/PublicTrade"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "tradesByInstrumentTypeCurrencyBatchStatusNotification": {
+        "name": "tradesByInstrumentTypeCurrencyBatchStatusNotification",
+        "payload": {
+          "$ref": "#/components/schemas/SettledTrade"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "walletRfqsNotification": {
+        "name": "walletRfqsNotification",
+        "payload": {
+          "$ref": "#/components/schemas/PublicRfq"
+        },
+        "summary": "Pushed as a JSON array; each element has the fields below."
+      },
+      "subscribeRequest": {
+        "name": "subscribeRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "subscribe"
+            },
+            "params": {
+              "$ref": "#/components/schemas/SubscribeParams"
+            }
+          }
+        },
+        "summary": "Send to subscribe: list this channel's address (with the {param} segments filled, e.g. orderbook.ETH-PERP.10.20) in params.channels.",
+        "examples": [
+          {
+            "payload": {
+              "id": 1,
+              "method": "subscribe",
+              "params": {
+                "channels": [
+                  "orderbook.ETH-PERP.10.20"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "unsubscribeRequest": {
+        "name": "unsubscribeRequest",
+        "payload": {
+          "type": "object",
+          "required": [
+            "id",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "headers": {
+              "description": "Non-standard; used by `auth/login`.",
+              "type": "object",
+              "additionalProperties": true,
+              "nullable": true
+            },
+            "id": {
+              "$ref": "#/components/schemas/JsonRpcId"
+            },
+            "method": {
+              "type": "string",
+              "const": "unsubscribe"
+            },
+            "params": {
+              "$ref": "#/components/schemas/UnsubscribeParams"
+            }
+          }
+        },
+        "summary": "Send to unsubscribe: list the channel addresses to drop in params.channels, or omit it to unsubscribe from everything."
+      }
+    },
+    "schemas": {
+      "Address": {
+        "description": "20-byte Ethereum address as a 0x-prefixed lowercase hex string.",
+        "type": "string",
+        "maxLength": 42,
+        "minLength": 42,
+        "pattern": "^0x[0-9a-fA-F]{40}$"
+      },
+      "AlgoType": {
+        "type": "string",
+        "enum": [
+          "twap"
+        ]
+      },
+      "AuctionDetails": {
+        "type": "object",
+        "required": [
+          "estimated_bid_price",
+          "estimated_discount_pnl",
+          "estimated_mtm",
+          "estimated_percent_bid",
+          "last_seen_trade_id",
+          "margin_type",
+          "min_cash_transfer",
+          "min_price_limit",
+          "subaccount_balances"
+        ],
+        "properties": {
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "estimated_bid_price": {
+            "type": "string"
+          },
+          "estimated_discount_pnl": {
+            "type": "string"
+          },
+          "estimated_mtm": {
+            "type": "string"
+          },
+          "estimated_percent_bid": {
+            "type": "string"
+          },
+          "last_seen_trade_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "margin_type": {
+            "type": "string"
+          },
+          "min_cash_transfer": {
+            "type": "string"
+          },
+          "min_price_limit": {
+            "type": "string"
+          },
+          "subaccount_balances": {
+            "type": "string"
+          }
+        }
+      },
+      "AuctionResult": {
+        "description": "Payload for `auctions.watch`.",
+        "type": "object",
+        "required": [
+          "state",
+          "subaccount_id",
+          "timestamp"
+        ],
+        "properties": {
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuctionDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/AuctionStateType"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AuctionStateType": {
+        "type": "string",
+        "enum": [
+          "ongoing",
+          "ended"
+        ]
+      },
+      "BalanceUpdate": {
+        "type": "object",
+        "required": [
+          "name",
+          "new_balance",
+          "previous_balance",
+          "update_type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "new_balance": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "previous_balance": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "update_type": {
+            "$ref": "#/components/schemas/BalanceUpdateType"
+          }
+        }
+      },
+      "BalanceUpdateType": {
+        "type": "string",
+        "enum": [
+          "trade",
+          "asset_deposit",
+          "asset_withdrawal",
+          "transfer",
+          "subaccount_deposit",
+          "subaccount_withdrawal",
+          "liquidation",
+          "liquidator",
+          "onchain_drift_fix",
+          "perp_settlement",
+          "option_settlement",
+          "interest_accrual",
+          "onchain_revert",
+          "double_revert"
+        ]
+      },
+      "BatchStatus": {
+        "description": "Batch lifecycle status — the single source of lifecycle truth for every operation in the batch (individual ops carry no status of their own). Each stage has a healthy variant and a corresponding `...Error` variant meaning that stage failed. Serialized as the variant name (string) in API responses.",
+        "type": "string",
+        "enum": [
+          "Batching",
+          "Executing",
+          "Proving",
+          "Settling",
+          "Settled",
+          "BatchingError",
+          "ExecutingError",
+          "ProvingError",
+          "SettlingError",
+          "SettledError"
+        ]
+      },
+      "BestQuoteChannelResult": {
+        "description": "Payload for `{subaccount_id}.best.quotes`.",
+        "type": "object",
+        "required": [
+          "rfq_id"
+        ],
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RPCError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RfqGetBestQuoteResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rfq_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CancelReason": {
+        "type": "string",
+        "enum": [
+          "",
+          "user_request",
+          "mmp_trigger",
+          "insufficient_margin",
+          "signed_max_fee_too_low",
+          "cancel_on_disconnect",
+          "ioc_or_market_partial_fill",
+          "session_key_deregistered",
+          "subaccount_withdrawn",
+          "compliance",
+          "trigger_failed",
+          "validation_failed",
+          "algo_completed"
+        ]
+      },
+      "DailyTradingStatistics": {
+        "type": "object",
+        "required": [
+          "c",
+          "h",
+          "l",
+          "n",
+          "oi",
+          "p",
+          "pr",
+          "v"
+        ],
+        "properties": {
+          "c": {
+            "description": "Number of contracts traded during last 24 hours",
+            "type": "string",
+            "format": "decimal"
+          },
+          "h": {
+            "description": "Highest trade price during last 24h",
+            "type": "string",
+            "format": "decimal"
+          },
+          "l": {
+            "description": "Lowest trade price during last 24h",
+            "type": "string",
+            "format": "decimal"
+          },
+          "n": {
+            "description": "Number of trades during last 24h",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "oi": {
+            "description": "Current total open interest",
+            "type": "string",
+            "format": "decimal"
+          },
+          "p": {
+            "description": "Options: 24hr percent change in premium; Perps: 24hr percent change in mark price",
+            "type": "string",
+            "format": "decimal"
+          },
+          "pr": {
+            "description": "Premium volume traded during last 24 hours",
+            "type": "string",
+            "format": "decimal"
+          },
+          "v": {
+            "description": "Notional volume traded during last 24 hours",
+            "type": "string",
+            "format": "decimal"
+          }
+        }
+      },
+      "Direction": {
+        "type": "string",
+        "enum": [
+          "buy",
+          "sell"
+        ]
+      },
+      "JsonRpcId": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "LegUnpricedParams": {
+        "type": "object",
+        "required": [
+          "amount",
+          "direction",
+          "instrument_name"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "instrument_name": {
+            "type": "string"
+          }
+        }
+      },
+      "LiquidityRole": {
+        "type": "string",
+        "enum": [
+          "maker",
+          "taker"
+        ]
+      },
+      "MarginWatchResult": {
+        "description": "Payload for `margin.watch`.",
+        "type": "object",
+        "required": [
+          "collaterals",
+          "currency",
+          "initial_margin",
+          "maintenance_margin",
+          "margin_type",
+          "positions",
+          "subaccount_id",
+          "subaccount_value",
+          "valuation_timestamp"
+        ],
+        "properties": {
+          "collaterals": {
+            "type": "array",
+            "items": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "initial_margin": {
+            "type": "string"
+          },
+          "maintenance_margin": {
+            "type": "string"
+          },
+          "margin_type": {
+            "type": "string"
+          },
+          "positions": {
+            "type": "array",
+            "items": true
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "subaccount_value": {
+            "type": "string"
+          },
+          "valuation_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "OptionPricing": {
+        "type": "object",
+        "required": [
+          "ai",
+          "bi",
+          "d",
+          "df",
+          "f",
+          "g",
+          "i",
+          "m",
+          "r",
+          "t",
+          "v"
+        ],
+        "properties": {
+          "ai": {
+            "description": "Implied volatility of the current best ask.",
+            "type": "string"
+          },
+          "bi": {
+            "description": "Implied volatility of the current best bid.",
+            "type": "string"
+          },
+          "d": {
+            "description": "Delta of the option.",
+            "type": "string"
+          },
+          "df": {
+            "description": "Discount factor used to calculate the option premium.",
+            "type": "string"
+          },
+          "f": {
+            "description": "Forward price used to calculate the option premium.",
+            "type": "string"
+          },
+          "g": {
+            "description": "Gamma of the option.",
+            "type": "string"
+          },
+          "i": {
+            "description": "Implied volatility of the option.",
+            "type": "string"
+          },
+          "m": {
+            "description": "Mark price of the option.",
+            "type": "string"
+          },
+          "r": {
+            "description": "Rho of the option.",
+            "type": "string"
+          },
+          "t": {
+            "description": "Theta of the option.",
+            "type": "string"
+          },
+          "v": {
+            "description": "Vega of the option.",
+            "type": "string"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": [
+          "amount",
+          "average_price",
+          "creation_timestamp",
+          "direction",
+          "extra_fee",
+          "filled_amount",
+          "instrument_name",
+          "is_transfer",
+          "last_update_timestamp",
+          "limit_price",
+          "max_fee",
+          "mmp",
+          "nonce",
+          "order_fee",
+          "order_id",
+          "order_status",
+          "order_type",
+          "quote_id",
+          "replaced_order_id",
+          "signature",
+          "signature_expiry_sec",
+          "signed_limit_price",
+          "signer",
+          "subaccount_id",
+          "time_in_force",
+          "trigger_price"
+        ],
+        "properties": {
+          "algo_duration_sec": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "algo_num_slices": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "algo_slices_completed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "algo_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlgoType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "amount": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "average_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "cancel_reason": {
+            "default": "",
+            "$ref": "#/components/schemas/CancelReason"
+          },
+          "creation_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "extra_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "filled_amount": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "is_transfer": {
+            "type": "boolean"
+          },
+          "label": {
+            "default": "",
+            "type": "string"
+          },
+          "last_update_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "limit_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "max_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "mmp": {
+            "type": "boolean"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "order_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "order_status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "order_type": {
+            "$ref": "#/components/schemas/OrderType"
+          },
+          "quote_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "replaced_order_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "signed_limit_price": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "time_in_force": {
+            "$ref": "#/components/schemas/TimeInForce"
+          },
+          "trigger_price": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "trigger_price_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerPriceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trigger_reject_message": {
+            "type": "string",
+            "nullable": true
+          },
+          "trigger_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "OrderSnapshot": {
+        "type": "object",
+        "required": [
+          "amount",
+          "price"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "filled",
+          "rejected",
+          "cancelled",
+          "expired",
+          "untriggered",
+          "algo_active"
+        ]
+      },
+      "OrderType": {
+        "type": "string",
+        "enum": [
+          "limit",
+          "market"
+        ]
+      },
+      "OrderbookSnapshot": {
+        "type": "object",
+        "required": [
+          "asks",
+          "bids",
+          "instrument_name",
+          "publish_id",
+          "timestamp"
+        ],
+        "properties": {
+          "asks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSnapshot"
+            }
+          },
+          "bids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSnapshot"
+            }
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "publish_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PricedLegParamsAndResponse": {
+        "type": "object",
+        "required": [
+          "amount",
+          "direction",
+          "instrument_name",
+          "price"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "price": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          }
+        }
+      },
+      "PublicQuote": {
+        "type": "object",
+        "required": [
+          "cancel_reason",
+          "creation_timestamp",
+          "direction",
+          "fill_pct",
+          "last_update_timestamp",
+          "legs",
+          "legs_hash",
+          "liquidity_role",
+          "quote_id",
+          "rfq_id",
+          "status",
+          "subaccount_id",
+          "wallet"
+        ],
+        "properties": {
+          "cancel_reason": {
+            "$ref": "#/components/schemas/RFQCancelReason"
+          },
+          "creation_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "fill_pct": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "last_update_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricedLegParamsAndResponse"
+            }
+          },
+          "legs_hash": {
+            "type": "string"
+          },
+          "liquidity_role": {
+            "$ref": "#/components/schemas/LiquidityRole"
+          },
+          "quote_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          },
+          "rfq_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RFQStatus"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "wallet": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "PublicRfq": {
+        "type": "object",
+        "required": [
+          "cancel_reason",
+          "creation_timestamp",
+          "fill_rate",
+          "filled_pct",
+          "last_update_timestamp",
+          "legs",
+          "partial_fill_step",
+          "recent_fill_rate",
+          "rfq_id",
+          "status",
+          "subaccount_id",
+          "total_cost",
+          "valid_until",
+          "wallet"
+        ],
+        "properties": {
+          "cancel_reason": {
+            "$ref": "#/components/schemas/RFQCancelReason"
+          },
+          "creation_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fill_rate": {
+            "description": "Lifetime taker fill rate as a decimal string; null until the wallet has enough lifetime RFQs for the rate to be meaningful.",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "filled_direction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Direction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "filled_pct": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "last_update_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LegUnpricedParams"
+            }
+          },
+          "partial_fill_step": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "recent_fill_rate": {
+            "description": "Decayed-recent taker fill rate as a decimal string; null until enough recent RFQ activity has accumulated for the rate to be meaningful.",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "rfq_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RFQStatus"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_cost": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "valid_until": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "wallet": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "PublicTrade": {
+        "type": "object",
+        "required": [
+          "direction",
+          "index_price",
+          "instrument_name",
+          "mark_price",
+          "timestamp",
+          "trade_amount",
+          "trade_id",
+          "trade_price"
+        ],
+        "properties": {
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "index_price": {
+            "type": "string"
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "mark_price": {
+            "type": "string"
+          },
+          "quote_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "rfq_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trade_amount": {
+            "type": "string"
+          },
+          "trade_id": {
+            "type": "string"
+          },
+          "trade_price": {
+            "type": "string"
+          }
+        }
+      },
+      "QuotePublishResult": {
+        "type": "object",
+        "required": [
+          "creation_timestamp",
+          "direction",
+          "extra_fee",
+          "fee",
+          "fill_pct",
+          "is_transfer",
+          "label",
+          "last_update_timestamp",
+          "legs",
+          "legs_hash",
+          "liquidity_role",
+          "max_fee",
+          "mmp",
+          "nonce",
+          "quote_id",
+          "rfq_id",
+          "signature",
+          "signature_expiry_sec",
+          "signer",
+          "status",
+          "subaccount_id"
+        ],
+        "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RFQCancelReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creation_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "extra_fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "fill_pct": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "is_transfer": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "last_update_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricedLegParamsAndResponse"
+            }
+          },
+          "legs_hash": {
+            "type": "string"
+          },
+          "liquidity_role": {
+            "$ref": "#/components/schemas/LiquidityRole"
+          },
+          "max_fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "mmp": {
+            "type": "boolean"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "quote_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          },
+          "rfq_id": {
+            "description": "UUID v4 string",
+            "type": "string",
+            "format": "uuid"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RFQStatus"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tx_hash": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RFQCancelReason": {
+        "type": "string",
+        "enum": [
+          "",
+          "user_request",
+          "insufficient_margin",
+          "signed_max_fee_too_low",
+          "mmp_trigger",
+          "cancel_on_disconnect",
+          "session_key_deregistered",
+          "subaccount_withdrawn",
+          "rfq_no_longer_open",
+          "compliance"
+        ]
+      },
+      "RFQStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "filled",
+          "cancelled",
+          "expired"
+        ]
+      },
+      "RPCError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "data": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "RfqGetBestQuoteResponse": {
+        "type": "object",
+        "required": [
+          "direction",
+          "down_liquidation_price",
+          "estimated_fee",
+          "estimated_realized_pnl",
+          "estimated_realized_pnl_excl_fees",
+          "estimated_total_cost",
+          "filled_pct",
+          "is_valid",
+          "orderbook_total_cost",
+          "post_initial_margin",
+          "post_liquidation_price",
+          "pre_initial_margin",
+          "suggested_max_fee",
+          "up_liquidation_price"
+        ],
+        "properties": {
+          "best_quote": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicQuote"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "down_liquidation_price": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "estimated_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "estimated_realized_pnl": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "estimated_realized_pnl_excl_fees": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "estimated_total_cost": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "filled_pct": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "invalid_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_valid": {
+            "type": "boolean"
+          },
+          "orderbook_total_cost": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "post_initial_margin": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "post_liquidation_price": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          },
+          "pre_initial_margin": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "suggested_max_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "up_liquidation_price": {
+            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal",
+            "nullable": true
+          }
+        }
+      },
+      "SettledTrade": {
+        "description": "A settled trade returned by `public/get_trade_history`. Anonymized: no `order_id` or `label`. `wallet` is included since settled trades are visible on-chain.",
+        "type": "object",
+        "required": [
+          "direction",
+          "expected_rebate",
+          "extra_fee",
+          "index_price",
+          "instrument_name",
+          "liquidity_role",
+          "mark_price",
+          "quote_id",
+          "realized_pnl",
+          "realized_pnl_excl_fees",
+          "rfq_id",
+          "subaccount_id",
+          "timestamp",
+          "trade_amount",
+          "trade_fee",
+          "trade_id",
+          "trade_price",
+          "tx_hash",
+          "wallet"
+        ],
+        "properties": {
+          "batch_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "expected_rebate": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "extra_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "index_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "liquidity_role": {
+            "$ref": "#/components/schemas/LiquidityRole"
+          },
+          "mark_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "quote_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "realized_pnl": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "realized_pnl_excl_fees": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "rfq_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trade_amount": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "trade_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "trade_id": {
+            "type": "string"
+          },
+          "trade_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "tx_hash": {
+            "type": "string"
+          },
+          "wallet": {
+            "type": "string"
+          }
+        }
+      },
+      "SpotFeedEntry": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "confidence_prev_daily",
+          "price",
+          "price_prev_daily",
+          "timestamp_prev_daily"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "confidence_prev_daily": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "price_prev_daily": {
+            "type": "string"
+          },
+          "timestamp_prev_daily": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SpotFeedPayload": {
+        "description": "Payload for `spot_feed.{currency}` (and `spot_feed.ALL`).",
+        "type": "object",
+        "required": [
+          "feeds",
+          "timestamp"
+        ],
+        "properties": {
+          "feeds": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SpotFeedEntry"
+            },
+            "properties": {
+              "{key}": {
+                "$ref": "#/components/schemas/SpotFeedEntry"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SubscribeParams": {
+        "description": "Params for `subscribe`. `channels` is the required list of channel names to subscribe to.",
+        "type": "object",
+        "required": [
+          "channels"
+        ],
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TickerSlimPayload": {
+        "description": "Payload for `ticker_slim.{instrument}.{interval}`.",
+        "type": "object",
+        "required": [
+          "instrument_ticker",
+          "timestamp"
+        ],
+        "properties": {
+          "instrument_ticker": {
+            "$ref": "#/components/schemas/TickerSlimSnapshot"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TickerSlimSnapshot": {
+        "type": "object",
+        "required": [
+          "A",
+          "B",
+          "I",
+          "M",
+          "a",
+          "b",
+          "maxp",
+          "minp",
+          "stats",
+          "t"
+        ],
+        "properties": {
+          "A": {
+            "description": "Amount of contracts / tokens available at the best ask price.",
+            "type": "string"
+          },
+          "B": {
+            "description": "Amount of contracts / tokens available at the best bid price.",
+            "type": "string"
+          },
+          "I": {
+            "description": "Index price.",
+            "type": "string"
+          },
+          "M": {
+            "description": "Mark price.",
+            "type": "string"
+          },
+          "a": {
+            "description": "Best ask price.",
+            "type": "string"
+          },
+          "b": {
+            "description": "Best bid price.",
+            "type": "string"
+          },
+          "f": {
+            "description": "Current hourly funding rate (perpetuals only; `null` otherwise).",
+            "type": "string",
+            "nullable": true
+          },
+          "maxp": {
+            "description": "Maximum price at which an aggressive buyer can be matched. Any portion of a market order that would execute above this price is cancelled. A limit buy order with limit price above this value is treated as post only (i.e. it is rejected if it would cross any existing resting order).",
+            "type": "string"
+          },
+          "minp": {
+            "description": "Minimum price at which an aggressive seller can be matched. Any portion of a market order that would execute below this price is cancelled. A limit sell order with limit price below this value is treated as post only (i.e. it is rejected if it would cross any existing resting order).",
+            "type": "string"
+          },
+          "option_pricing": {
+            "description": "Option greeks and implied vols (options only; `null` otherwise).",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OptionPricing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stats": {
+            "description": "Trailing 24-hour trading statistics.",
+            "$ref": "#/components/schemas/DailyTradingStatistics"
+          },
+          "t": {
+            "description": "Snapshot creation timestamp, in milliseconds since the Unix epoch.",
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TimeInForce": {
+        "type": "string",
+        "enum": [
+          "gtc",
+          "post_only",
+          "fok",
+          "ioc"
+        ]
+      },
+      "Trade": {
+        "description": "Info that the user expects to get delivered when requesting trade info.",
+        "type": "object",
+        "required": [
+          "direction",
+          "expected_rebate",
+          "extra_fee",
+          "index_price",
+          "instrument_name",
+          "is_transfer",
+          "liquidity_role",
+          "mark_price",
+          "op_uuid",
+          "order_id",
+          "quote_id",
+          "realized_pnl",
+          "realized_pnl_excl_fees",
+          "rfq_id",
+          "subaccount_id",
+          "timestamp",
+          "trade_amount",
+          "trade_fee",
+          "trade_id",
+          "trade_price"
+        ],
+        "properties": {
+          "batch_status": {
+            "description": "Settlement batch status; `null` if processed by sequencer.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          },
+          "expected_rebate": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "extra_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "index_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "instrument_name": {
+            "type": "string"
+          },
+          "is_transfer": {
+            "type": "boolean"
+          },
+          "label": {
+            "default": "",
+            "type": "string"
+          },
+          "liquidity_role": {
+            "$ref": "#/components/schemas/LiquidityRole"
+          },
+          "mark_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "op_uuid": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "quote_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "realized_pnl": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "realized_pnl_excl_fees": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "rfq_id": {
+            "description": "Optional UUID v4 string",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trade_amount": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "trade_fee": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "trade_id": {
+            "type": "string"
+          },
+          "trade_price": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "tx_hash": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "TriggerPriceType": {
+        "type": "string",
+        "enum": [
+          "mark",
+          "index"
+        ]
+      },
+      "TriggerType": {
+        "type": "string",
+        "enum": [
+          "stoploss",
+          "takeprofit"
+        ]
+      },
+      "UnsubscribeParams": {
+        "description": "Params for `unsubscribe`. `channels` is optional.\n\nWhen omitted (or null) the connection unsubscribes from all channels.",
+        "type": "object",
+        "properties": {
+          "channels": {
+            "default": null,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      }
+    }
+  }
+}

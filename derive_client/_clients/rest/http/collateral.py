@@ -5,23 +5,19 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from derive_action_signing import DepositModuleData, WithdrawModuleData
-
-from derive_client.config import CURRENCY_DECIMALS
-from derive_client.data_types import Currency
+from derive_client.data_types import ChecksumAddress
 from derive_client.data_types.generated_models import (
-    MarginType,
-    PrivateDepositParamsSchema,
-    PrivateDepositResultSchema,
-    PrivateGetCollateralsParamsSchema,
-    PrivateGetCollateralsResultSchema,
-    PrivateGetMarginParamsSchema,
-    PrivateGetMarginResultSchema,
-    PrivateWithdrawParamsSchema,
-    PrivateWithdrawResultSchema,
-    SimulatedCollateralSchema,
-    SimulatedPositionSchema,
+    AssetType,
+    GetCollateralsRequest,
+    GetErc20TransferHistoryRequest,
+    PrivateGetCollateralsResponse,
+    PrivateTransferSpotExternalRequest,
+    PrivateTransferSpotExternalResponse,
+    PrivateTransferSpotRequest,
+    PrivateTransferSpotResponse,
+    TransferEntry,
 )
+from derive_client.data_types.module_data import TransferSpotExternalModuleData, TransferSpotModuleData
 
 if TYPE_CHECKING:
     from .subaccount import Subaccount
@@ -39,139 +35,160 @@ class CollateralOperations:
         """
         self._subaccount = subaccount
 
-    def get(self) -> PrivateGetCollateralsResultSchema:
+    def get(self) -> PrivateGetCollateralsResponse:
         """Get collaterals of a subaccount."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetCollateralsParamsSchema(subaccount_id=subaccount_id)
+        params = GetCollateralsRequest(subaccount_id=subaccount_id)
         result = self._subaccount._private_api.rpc.get_collaterals(params)
         return result
 
-    def get_margin(
+    def get_transfer_history(
         self,
-        simulated_collateral_changes: Optional[list[SimulatedCollateralSchema]] = None,
-        simulated_position_changes: Optional[list[SimulatedPositionSchema]] = None,
-    ) -> PrivateGetMarginResultSchema:
-        """
-        Calculates margin for a given subaccount and (optionally) a simulated state change.
+        *,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None,
+        wallet: bool = False,
+    ) -> list[TransferEntry]:
+        """Settled spot (ERC-20) transfer history; transfer_spot() and
+        transfer_spot_external() calls that have settled, for this
+        subaccount, or the whole wallet if wallet=True."""
 
-        Does not take into account open orders margin requirements.
-        """
+        params = GetErc20TransferHistoryRequest(
+            subaccount_id=None if wallet else self._subaccount.id,
+            wallet=self._subaccount._auth.wallet if wallet else None,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+        )
+        result = self._subaccount._private_api.rpc.get_erc20_transfer_history(params)
+        return result.transfers
+
+    def transfer_spot(
+        self,
+        *,
+        amount: Decimal,
+        asset_name: str,
+        to_subaccount_id: int = 0,
+        new_subaccount_manager: int = 0,
+        max_fee_usd: Decimal = Decimal("0"),
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+    ) -> PrivateTransferSpotResponse:
+        """Moves a spot balance between the owner's OWN subaccounts."""
+
+        if to_subaccount_id == 0 and new_subaccount_manager == 0:
+            raise ValueError("Specify to_subaccount_id, or new_subaccount_manager to create a new subaccount instead.")
+
+        if new_subaccount_manager != 0 and max_fee_usd <= 0:
+            raise ValueError(
+                "Creating a subaccount charges a transfer fee -- "
+                "set max_fee_usd (>= 1) when new_subaccount_manager is used."
+            )
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetMarginParamsSchema(
-            subaccount_id=subaccount_id,
-            simulated_collateral_changes=simulated_collateral_changes,
-            simulated_position_changes=simulated_position_changes,
-        )
-        result = self._subaccount._private_api.rpc.get_margin(params)
-        return result
 
-    def deposit_to_subaccount(
-        self,
-        *,
-        amount: Decimal,
-        asset_name: str,
-        subaccount_id: Optional[int] = None,
-        nonce: Optional[int] = None,
-        signature_expiry_sec: Optional[int] = None,
-        is_atomic_signing: bool = False,
-    ) -> PrivateDepositResultSchema:
-        """Deposit an asset to a subaccount from the LightAccount wallet."""
+        assets = self._subaccount.markets.get_assets(asset_type=AssetType.erc20, currency=asset_name)
+        if not len(assets) == 1:
+            raise RuntimeError(f"Expected exactly one asset for {asset_name}, got {assets}")
+        asset = assets[0]
 
-        subaccount_id = self._subaccount.id if subaccount_id is None else subaccount_id
-        module_address = self._subaccount._config.contracts.DEPOSIT_MODULE
-
-        currency = self._subaccount.markets.get_currency(currency=asset_name)
-        if (asset := currency.protocol_asset_addresses.spot) is None:
-            raise ValueError(f"asset '{asset_name}' has no spot address, found: {currency}")
-
-        managers = []
-        for manager in currency.managers:
-            if manager.margin_type == self._subaccount.margin_type == MarginType.SM:
-                managers.append(manager)
-            if manager.margin_type is self._subaccount.margin_type and manager.currency == self._subaccount.currency:
-                managers.append(manager)
-
-        if len(managers) != 1:
-            msg = f"Expected exactly one manager for {(self._subaccount.margin_type, self._subaccount.currency)}, found {managers}"  # noqa: E501
-            raise ValueError(msg)
-
-        manager_address = managers[0].address
-        decimals = CURRENCY_DECIMALS[Currency[currency.currency]]
-
-        module_data = DepositModuleData(
+        module_data = TransferSpotModuleData(
+            to_subaccount_id=to_subaccount_id,
+            new_subaccount_manager=new_subaccount_manager,
+            asset=asset.address,
+            sub_id=int(asset.sub_id),
             amount=amount,
-            asset=asset,
-            manager=manager_address,
-            decimals=decimals,
-            asset_name=asset_name,
+            max_fee_usd=max_fee_usd,
         )
 
+        module_address = self._subaccount._config.contracts.TRANSFER_MODULE
         signed_action = self._subaccount.sign_action(
-            nonce=nonce,
             module_address=module_address,
             module_data=module_data,
+            nonce=nonce,
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateDepositParamsSchema(
+        params = PrivateTransferSpotRequest(
             amount=amount,
             asset_name=asset_name,
+            max_fee_usd=max_fee_usd,
+            new_subaccount_manager=new_subaccount_manager,
             nonce=signed_action.nonce,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
+            sub_id=int(asset.sub_id),
             subaccount_id=subaccount_id,
-            is_atomic_signing=is_atomic_signing,
+            to_subaccount_id=to_subaccount_id,
         )
-        result = self._subaccount._private_api.rpc.deposit(params)
+
+        result = self._subaccount._private_api.rpc.transfer_spot(params)
         return result
 
-    def withdraw_from_subaccount(
+    def transfer_spot_external(
         self,
         *,
         amount: Decimal,
         asset_name: str,
-        subaccount_id: Optional[int] = None,
+        recipient_address: str,
+        to_subaccount_id: int = 0,
+        new_subaccount_manager: int = 0,
+        max_fee_usd: Decimal,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
-        is_atomic_signing: bool = False,
-    ) -> PrivateWithdrawResultSchema:
-        """Withdraw an asset from a subaccount to the LightAccount wallet."""
+    ) -> PrivateTransferSpotExternalResponse:
+        """Moves a spot balance to a subaccount belonging to a DIFFERENT owner's wallet.
 
-        subaccount_id = self._subaccount.id if subaccount_id is None else subaccount_id
-        module_address = self._subaccount._config.contracts.WITHDRAWAL_MODULE
+        recipient_address must already be on the sender's whitelist,
+        call LightAccount.update_whitelisted_recipients() first.
+        """
 
-        currency = self._subaccount.markets.get_currency(currency=asset_name)
-        if (asset := currency.protocol_asset_addresses.spot) is None:
-            raise ValueError(f"asset '{asset_name}' has no spot address, found: {currency}")
+        if to_subaccount_id == 0 and new_subaccount_manager == 0:
+            raise ValueError(
+                "Specify the recipient's to_subaccount_id, or new_subaccount_manager to create one for them instead."
+            )
 
-        decimals = CURRENCY_DECIMALS[Currency[asset_name]]
+        subaccount_id = self._subaccount.id
+        recipient = ChecksumAddress(recipient_address)
 
-        module_data = WithdrawModuleData(
+        assets = self._subaccount.markets.get_assets(asset_type=AssetType.erc20, currency=asset_name)
+        if not len(assets) == 1:
+            raise RuntimeError(f"Expected exactly one asset for {asset_name}, got {assets}")
+        asset = assets[0]
+
+        module_data = TransferSpotExternalModuleData(
+            to_subaccount_id=to_subaccount_id,
+            new_subaccount_manager=new_subaccount_manager,
+            asset=asset.address,
+            sub_id=int(asset.sub_id),
             amount=amount,
-            asset=asset,
-            decimals=decimals,
-            asset_name=asset_name,
+            max_fee_usd=max_fee_usd,
+            recipient=recipient,
         )
 
+        module_address = self._subaccount._config.contracts.EXTERNAL_TRANSFER_MODULE
         signed_action = self._subaccount.sign_action(
-            nonce=nonce,
             module_address=module_address,
             module_data=module_data,
+            nonce=nonce,
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateWithdrawParamsSchema(
+        params = PrivateTransferSpotExternalRequest(
             amount=amount,
             asset_name=asset_name,
+            max_fee_usd=max_fee_usd,
+            new_subaccount_manager=new_subaccount_manager,
             nonce=signed_action.nonce,
+            recipient_address=recipient,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
+            sub_id=int(asset.sub_id),
             subaccount_id=subaccount_id,
-            is_atomic_signing=is_atomic_signing,
+            to_subaccount_id=to_subaccount_id,
         )
-        result = self._subaccount._private_api.rpc.withdraw(params)
+
+        result = self._subaccount._private_api.rpc.transfer_spot_external(params)
         return result

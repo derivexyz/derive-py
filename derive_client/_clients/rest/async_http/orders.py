@@ -9,27 +9,25 @@ from derive_action_signing import TradeModuleData
 
 from derive_client.config import INT64_MAX
 from derive_client.data_types.generated_models import (
+    CancelAllRequest,
+    CancelByInstrumentRequest,
+    CancelByInstrumentResponse,
+    CancelByLabelRequest,
+    CancelByLabelResponse,
+    CancelByNonceRequest,
+    CancelByNonceResponse,
+    CancelOrderRequest,
+    CreateOrderRequest,
     Direction,
-    OrderResponseSchema,
-    OrderStatus,
+    GetOpenOrdersRequest,
+    GetOrderHistoryRequest,
+    GetOrderRequest,
+    Order,
+    OrderCreatedResponse,
     OrderType,
-    PrivateCancelAllParamsSchema,
-    PrivateCancelByInstrumentParamsSchema,
-    PrivateCancelByInstrumentResultSchema,
-    PrivateCancelByLabelParamsSchema,
-    PrivateCancelByLabelResultSchema,
-    PrivateCancelByNonceParamsSchema,
-    PrivateCancelByNonceResultSchema,
-    PrivateCancelParamsSchema,
-    PrivateCancelResultSchema,
-    PrivateGetOpenOrdersParamsSchema,
-    PrivateGetOrderParamsSchema,
-    PrivateGetOrderResultSchema,
-    PrivateGetOrdersParamsSchema,
-    PrivateOrderParamsSchema,
-    PrivateReplaceParamsSchema,
-    PrivateReplaceResultSchema,
-    Result,
+    PaginatedOrdersResult,
+    ReplaceOrderRequest,
+    ReplaceOrderResponse,
     TimeInForce,
     TriggerPriceType,
     TriggerType,
@@ -72,7 +70,7 @@ class OrderOperations:
         trigger_price: Optional[Decimal] = None,
         trigger_price_type: Optional[TriggerPriceType] = None,
         trigger_type: Optional[TriggerType] = None,
-    ) -> OrderResponseSchema:
+    ) -> OrderCreatedResponse:
         """
         Create a new order.
 
@@ -85,8 +83,8 @@ class OrderOperations:
         asset_address = instrument.base_asset_address
         sub_id = int(instrument.base_asset_sub_id)
 
-        amount = Decimal(amount).quantize(instrument.amount_step)
-        limit_price = Decimal(limit_price).quantize(instrument.tick_size)
+        amount = Decimal(amount).quantize(Decimal(instrument.amount_step))
+        limit_price = Decimal(limit_price).quantize(Decimal(instrument.tick_size))
 
         is_bid = direction == Direction.buy
         module_data = TradeModuleData(
@@ -107,13 +105,13 @@ class OrderOperations:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateOrderParamsSchema(
+        params = CreateOrderRequest(
             amount=amount,
             direction=direction,
             instrument_name=instrument_name,
             limit_price=limit_price,
             max_fee=max_fee,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
@@ -131,45 +129,45 @@ class OrderOperations:
             trigger_type=trigger_type,
         )
         result = await self._subaccount._private_api.rpc.order(params)
-        return result.order
+        return result
 
-    async def get(self, *, order_id: str) -> PrivateGetOrderResultSchema:
+    async def get(self, *, order_id: str) -> Order:
         """Get state of an order by order id."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetOrderParamsSchema(
+        params = GetOrderRequest(
             order_id=order_id,
             subaccount_id=subaccount_id,
         )
         result = await self._subaccount._private_api.rpc.get_order(params)
         return result
 
-    async def list(
+    async def history(
         self,
         *,
-        instrument_name: Optional[str] = None,
-        label: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 100,
-        status: Optional[OrderStatus] = None,
-    ) -> List[OrderResponseSchema]:
-        """Get orders for a subaccount, with optional filtering."""
+        from_timestamp: Optional[int] = None,
+        to_timestamp: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+    ) -> PaginatedOrdersResult:
+        """
+        Get order history of the currently active subaccount.
+        """
 
-        params = PrivateGetOrdersParamsSchema(
+        params = GetOrderHistoryRequest(
             subaccount_id=self._subaccount.id,
-            instrument_name=instrument_name,
-            label=label,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
             page=page,
             page_size=page_size,
-            status=status,
         )
-        result = await self._subaccount._private_api.rpc.get_orders(params)
-        return result.orders
+        result = await self._subaccount._private_api.rpc.get_order_history(params)
+        return result
 
-    async def list_open(self) -> List[OrderResponseSchema]:
+    async def list_open(self) -> List[Order]:
         """Get all open orders of a subacccount."""
 
-        params = PrivateGetOpenOrdersParamsSchema(subaccount_id=self._subaccount.id)
+        params = GetOpenOrdersRequest(subaccount_id=self._subaccount.id)
         result = await self._subaccount._private_api.rpc.get_open_orders(params)
         return result.orders
 
@@ -178,10 +176,12 @@ class OrderOperations:
         *,
         instrument_name: str,
         order_id: str,
-    ) -> PrivateCancelResultSchema:
-        """Cancel a single order."""
+    ) -> Order:
+        """
+        Cancel a single order.
+        """
 
-        params = PrivateCancelParamsSchema(
+        params = CancelOrderRequest(
             instrument_name=instrument_name,
             order_id=order_id,
             subaccount_id=self._subaccount.id,
@@ -194,14 +194,16 @@ class OrderOperations:
         *,
         label: str,
         instrument_name: Optional[str] = None,
-    ) -> PrivateCancelByLabelResultSchema:
+    ) -> CancelByLabelResponse:
         """
         Cancel all open orders for a given subaccount and a given label.
 
         If instrument_name is provided, only orders for that instrument will be cancelled.
+
+        v3 change: returns a cancelled-order count, not the cancelled orders.
         """
 
-        params = PrivateCancelByLabelParamsSchema(
+        params = CancelByLabelRequest(
             label=label,
             instrument_name=instrument_name,
             subaccount_id=self._subaccount.id,
@@ -214,33 +216,44 @@ class OrderOperations:
         *,
         instrument_name: str,
         nonce: int,
-    ) -> PrivateCancelByNonceResultSchema:
-        """Cancel a single order by nonce. Uses up that nonce if the order does not exist,
-        so any future orders with that nonce will fail."""
+    ) -> CancelByNonceResponse:
+        """
+        Cancel a single order by nonce. Uses up that nonce if the order does not exist,
+        so any future orders with that nonce will fail.
 
-        params = PrivateCancelByNonceParamsSchema(
+        v3 change: CancelByNonceRequest no longer accepts wallet, dropped.
+        """
+
+        params = CancelByNonceRequest(
             nonce=nonce,
             instrument_name=instrument_name,
             subaccount_id=self._subaccount.id,
-            wallet=self._subaccount._auth.wallet,
         )
         result = await self._subaccount._private_api.rpc.cancel_by_nonce(params)
         return result
 
-    async def cancel_by_instrument(self, *, instrument_name: str) -> PrivateCancelByInstrumentResultSchema:
-        """Cancel all orders for this instrument."""
+    async def cancel_by_instrument(self, *, instrument_name: str) -> CancelByInstrumentResponse:
+        """
+        Cancel all orders for this instrument.
 
-        params = PrivateCancelByInstrumentParamsSchema(
+        v3 change: returns a cancelled-order count, not the cancelled orders.
+        """
+
+        params = CancelByInstrumentRequest(
             instrument_name=instrument_name,
             subaccount_id=self._subaccount.id,
         )
         result = await self._subaccount._private_api.rpc.cancel_by_instrument(params)
         return result
 
-    async def cancel_all(self) -> Result:
-        """Cancel all orders for this instrument."""
+    async def cancel_all(self) -> str:
+        """
+        Cancel all orders for this instrument.
 
-        params = PrivateCancelAllParamsSchema(subaccount_id=self._subaccount.id)
+        v3 change: response is now the literal string "ok", not a Result object.
+        """
+
+        params = CancelAllRequest(subaccount_id=self._subaccount.id)
         result = await self._subaccount._private_api.rpc.cancel_all(params)
         return result
 
@@ -268,7 +281,7 @@ class OrderOperations:
         trigger_price: Optional[Decimal] = None,
         trigger_price_type: Optional[TriggerPriceType] = None,
         trigger_type: Optional[TriggerType] = None,
-    ) -> PrivateReplaceResultSchema:
+    ) -> ReplaceOrderResponse:
         """
         Cancel an existing order with nonce or order_id and create new order with
         different order_id in a single RPC call.
@@ -279,6 +292,10 @@ class OrderOperations:
         cancelled.
 
         Amount and limit_price are automatically quantized to match instrument specifications.
+
+        v3 change: return shape is now ReplaceOrderResponse (cancelled_order,
+        order | None, create_order_error | None), not a flat order. Check
+        .create_order_error before assuming .order succeeded.
         """
 
         if (nonce_to_cancel is None) == (order_id_to_cancel is None):
@@ -290,8 +307,8 @@ class OrderOperations:
         asset_address = instrument.base_asset_address
         sub_id = int(instrument.base_asset_sub_id)
 
-        amount = Decimal(amount).quantize(instrument.amount_step)
-        limit_price = Decimal(limit_price).quantize(instrument.tick_size)
+        amount = Decimal(amount).quantize(Decimal(instrument.amount_step))
+        limit_price = Decimal(limit_price).quantize(Decimal(instrument.tick_size))
 
         is_bid = direction == Direction.buy
         module_data = TradeModuleData(
@@ -312,13 +329,13 @@ class OrderOperations:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = PrivateReplaceParamsSchema(
+        params = ReplaceOrderRequest(
             amount=amount,
             direction=direction,
             instrument_name=instrument_name,
             limit_price=limit_price,
             max_fee=max_fee,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,

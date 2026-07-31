@@ -3,24 +3,24 @@
 import pytest
 
 from derive_client.data_types.generated_models import (
-    PrivateGetOrdersParamsSchema,
-    PrivateGetOrdersResultSchema,
-    PrivateGetSubaccountsParamsSchema,
-    PrivateGetSubaccountsResultSchema,
+    GetOrderHistoryRequest,
+    GetSubaccountsRequest,
+    PaginatedOrdersResult,
+    PrivateGetSubaccountsResponse,
 )
 
 
 @pytest.mark.asyncio
 async def test_get_private_get_subaccounts(client_admin_wallet):
     wallet = client_admin_wallet._auth.wallet
-    params = PrivateGetSubaccountsParamsSchema(wallet=wallet)
+    params = GetSubaccountsRequest(wallet=wallet)
     result = await client_admin_wallet._private_api.rpc.get_subaccounts(params=params)
-    assert isinstance(result, PrivateGetSubaccountsResultSchema)
+    assert isinstance(result, PrivateGetSubaccountsResponse)
 
 
 @pytest.mark.asyncio
-async def test_get_private_get_orders(client_admin_wallet):
+async def test_get_private_get_order_history(client_admin_wallet):
     subaccount_id = client_admin_wallet.active_subaccount.id
-    params = PrivateGetOrdersParamsSchema(subaccount_id=subaccount_id)
-    result = await client_admin_wallet._private_api.rpc.get_orders(params=params)
-    assert isinstance(result, PrivateGetOrdersResultSchema)
+    params = GetOrderHistoryRequest(subaccount_id=subaccount_id)
+    result = await client_admin_wallet._private_api.rpc.get_order_history(params=params)
+    assert isinstance(result, PaginatedOrdersResult)

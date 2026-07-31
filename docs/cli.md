@@ -8,7 +8,6 @@ Run any command with `--help` to see detailed usage:
 
 ```bash
 drv --help              # Show all commands
-drv bridge --help       # Show bridge command options
 ```
 
 ## Command Tree
@@ -18,14 +17,9 @@ Derive Client
 ├── account........................... Account details.
 │   ├── get........................... Account details.
 │   └── portfolios.................... Get all portfolios of a wallet.
-├── bridge............................ Bridge assets to/from Derive (ETH, ERC20, DRV).
-│   ├── deposit....................... Deposit funds via the socket superbridge to a Derive funding account.
-│   ├── gas........................... Deposit gas (native token) for bridging via the standard bridge to the owner's EOA.
-│   └── withdraw...................... Withdraw funds from Derive funding account via the Withdraw Wrapper contract.
 ├── collateral........................ Manage collateral and margin.
 │   ├── deposit-to-subaccount......... Deposit an asset to your subaccount.
 │   ├── get........................... Get subaccount collaterals.
-│   ├── get-margin.................... Calculates margin for a given subaccount.
 │   └── withdraw-from-subaccount...... Withdraw an asset to your lightaccount wallet.
 ├── market............................ Query market data: currencies, instruments, tickers.
 │   ├── currency...................... Get currency details.
@@ -45,7 +39,7 @@ Derive Client
 │   ├── list.......................... List active positions of a subaccount.
 │   └── transfer...................... Transfers a positions from one subaccount to another, owned by the same wallet.
 ├── transaction....................... Query transaction status and details.
-│   └── get........................... Used for getting a transaction by its transaction id.
+│   └── get........................... Used for getting a transaction by its operation UUID.
 └── tree.............................. Print the command tree structure.
 ```
 

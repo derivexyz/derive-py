@@ -5,10 +5,12 @@ Asynchronous WebSocket client for Derive.
 from __future__ import annotations
 
 import contextlib
+from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
-from typing import Generator
+from typing import AsyncIterator, Generator, cast
 
+from hexbytes import HexBytes
 from pydantic import ConfigDict, validate_call
 from web3 import Web3
 
@@ -25,9 +27,11 @@ from derive_client._clients.rest.async_http.transactions import TransactionOpera
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
+from derive_client._web3 import ContractRegistry, Deposits
+from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, LoggerType
-from derive_client.data_types.generated_models import PublicLoginParamsSchema
+from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
+from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
 
 
@@ -80,6 +84,12 @@ class WebSocketClient:
 
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
+
+        sync_w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
+        network = "sepolia" if env == Environment.TEST else "ethereum"
+        self._contract_registry = ContractRegistry(w3=sync_w3, network=network)
+        self._deposits = Deposits(self._contract_registry, w3=sync_w3, logger=self._logger)
+
         self._logger.info(
             dedent(f"""
                         Initialized WebSocketClient for:
@@ -107,11 +117,17 @@ class WebSocketClient:
         await self._initialize_account_and_markets()
 
     async def _authenticate(self) -> None:
-        """Perform WebSocket authentication."""
-
-        params = PublicLoginParamsSchema(**self._auth.sign_ws_login())
-        subaccount_ids = await self._public_api.rpc.login(params=params)
-        self._logger.debug(f"WebSocket login returned subaccount ids: {subaccount_ids}")
+        """
+        Perform WebSocket authentication via `public/login`.
+        """
+        login_dict = self._auth.sign_ws_login()
+        login_params = LoginRequest(
+            wallet=login_dict["wallet"],
+            timestamp=int(login_dict["timestamp"]),
+            signature=login_dict["signature"],
+        )
+        subaccount_ids = await self._public_api.rpc.login(login_params)
+        self._logger.info(f"WebSocket authenticated; accessible subaccounts: {subaccount_ids}")
 
         # Validate subaccount
         if self._subaccount_id not in subaccount_ids:
@@ -119,6 +135,13 @@ class WebSocketClient:
                 f"Subaccount {self._subaccount_id} does not exist for wallet {self._auth.wallet}. "
                 f"Available subaccounts: {subaccount_ids}"
             )
+
+    async def set_cancel_on_disconnect(self, enabled: bool = True) -> str:
+        """
+        Toggle cancel-on-disconnect for the authenticated wallet.
+        """
+        params = SetCancelOnDisconnectRequest(enabled=enabled)
+        return await self._private_api.rpc.set_cancel_on_disconnect(params)
 
     async def _initialize_account_and_markets(self) -> None:
         """Initialize account and fetch market data."""
@@ -152,6 +175,7 @@ class WebSocketClient:
         self._markets._erc20_instruments_cache.clear()
         self._markets._perp_instruments_cache.clear()
         self._markets._option_instruments_cache.clear()
+        self._markets._risk_universes_cache.clear()
 
     async def _instantiate_account(self) -> LightAccount:
         """Instantiate account using WebSocket API."""
@@ -172,6 +196,7 @@ class WebSocketClient:
             logger=self._logger,
             markets=self._markets,
             transactions=self._transactions,
+            deposits=self._deposits,
             public_api=self._public_api,  # type: ignore
             private_api=self._private_api,  # type: ignore
         )
@@ -195,6 +220,34 @@ class WebSocketClient:
         if (subaccount := self._subaccounts.get(self._subaccount_id)) is None:
             raise RuntimeError("Specified subaccount not initialized. Call connect() first.")
         return subaccount
+
+    async def plan_deposit_to_new_subaccount(
+        self,
+        *,
+        risk_universe_id: RiskUniverseID,
+        margin_type: MarginType,
+        asset_name: str,
+        amount: Decimal,
+        gas_priority: GasPriority = GasPriority.MEDIUM,
+    ) -> AsyncIterator[AsyncDepositStep]:
+        """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
+
+        risk_universes = self._markets._risk_universes_cache or await self._markets.get_risk_universes()
+
+        sync_plan = self._deposits.plan_new_subaccount(
+            risk_universes=risk_universes,
+            risk_universe_id=risk_universe_id,
+            margin_type=margin_type,
+            asset_name=asset_name,
+            amount=amount,
+            from_address=ChecksumAddress(self._auth.account.address),
+            owner=self._auth.wallet,
+            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            gas_priority=gas_priority,
+        )
+
+        async for step in iterate_deposit_steps_in_thread(sync_plan):
+            yield step
 
     async def fetch_subaccount(self, subaccount_id: int) -> Subaccount:
         """Fetch a subaccount from API and cache it."""

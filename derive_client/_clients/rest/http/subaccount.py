@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import functools
-from typing import Optional
+from decimal import Decimal
+from typing import Iterator, Optional, cast
 
 from derive_action_signing import ModuleData, SignedAction
+from hexbytes import HexBytes
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.collateral import CollateralOperations
@@ -17,12 +19,15 @@ from derive_client._clients.rest.http.rfq import RFQOperations
 from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext
-from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType
+from derive_client._web3.deposits import Deposits, DepositStep, resolve_collateral
+from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
-    MarginType,
-    PrivateGetSubaccountParamsSchema,
-    PrivateGetSubaccountResultSchema,
+    GetSubaccountRequest,
+    PrivateWithdrawRequest,
+    PrivateWithdrawResponse,
 )
+from derive_client.data_types.generated_models import Subaccount as SubaccountState
+from derive_client.data_types.module_data import WithdrawModuleData
 
 
 @functools.total_ordering
@@ -38,9 +43,10 @@ class Subaccount:
         logger: LoggerType,
         markets: MarketOperations,
         transactions: TransactionOperations,
+        deposits: Deposits,
         public_api: PublicAPI,
         private_api: PrivateAPI,
-        _state: PrivateGetSubaccountResultSchema | None = None,
+        _state: SubaccountState | None = None,
     ):
         """
         Initialize subaccount (internal use - use from_api() instead).
@@ -64,6 +70,7 @@ class Subaccount:
         self._private_api = private_api
 
         self._markets = markets
+        self._deposits = deposits
         self._transactions = transactions
 
         self._collateral = CollateralOperations(subaccount=self)
@@ -73,7 +80,7 @@ class Subaccount:
         self._rfq = RFQOperations(subaccount=self)
         self._mmp = MMPOperations(subaccount=self)
 
-        self._state: PrivateGetSubaccountResultSchema | None = _state
+        self._state: SubaccountState | None = _state
 
     @classmethod
     def from_api(
@@ -85,6 +92,7 @@ class Subaccount:
         logger: LoggerType,
         markets: MarketOperations,
         transactions: TransactionOperations,
+        deposits: Deposits,
         public_api: PublicAPI,
         private_api: PrivateAPI,
     ) -> Subaccount:
@@ -100,6 +108,7 @@ class Subaccount:
             config: Environment configuration
             markets: Market operations interface
             transactions: Transaction operations interface
+            deposits: Deposits interface for deposit operations
             public_api: Public API interface
             private_api: Private API interface for authenticated requests
 
@@ -110,7 +119,7 @@ class Subaccount:
             APIError: If subaccount does not exist or API call fails
         """
 
-        params = PrivateGetSubaccountParamsSchema(subaccount_id=subaccount_id)
+        params = GetSubaccountRequest(subaccount_id=subaccount_id)
         result = private_api.rpc.get_subaccount(params)
         state = result
         logger.debug(f"Subaccount validated: {state.subaccount_id}")
@@ -122,6 +131,7 @@ class Subaccount:
             logger=logger,
             markets=markets,
             transactions=transactions,
+            deposits=deposits,
             public_api=public_api,
             private_api=private_api,
             _state=state,
@@ -130,13 +140,13 @@ class Subaccount:
     def refresh(self) -> Subaccount:
         """Refresh mutable state from API."""
 
-        params = PrivateGetSubaccountParamsSchema(subaccount_id=self.id)
+        params = GetSubaccountRequest(subaccount_id=self.id)
         result = self._private_api.rpc.get_subaccount(params)
         self._state = result
         return self
 
     @property
-    def state(self) -> PrivateGetSubaccountResultSchema:
+    def state(self) -> SubaccountState:
         """Current mutable state (positions, orders, collateral, etc)."""
 
         if not self._state:
@@ -147,14 +157,26 @@ class Subaccount:
         return self._state
 
     @property
-    def margin_type(self) -> MarginType:
-        """Margin type of subaccount (PM (Portfolio Margin), PM2 (Portfolio Margin 2), or SM (Standard Margin))"""
+    def risk_universe_id(self) -> RiskUniverseID:
+        """
+        Risk Universe ID of subaccount.
+        """
+
+        return RiskUniverseID(self.state.risk_universe_id)
+
+    @property
+    def margin_type(self) -> str:
+        """
+        Margin type of subaccount.
+        """
 
         return self.state.margin_type
 
     @property
-    def currency(self) -> str:
-        """Currency of subaccount."""
+    def currency(self) -> list[str]:
+        """
+        Currency of subaccount.
+        """
 
         return self.state.currency
 
@@ -227,6 +249,77 @@ class Subaccount:
             signature_expiry_sec=signature_expiry_sec,
             subaccount_id=self.id,
         )
+
+    def plan_deposit(
+        self,
+        *,
+        asset_name: str,
+        amount: Decimal,
+        gas_priority: GasPriority = GasPriority.MEDIUM,
+    ) -> Iterator[DepositStep]:
+        """Deposit into this subaccount."""
+
+        risk_universes = self.markets._risk_universes_cache or self.markets.get_risk_universes()
+
+        return self._deposits.plan_deposit(
+            risk_universes=risk_universes,
+            manager_id=self.state.manager_id,
+            subaccount_id=self.id,
+            asset_name=asset_name,
+            amount=amount,
+            from_address=ChecksumAddress(self._auth.account.address),
+            fallback_recipient=self._auth.wallet,
+            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            gas_priority=gas_priority,
+        )
+
+    def withdraw(
+        self,
+        *,
+        asset_name: str,
+        amount: Decimal,
+        max_fee_usd: Decimal = Decimal("1"),
+        force_batch: bool = False,
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+    ) -> PrivateWithdrawResponse:
+        """Submits a signed request to withdraw a spot asset out of a subaccount."""
+
+        risk_universes = self.markets._risk_universes_cache or self.markets.get_risk_universes()
+        collateral = resolve_collateral(risk_universes, manager_id=self.state.manager_id, asset_name=asset_name)
+        recipient = self._auth.account.address  # signer MUST be the recipient
+
+        module_data = WithdrawModuleData(
+            protocol_asset=collateral.protocol_asset_address,
+            max_fee_usd=max_fee_usd,
+            recipient=recipient,
+            amount=amount,
+            decimals=collateral.decimals,
+            force_batch=force_batch,
+        )
+
+        module_address = self._config.contracts.WITHDRAW_MODULE
+        signed_action = self.sign_action(
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = PrivateWithdrawRequest(
+            subaccount_id=self.id,
+            asset_name=asset_name,
+            amount_in_underlying=str(amount),
+            max_fee_usd=max_fee_usd,
+            force_batch=force_batch,
+            nonce=signed_action.nonce,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+        )
+
+        response = self._private_api.rpc.withdraw(params)
+        return response
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__qualname__}({self.id}) object at {hex(id(self))}>"

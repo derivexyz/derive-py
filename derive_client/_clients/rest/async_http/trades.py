@@ -1,21 +1,17 @@
-"""Order management operations."""
+"""Trade management operations."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from derive_client.config import INT64_MAX
 from derive_client.data_types.generated_models import (
-    InstrumentType as AssetType,
-)
-from derive_client.data_types.generated_models import (
-    PrivateGetTradeHistoryParamsSchema,
-    PublicGetTradeHistoryParamsSchema,
-    TradeResponseSchema,
-    TradeSettledPublicResponseSchema,
-)
-from derive_client.data_types.generated_models import (
-    TxStatus5 as TxStatus4,
+    AssetType,
+    BatchStatus,
+    GetPublicTradeHistoryRequest,
+    GetTradeHistoryRequest,
+    SettledTrade,
+    TradeHistoryResponse,
 )
 
 if TYPE_CHECKING:
@@ -45,12 +41,13 @@ class TradeOperations:
         subaccount_id: int | None = None,
         to_timestamp: int = INT64_MAX,
         trade_id: str | None = None,
-        tx_hash: str | None = None,
-        tx_status: TxStatus4 = TxStatus4('settled'),
-    ) -> list[TradeSettledPublicResponseSchema]:
-        """Get trade history for a subaccount, with filter parameters."""
+        batch_status: Optional[BatchStatus] = BatchStatus.Settled,
+    ) -> list[SettledTrade]:
+        """
+        Get trade history for a subaccount, with filter parameters.
+        """
 
-        params = PublicGetTradeHistoryParamsSchema(
+        params = GetPublicTradeHistoryRequest(
             currency=currency,
             from_timestamp=from_timestamp,
             instrument_name=instrument_name,
@@ -60,8 +57,7 @@ class TradeOperations:
             subaccount_id=subaccount_id,
             to_timestamp=to_timestamp,
             trade_id=trade_id,
-            tx_hash=tx_hash,
-            tx_status=tx_status,
+            batch_status=batch_status,
         )
         result = await self._subaccount._public_api.rpc.get_trade_history(params)
         return result.trades
@@ -75,10 +71,10 @@ class TradeOperations:
         page_size: int = 100,
         quote_id: str | None = None,
         to_timestamp: int = INT64_MAX,
-    ) -> list[TradeResponseSchema]:
+    ) -> list[TradeHistoryResponse]:
         """Get trade history for a subaccount, with filter parameters."""
 
-        params = PrivateGetTradeHistoryParamsSchema(
+        params = GetTradeHistoryRequest(
             from_timestamp=from_timestamp,
             instrument_name=instrument_name,
             order_id=order_id,

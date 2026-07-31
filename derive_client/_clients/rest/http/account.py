@@ -2,38 +2,30 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Optional
 
-from derive_action_signing import DepositModuleData
+import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
-from derive_client.config import CURRENCY_DECIMALS
-from derive_client.data_types import ChecksumAddress, Currency, EnvConfig, LoggerType
+from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
-    MarginType,
-    PrivateCreateSubaccountParamsSchema,
-    PrivateCreateSubaccountResultSchema,
-    PrivateEditSessionKeyParamsSchema,
-    PrivateEditSessionKeyResultSchema,
-    PrivateGetAccountParamsSchema,
-    PrivateGetAccountResultSchema,
-    PrivateGetAllPortfoliosParamsSchema,
-    PrivateGetSubaccountResultSchema,
-    PrivateGetSubaccountsParamsSchema,
-    PrivateGetSubaccountsResultSchema,
-    PrivateRegisterScopedSessionKeyParamsSchema,
-    PrivateRegisterScopedSessionKeyResultSchema,
-    PrivateSessionKeysParamsSchema,
-    PrivateSessionKeysResultSchema,
-    PrivateSetCancelOnDisconnectParamsSchema,
-    PublicBuildRegisterSessionKeyTxResultSchema,
-    PublicDeregisterSessionKeyResultSchema,
-    PublicRegisterSessionKeyResultSchema,
-    Result,
-    Scope,
+    CreateSessionKeyRequest,
+    EditSessionKeyRequest,
+    GetAccountRequest,
+    GetAllPortfoliosRequest,
+    GetSubaccountsRequest,
+    PrivateCreateSessionKeyResponse,
+    PrivateGetAccountResponse,
+    PrivateGetSubaccountsResponse,
+    PrivateSessionKeysResponse,
+    SessionKey,
+    SessionKeysRequest,
+    Subaccount,
+    UpdateWhitelistedRecipientsRequest,
+    UpdateWhitelistedRecipientsResponse,
 )
+from derive_client.data_types.module_data import SessionKeyModuleData, WhitelistedRecipientModuleData
 
 
 class LightAccount:
@@ -47,7 +39,7 @@ class LightAccount:
         logger: LoggerType,
         public_api: PublicAPI,
         private_api: PrivateAPI,
-        _state: PrivateGetAccountResultSchema | None = None,
+        _state: PrivateGetAccountResponse | None = None,
     ):
         """
         Initialize LightAccount (internal use - use from_api() instead).
@@ -95,13 +87,13 @@ class LightAccount:
             APIError: If wallet does not exist
         """
 
-        params = PrivateGetAccountParamsSchema(wallet=auth.wallet)
+        params = GetAccountRequest(wallet=auth.wallet)
         result = private_api.rpc.get_account(params)
         state = result
         logger.debug(f"LightAccount validated: {state.wallet}")
 
         # Check if the current signer is in the list of valid session keys
-        session_keys_params = PrivateSessionKeysParamsSchema(wallet=auth.wallet)
+        session_keys_params = SessionKeysRequest(wallet=auth.wallet)
         session_keys_result = private_api.rpc.session_keys(session_keys_params)
 
         valid_signers = {key.public_session_key: key for key in session_keys_result.public_session_keys}
@@ -121,7 +113,7 @@ class LightAccount:
         )
 
     @property
-    def state(self) -> PrivateGetAccountResultSchema:
+    def state(self) -> PrivateGetAccountResponse:
         """Current mutable state."""
         if not self._state:
             msg = "Account state not loaded. Use Account.from_api() to instantiate or call refresh() to load state."
@@ -135,223 +127,145 @@ class LightAccount:
 
     def refresh(self) -> LightAccount:
         """Refresh mutable state from API."""
-        params = PrivateGetAccountParamsSchema(wallet=self._auth.wallet)
+        params = GetAccountRequest(wallet=self._auth.wallet)
         response = self._private_api.rpc.get_account(params)
         self._state = response
         return self
 
-    def build_register_session_key_tx(
-        self,
-        *,
-        expiry_sec: int,
-        public_session_key: str,
-        gas: Optional[int] = None,
-        nonce: Optional[int] = None,
-    ) -> PublicBuildRegisterSessionKeyTxResultSchema:
-        """
-        NOT SUPPORTED PROGRAMMATICALLY: registering a session key (paymaster flow)
-        cannot be executed from this client.
+    def session_keys(self) -> PrivateSessionKeysResponse:
+        """Registered session keys, including details (expiry, scope, IP whitelist)."""
 
-        Options:
-        - Use the Derive frontend (recommended) so the paymaster pays gas.
-        - To register programmatically, use an owner-signed, EOA-paid flow:
-            client.owner.build_register_session_key_tx(...)
-        """
-        raise NotImplementedError(
-            "Programmatic paymaster registration is not supported. "
-            "Use the Derive frontend (paymaster) or client.owner.build_register_session_key_tx(...) "
-            "for an owner-signed, EOA-paid registration."
-        )
-
-    def register_session_key(
-        self,
-        *,
-        expiry_sec: int,
-        label: str,
-        public_session_key: str,
-        signed_raw_tx: str,
-    ) -> PublicRegisterSessionKeyResultSchema:
-        """
-        NOT SUPPORTED PROGRAMMATICALLY: registering a session key (paymaster flow)
-        cannot be executed from this client.
-
-        Options:
-        - Use the Derive frontend (recommended) so the paymaster pays gas.
-        - To register programmatically, use an owner-signed, EOA-paid flow:
-            client.owner.register_session_key_via_eoa(...)
-        """
-        raise NotImplementedError(
-            "Programmatic paymaster registration is not supported. "
-            "Use the Derive frontend (paymaster) or client.owner.register_session_key_via_eoa(...) "
-            "for an owner-signed, EOA-paid registration."
-        )
-
-    def deregister_session_key(
-        self,
-        *,
-        public_session_key: str,
-        signed_raw_tx: str,
-    ) -> PublicDeregisterSessionKeyResultSchema:
-        """
-        NOT SUPPORTED PROGRAMMATICALLY: deregistering a session key (paymaster flow)
-        cannot be executed from this client.
-
-        Options:
-        - Use the Derive frontend to deregister so paymaster handles flow.
-        - To deregister programmatically, use an owner-signed, EOA-paid flow:
-            client.owner.deregister_session_key_via_eoa(...)
-        """
-        raise NotImplementedError(
-            "Programmatic paymaster deregistration is not supported. "
-            "Use the Derive frontend or client.owner.deregister_session_key_via_eoa(...)."
-            "for an owner-signed, EOA-paid registration."
-        )
-
-    def register_scoped_session_key(
-        self,
-        *,
-        expiry_sec: int,
-        public_session_key: str,
-        ip_whitelist: Optional[list[str]] = None,
-        label: Optional[str] = None,
-        scope: Scope = Scope.read_only,
-        signed_raw_tx: Optional[str] = None,
-    ) -> PrivateRegisterScopedSessionKeyResultSchema:
-        params = PrivateRegisterScopedSessionKeyParamsSchema(
-            wallet=self._auth.wallet,
-            expiry_sec=expiry_sec,
-            public_session_key=public_session_key,
-            ip_whitelist=ip_whitelist,
-            label=label,
-            scope=scope,
-            signed_raw_tx=signed_raw_tx,
-        )
-        result = self._private_api.rpc.register_scoped_session_key(params)
+        params = SessionKeysRequest(wallet=self.address)
+        result = self._private_api.rpc.session_keys(params)
         return result
 
-    def session_keys(self) -> PrivateSessionKeysResultSchema:
-        """
-        Registered session keys, including details (expiry, scope, IP whitelist)
+    def create_session_key(
+        self,
+        *,
+        expiry_sec: int,
+        public_session_key: str,
+        offchain_scopes: list[OffchainScope],
+        protocol_scopes: list[ProtocolScope],
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+        ip_whitelist: list[str] | None = None,
+        label: str | None = None,
+        subaccount_ids: list[int] | None = None,
+    ) -> PrivateCreateSessionKeyResponse:
+        """Authorizes a new session key for a wallet from a signed action."""
 
-        A session key is simply an Ethereum wallet.
-        Account owners can give other Ethereum wallets temporary access to their accounts via session keys.
-        """
+        wallet = self._auth.wallet
 
-        params = PrivateSessionKeysParamsSchema(wallet=self.address)
-        result = self._private_api.rpc.session_keys(params)
+        module_data = SessionKeyModuleData(
+            session_key=public_session_key,
+            expiry_sec=expiry_sec,
+            scopes=[scope.code for scope in protocol_scopes],
+            subaccount_ids=subaccount_ids or [],
+        )
+
+        module_address = self._config.contracts.CREATE_SESSION_KEY_MODULE
+        signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
+            module_address=module_address,
+            module_data=module_data,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = CreateSessionKeyRequest(
+            expiry_sec=expiry_sec,
+            nonce=str(signed_action.nonce),
+            offchain_scopes=list(map(str, offchain_scopes)),
+            protocol_scopes=list(map(str, protocol_scopes)),
+            public_session_key=public_session_key,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+            wallet=wallet,
+            ip_whitelist=ip_whitelist or msgspec.UNSET,
+            label=label or msgspec.UNSET,
+            subaccount_ids=subaccount_ids or msgspec.UNSET,
+        )
+
+        result = self._private_api.rpc.create_session_key(params)
         return result
 
     def edit_session_key(
         self,
         *,
         public_session_key: str,
-        disable: bool = False,
         ip_whitelist: Optional[list[str]] = None,
         label: Optional[str] = None,
-    ) -> PrivateEditSessionKeyResultSchema:
+        offchain_scopes: Optional[list[OffchainScope]] = None,
+    ) -> SessionKey:
         """Edits session key parameters such as label and IP whitelist."""
 
-        params = PrivateEditSessionKeyParamsSchema(
+        params = EditSessionKeyRequest(
             wallet=self.address,
             public_session_key=public_session_key,
-            disable=disable,
-            ip_whitelist=ip_whitelist,
+            ip_whitelist=ip_whitelist or msgspec.UNSET,
             label=label,
+            offchain_scopes=list(map(str, offchain_scopes)) if offchain_scopes else msgspec.UNSET,
         )
         result = self._private_api.rpc.edit_session_key(params)
         return result
 
-    def get_all_portfolios(self) -> list[PrivateGetSubaccountResultSchema]:
-        """Get all subaccount portfolios of a wallet"""
-
-        params = PrivateGetAllPortfoliosParamsSchema(wallet=self.address)
-        result = self._private_api.rpc.get_all_portfolios(params)
-        return result
-
-    def create_subaccount(
+    def update_whitelisted_recipients(
         self,
         *,
-        amount: Decimal = Decimal("0"),
-        asset_name: str = "USDC",
-        margin_type: MarginType = MarginType.SM,
+        add: list[str],
+        remove: list[str],
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
-        currency: Optional[str] = None,
-    ) -> PrivateCreateSubaccountResultSchema:
-        """Create subaccount."""
+    ) -> UpdateWhitelistedRecipientsResponse:
+        """Adds and/or removes recipient wallet addresses on an account's
+        transfer whitelist. Resulting list is (current UNION add) MINUS remove."""
 
-        # Current implementation only supports the exact invariants below.
-        # If callers pass any other values, fail fast with NotImplementedError
-        # so we can change the API later without breaking callers.
-        if amount != Decimal("0"):
-            raise NotImplementedError("Only amount == 0 is supported at present.")
-        if asset_name != "USDC":
-            raise NotImplementedError('Only asset_name == "USDC" is supported at present.')
-        if margin_type != MarginType.SM:
-            raise NotImplementedError("Only margin_type == MarginType.SM is supported at present.")
-        if currency is not None:
-            raise NotImplementedError("Only currency == None is supported for SM subaccounts at present.")
+        wallet = self._auth.wallet
 
-        if margin_type == MarginType.SM and currency is not None:
-            raise ValueError("base_currency must not be provided for standard-margin (SM) subaccounts.")
+        module_data = WhitelistedRecipientModuleData(add=add, remove=remove)
 
-        subaccount_id = 0  # must be zero for new account creation
-        module_address = self._config.contracts.DEPOSIT_MODULE
-
-        decimals = CURRENCY_DECIMALS[Currency(asset_name)]
-        manager_address = self._config.contracts.STANDARD_RISK_MANAGER
-        asset = self._config.contracts.CASH_ASSET
-
-        module_data = DepositModuleData(
-            amount=amount,
-            asset=asset,
-            manager=manager_address,
-            decimals=decimals,
-            asset_name=asset_name,
-        )
-
+        module_address = self._config.contracts.WHITELISTED_RECIPIENT_MODULE
         signed_action = self._auth.sign_action(
+            subaccount_id=0,
+            nonce=nonce,
             module_address=module_address,
             module_data=module_data,
             signature_expiry_sec=signature_expiry_sec,
-            subaccount_id=subaccount_id,
         )
 
-        params = PrivateCreateSubaccountParamsSchema(
-            amount=amount,
-            asset_name=asset_name,
-            margin_type=margin_type,
+        params = UpdateWhitelistedRecipientsRequest(
+            add=add,
+            remove=remove,
             nonce=signed_action.nonce,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
-            wallet=self.address,
+            wallet=wallet,
         )
-        result = self._private_api.rpc.create_subaccount(params)
+
+        result = self._private_api.rpc.update_whitelisted_recipients(params)
         return result
 
-    def get_subaccounts(self) -> PrivateGetSubaccountsResultSchema:
+    def get_all_portfolios(self) -> list[Subaccount]:
+        """Get all subaccount portfolios of a wallet"""
+
+        params = GetAllPortfoliosRequest(wallet=self.address)
+        result = self._private_api.rpc.get_all_portfolios(params)
+        return result
+
+    def get_subaccounts(self) -> PrivateGetSubaccountsResponse:
         """Get all subaccount IDs of an account / wallet"""
 
-        params = PrivateGetSubaccountsParamsSchema(wallet=self.address)
+        params = GetSubaccountsRequest(wallet=self.address)
         result = self._private_api.rpc.get_subaccounts(params)
         return result
 
-    def get(self) -> PrivateGetAccountResultSchema:
+    def get(self) -> PrivateGetAccountResponse:
         """Account details getter"""
 
-        params = PrivateGetAccountParamsSchema(wallet=self.address)
+        params = GetAccountRequest(wallet=self.address)
         result = self._private_api.rpc.get_account(params)
-        return result
-
-    def set_cancel_on_disconnect(self, enabled: bool = True) -> Result:
-        """Enables cancel on disconnect for the account."""
-
-        params = PrivateSetCancelOnDisconnectParamsSchema(
-            wallet=self.address,
-            enabled=enabled,
-        )
-        result = self._private_api.rpc.set_cancel_on_disconnect(params)
         return result
 
     def __repr__(self) -> str:

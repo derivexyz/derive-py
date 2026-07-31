@@ -3,16 +3,14 @@
 from decimal import Decimal
 
 from derive_client.data_types.generated_models import (
+    CancelByInstrumentResponse,
+    CancelByLabelResponse,
+    CancelByNonceResponse,
     Direction,
-    OrderResponseSchema,
+    Order,
     OrderType,
-    PrivateCancelByInstrumentResultSchema,
-    PrivateCancelByLabelResultSchema,
-    PrivateCancelByNonceResultSchema,
-    PrivateCancelResultSchema,
-    PrivateGetOrderResultSchema,
-    PrivateReplaceResultSchema,
-    Result,
+    PaginatedOrdersResult,
+    ReplaceOrderResponse,
 )
 from tests.conftest import assert_api_calls
 
@@ -23,12 +21,12 @@ def _create_order(
     instrument_name: str = "ETH-PERP",
     direction=Direction.buy,
     limit_price=Decimal("200.00"),
-) -> OrderResponseSchema:
+) -> Order:
     max_fee = Decimal("1000")
     order_type = OrderType.limit
     label = "test_order"
 
-    order = client.orders.create(
+    create_order_response = client.orders.create(
         amount=amount,
         direction=direction,
         instrument_name=instrument_name,
@@ -37,32 +35,32 @@ def _create_order(
         order_type=order_type,
         label=label,
     )
-    return order
+    return create_order_response.order
 
 
 def test_orders_create(client_admin_wallet):
     with assert_api_calls(client_admin_wallet, expected=1):
         order = _create_order(client_admin_wallet)
-    assert isinstance(order, OrderResponseSchema)
+    assert isinstance(order, Order)
 
 
 def test_orders_get(client_admin_wallet):
     order = _create_order(client_admin_wallet)
     order_id = order.order_id
     order = client_admin_wallet.orders.get(order_id=order_id)
-    assert isinstance(order, PrivateGetOrderResultSchema)
+    assert isinstance(order, Order)
 
 
-def test_orders_list(client_admin_wallet):
-    orders = client_admin_wallet.orders.list()
-    assert isinstance(orders, list)
-    assert all(isinstance(o, OrderResponseSchema) for o in orders)
+def test_orders_history(client_admin_wallet):
+    orders = client_admin_wallet.orders.history()
+    assert isinstance(orders, PaginatedOrdersResult)
+    assert all(isinstance(o, Order) for o in orders.orders)
 
 
 def test_orders_list_open(client_admin_wallet):
     open_orders = client_admin_wallet.orders.list_open()
     assert isinstance(open_orders, list)
-    assert all(isinstance(o, OrderResponseSchema) for o in open_orders)
+    assert all(isinstance(o, Order) for o in open_orders)
 
 
 def test_orders_cancel(client_admin_wallet):
@@ -72,33 +70,34 @@ def test_orders_cancel(client_admin_wallet):
         instrument_name=order.instrument_name,
         order_id=order_id,
     )
-    assert isinstance(cancelled, PrivateCancelResultSchema)
+    assert isinstance(cancelled, Order)
 
 
 def test_orders_cancel_by_label(client_admin_wallet):
     order = _create_order(client_admin_wallet)
     cancelled_by_label = client_admin_wallet.orders.cancel_by_label(label=order.label)
-    assert isinstance(cancelled_by_label, PrivateCancelByLabelResultSchema)
+    assert isinstance(cancelled_by_label, CancelByLabelResponse)
 
 
 def test_orders_cancel_by_nonce(client_admin_wallet):
     order = _create_order(client_admin_wallet)
+    # order.nonce is str on the Order struct; cancel_by_nonce's request wants int.
     cancelled_by_label = client_admin_wallet.orders.cancel_by_nonce(
         instrument_name=order.instrument_name,
-        nonce=order.nonce,
+        nonce=int(order.nonce),
     )
-    assert isinstance(cancelled_by_label, PrivateCancelByNonceResultSchema)
+    assert isinstance(cancelled_by_label, CancelByNonceResponse)
 
 
 def test_orders_cancel_by_instrument(client_admin_wallet):
     order = _create_order(client_admin_wallet)
     cancelled_by_label = client_admin_wallet.orders.cancel_by_instrument(instrument_name=order.instrument_name)
-    assert isinstance(cancelled_by_label, PrivateCancelByInstrumentResultSchema)
+    assert isinstance(cancelled_by_label, CancelByInstrumentResponse)
 
 
 def test_orders_cancel_all(client_admin_wallet):
     cancelled_all = client_admin_wallet.orders.cancel_all()
-    assert isinstance(cancelled_all, Result)
+    assert isinstance(cancelled_all, str)
 
 
 def test_orders_replace(client_admin_wallet):
@@ -113,4 +112,4 @@ def test_orders_replace(client_admin_wallet):
             max_fee=order.max_fee,
             order_id_to_cancel=order_id,
         )
-    assert isinstance(replace, PrivateReplaceResultSchema)
+    assert isinstance(replace, ReplaceOrderResponse)

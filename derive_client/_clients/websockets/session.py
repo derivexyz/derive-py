@@ -398,16 +398,18 @@ class WebSocketSession:
                 self._logger.error(f"Failed to resubscribe to {channel}: {e}")
                 # Continue trying other channels
 
-    async def _send_request(self, method: str, params: msgspec.Struct | dict) -> JSONRPCEnvelope:
+    async def _send_request(self, method: str, params: msgspec.Struct | dict | None) -> JSONRPCEnvelope:
         """Send RPC request and return decoded envelope."""
         if not self._ws:
             raise RuntimeError("WebSocket not connected")
 
         request_id = str(uuid.uuid4())
 
-        if isinstance(params, msgspec.Struct):
+        if params is None:
+            params_filtered = {}
+        elif isinstance(params, msgspec.Struct):
             params_dict = msgspec.structs.asdict(params)
-            params_filtered = {k: v for k, v in params_dict.items() if v is not None}
+            params_filtered = {k: v for k, v in params_dict.items() if v is not None and v is not msgspec.UNSET}
         else:
             params_filtered = params
 

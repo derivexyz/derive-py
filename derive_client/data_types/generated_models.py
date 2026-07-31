@@ -2,38 +2,140 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from enum import StrEnum
+from typing import TypeAlias
 
-from msgspec import Struct
-
-
-class PublicGetVaultStatisticsParamsSchema(Struct):
-    pass
+from msgspec import UNSET, Struct, UnsetType, field
 
 
-class VaultStatisticsResponseSchema(Struct):
-    base_value: Decimal
-    block_number: int
-    block_timestamp: int
-    total_supply: Decimal
-    usd_tvl: Decimal
-    usd_value: Decimal
-    vault_name: str
-    subaccount_value_at_last_trade: Optional[Decimal] = None
-    underlying_value: Optional[Decimal] = None
+class AccountFeeInfo(Struct):
+    base_fee_discount: str
+    rfq_maker_discount: str
+    rfq_taker_discount: str
+    option_maker_fee: str | None | UnsetType = UNSET
+    option_taker_fee: str | None | UnsetType = UNSET
+    perp_maker_fee: str | None | UnsetType = UNSET
+    perp_taker_fee: str | None | UnsetType = UNSET
+    spot_maker_fee: str | None | UnsetType = UNSET
+    spot_taker_fee: str | None | UnsetType = UNSET
 
 
-class PrivateCancelTriggerOrderParamsSchema(Struct):
+Address: TypeAlias = str
+
+
+class AlgoType(StrEnum):
+    twap = 'twap'
+
+
+class AssetType(StrEnum):
+    option = 'option'
+    perp = 'perp'
+    erc20 = 'erc20'
+
+
+class BatchStatus(StrEnum):
+    Batching = 'Batching'
+    Executing = 'Executing'
+    Proving = 'Proving'
+    Settling = 'Settling'
+    Settled = 'Settled'
+    BatchingError = 'BatchingError'
+    ExecutingError = 'ExecutingError'
+    ProvingError = 'ProvingError'
+    SettlingError = 'SettlingError'
+    SettledError = 'SettledError'
+
+
+class CancelAlgoOrderRequest(Struct):
     order_id: str
     subaccount_id: int
 
 
-class AlgoType(Enum):
-    twap = 'twap'
+class CancelAllAlgoOrdersRequest(Struct):
+    subaccount_id: int
 
 
-class CancelReason(Enum):
+class CancelAllAlgoOrdersResponse(StrEnum):
+    ok = 'ok'
+
+
+class CancelAllRequest(Struct):
+    subaccount_id: int
+    cancel_algo_orders: bool | None | UnsetType = UNSET
+    cancel_trigger_orders: bool | None | UnsetType = UNSET
+
+
+class CancelAllTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class CancelBatchQuotesRequest(Struct):
+    subaccount_id: int
+    label: str | None | UnsetType = UNSET
+    nonce: int | None | UnsetType = UNSET
+    quote_id: str | None | UnsetType = UNSET
+    rfq_id: str | None | UnsetType = UNSET
+
+
+class CancelBatchResult(Struct):
+    cancelled_ids: list[str]
+
+
+class CancelBatchRfqsRequest(Struct):
+    subaccount_id: int
+    label: str | None | UnsetType = UNSET
+    nonce: int | None | UnsetType = UNSET
+    rfq_id: str | None | UnsetType = UNSET
+
+
+class CancelBatchRfqsResponse(CancelBatchResult):
+    pass
+
+
+class CancelByInstrumentRequest(Struct):
+    instrument_name: str
+    subaccount_id: int
+
+
+class CancelByInstrumentResponse(Struct):
+    cancelled_orders: int
+
+
+class CancelByLabelRequest(Struct):
+    label: str
+    subaccount_id: int
+    instrument_name: str | None | UnsetType = UNSET
+
+
+class CancelByLabelResponse(CancelByInstrumentResponse):
+    pass
+
+
+class CancelByNonceRequest(Struct):
+    instrument_name: str
+    nonce: int
+    subaccount_id: int
+
+
+class CancelByNonceResponse(CancelByInstrumentResponse):
+    pass
+
+
+class CancelOrderRequest(Struct):
+    instrument_name: str
+    order_id: str
+    subaccount_id: int
+
+
+class CancelQuoteRequest(Struct):
+    quote_id: str
+    subaccount_id: int
+    label: str | None | UnsetType = UNSET
+    nonce: int | None | UnsetType = UNSET
+    rfq_id: str | None | UnsetType = UNSET
+
+
+class CancelReason(StrEnum):
     field_ = ''
     user_request = 'user_request'
     mmp_trigger = 'mmp_trigger'
@@ -49,336 +151,955 @@ class CancelReason(Enum):
     algo_completed = 'algo_completed'
 
 
-class Direction(Enum):
+class CancelRfqRequest(Struct):
+    rfq_id: str
+    subaccount_id: int
+
+
+class CancelTriggerOrderRequest(CancelAlgoOrderRequest):
+    pass
+
+
+class CancelVaultRequestRequest(Struct):
+    nonce: int
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+    vault_subaccount_id: int
+
+
+class ChangeSubaccountLabelRequest(Struct):
+    label: str
+    subaccount_id: int
+
+
+class Collateral(Struct):
+    amount: str
+    amount_step: str
+    asset_name: str
+    asset_type: str
+    average_price: str
+    average_price_excl_fees: str
+    creation_timestamp: int
+    cumulative_interest: str
+    currency: str
+    delta: str
+    delta_currency: str
+    initial_margin: str
+    maintenance_margin: str
+    mark_price: str
+    mark_value: str
+    open_orders_margin: str
+    pending_interest: str
+    realized_pnl: str
+    realized_pnl_excl_fees: str
+    total_fees: str
+    unrealized_pnl: str
+    unrealized_pnl_excl_fees: str
+
+
+class CreateSessionKeyRequest(Struct):
+    expiry_sec: int
+    nonce: str
+    offchain_scopes: list[str]
+    protocol_scopes: list[str]
+    public_session_key: str
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    wallet: str
+    ip_whitelist: list[str] | UnsetType = UNSET
+    label: str | None | UnsetType = UNSET
+    subaccount_ids: list[int] | UnsetType = UNSET
+
+
+class CreateVaultRequest(Struct):
+    cooldown_sec: int
+    deposit_spot_asset: Address
+    initial_deposit: Decimal
+    initial_share_price_usd: Decimal
+    management_fee_bps: int
+    manager_id: int
+    max_fee_usd: Decimal
+    max_slippage_bps: int
+    nonce: int
+    performance_fee_bps: int
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+    benchmark_asset: Address | None | UnsetType = UNSET
+
+
+class DailyTradingStatistics(
+    Struct,
+    rename={
+        'contract_volume_24h': 'c',
+        'high_24h': 'h',
+        'low_24h': 'l',
+        'trade_count_24h': 'n',
+        'open_interest': 'oi',
+        'percent_change_24h': 'p',
+        'premium_volume_24h': 'pr',
+        'notional_volume_24h': 'v',
+    },
+):
+    contract_volume_24h: Decimal
+    high_24h: Decimal
+    low_24h: Decimal
+    trade_count_24h: int
+    open_interest: Decimal
+    percent_change_24h: Decimal
+    premium_volume_24h: Decimal
+    notional_volume_24h: Decimal
+
+
+class DepositEntry(Struct):
+    amount: Decimal
+    asset: str
+    batch_status: BatchStatus
+    batch_uuid: str
+    fee: Decimal
+    new_subaccount: bool
+    operation_id: str
+    subaccount_id: int
+    timestamp: int
+    wallet: str
+    action_id: int | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class DepositHistoryResult(Struct):
+    deposits: list[DepositEntry]
+
+
+class DepositType(StrEnum):
+    standard = 'standard'
+    instant = 'instant'
+    direct = 'direct'
+
+
+class Direction(StrEnum):
     buy = 'buy'
     sell = 'sell'
 
 
-class OrderStatus(Enum):
+class EditSessionKeyRequest(Struct):
+    public_session_key: str
+    wallet: str
+    ip_whitelist: list[str] | UnsetType = UNSET
+    label: str | None | UnsetType = UNSET
+    offchain_scopes: list[str] | UnsetType = UNSET
+
+
+EmptyRequest: TypeAlias = None
+
+
+class Erc20Details(Struct):
+    decimals: int
+    underlying_erc20: str | None | UnsetType = UNSET
+
+
+class ExpirySettlementPrice(Struct):
+    expiry_date: str
+    utc_expiry_sec: int
+    price: str | None | UnsetType = UNSET
+
+
+class ForceBurnRequest(Struct):
+    holder: Address
+    subaccount_id: int
+
+
+class FundingRateCandle(Struct):
+    close: str
+    currency: str
+    funding_rate: str
+    high: str
+    low: str
+    open: str
+    risk_universe_id: int
+    timestamp: int
+
+
+class FundingRateHistoryResult(Struct):
+    funding_rate_history: list[FundingRateCandle]
+
+
+class GetAccountRequest(Struct):
+    wallet: Address
+
+
+class GetAlgoOrdersRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetAllInstrumentsRequest(Struct):
+    expired: bool
+    instrument_type: AssetType
+    currency: str | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    risk_universe_id: int | None | UnsetType = UNSET
+
+
+class GetAllPortfoliosRequest(GetAccountRequest):
+    pass
+
+
+class GetAllReferralCodesParams(Struct):
+    pass
+
+
+class GetAssetsRequest(Struct):
+    asset_type: AssetType
+    currency: str
+    expired: bool
+
+
+class GetCollateralsRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetCuratedVaultsRequest(Struct):
+    wallet: str
+
+
+class GetCurrencyRequest(Struct):
+    currency: str
+
+
+class GetDepositHistoryRequest(Struct):
+    end_timestamp: int | None | UnsetType = UNSET
+    start_timestamp: int | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetErc20TransferHistoryRequest(GetDepositHistoryRequest):
+    pass
+
+
+class GetFundingHistoryRequest(Struct):
+    end_timestamp: int | None | UnsetType = UNSET
+    instrument_name: str | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    start_timestamp: int | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetFundingRateHistoryRequest(Struct):
+    instrument_name: str
+    end_timestamp: int | None | UnsetType = UNSET
+    period: int | None | UnsetType = UNSET
+    start_timestamp: int | None | UnsetType = UNSET
+
+
+class GetIndexChartDataRequest(Struct):
+    currency: str
+    end_timestamp: int
+    period: int
+    start_timestamp: int
+
+
+class GetInstrumentRequest(Struct):
+    instrument_name: str
+
+
+class GetInterestHistoryRequest(GetDepositHistoryRequest):
+    pass
+
+
+class GetInterestRateHistoryRequest(Struct):
+    currency: str
+    end_timestamp: int | None | UnsetType = UNSET
+    period: int | None | UnsetType = UNSET
+    risk_universe_id: int | None | UnsetType = UNSET
+    start_timestamp: int | None | UnsetType = UNSET
+
+
+class GetLatestSignedFeedsRequest(Struct):
+    currency: str | None | UnsetType = UNSET
+    expiry: int | None | UnsetType = UNSET
+
+
+class GetLiveBurnRequestsRequest(Struct):
+    limit: int
+    subaccount_id: int
+
+
+class GetLiveMintRequestsRequest(GetLiveBurnRequestsRequest):
+    pass
+
+
+class GetLiveVaultRequestsRequest(GetCuratedVaultsRequest):
+    pass
+
+
+class GetOnchainActionHistoryParams(Struct):
+    action_type: int | None | UnsetType = UNSET
+    end_timestamp: int | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    start_timestamp: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetOpenOrdersRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetOptionSettlementHistoryParams(Struct):
+    subaccount_id: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetOptionSettlementPricesRequest(GetCurrencyRequest):
+    pass
+
+
+class GetOrderHistoryRequest(Struct):
+    from_timestamp: int | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
+    to_timestamp: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetOrderRequest(CancelAlgoOrderRequest):
+    pass
+
+
+class GetPendingDepositsParams(GetCuratedVaultsRequest):
+    pass
+
+
+class GetPositionsRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetPublicTradeHistoryRequest(Struct):
+    batch_status: BatchStatus | None | UnsetType = UNSET
+    currency: str | None | UnsetType = UNSET
+    from_timestamp: int | None | UnsetType = UNSET
+    instrument_name: str | None | UnsetType = UNSET
+    instrument_type: AssetType | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
+    to_timestamp: int | None | UnsetType = UNSET
+    trade_id: str | None | UnsetType = UNSET
+
+
+class GetQuotesRequest(Struct):
+    subaccount_id: int
+    from_timestamp: int | UnsetType = 0
+    page: int | UnsetType = 1
+    page_size: int | UnsetType = 20
+    quote_id: str | None | UnsetType = UNSET
+    rfq_id: str | None | UnsetType = UNSET
+    status: str | None | UnsetType = UNSET
+    to_timestamp: int | UnsetType = 9223372036854775807
+
+
+class GetReferralPerformanceParams(Struct):
+    end_ms: int
+    start_ms: int
+    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetRfqsRequest(Struct):
+    subaccount_id: int
+    from_timestamp: int | UnsetType = 0
+    page: int | UnsetType = 1
+    page_size: int | UnsetType = 20
+    rfq_id: str | None | UnsetType = UNSET
+    status: str | None | UnsetType = UNSET
+    to_timestamp: int | UnsetType = 9223372036854775807
+
+
+class GetShareholderVaultsRequest(GetCuratedVaultsRequest):
+    pass
+
+
+class GetSubaccountRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetSubaccountsRequest(GetAccountRequest):
+    pass
+
+
+class GetTickerRequest(GetInstrumentRequest):
+    pass
+
+
+class GetTickersRequest(Struct):
+    instrument_type: AssetType
+    currency: str | None | UnsetType = UNSET
+    expiry_date: int | None | UnsetType = UNSET
+
+
+class GetTradeHistoryRequest(Struct):
+    from_timestamp: int | None | UnsetType = UNSET
+    instrument_name: str | None | UnsetType = UNSET
+    order_id: str | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+    quote_id: str | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
+    to_timestamp: int | None | UnsetType = UNSET
+    wallet: str | None | UnsetType = UNSET
+
+
+class GetTradingviewChartDataRequest(Struct):
+    end_timestamp: int
+    instrument_name: str
+    period: int
+    start_timestamp: int
+
+
+class GetTransactionParams(Struct):
+    op_uuid: str
+
+
+class GetTransactionResult(Struct):
+    data: str
+    error_log: str | None | UnsetType = UNSET
+    status: BatchStatus | None | UnsetType = UNSET
+    transaction_hash: str | None | UnsetType = UNSET
+
+
+class GetTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetVaultActionHistoryRequest(Struct):
+    subaccount_id: int
+    event_type: str | None | UnsetType = UNSET
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+
+
+class GetVaultRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class GetVaultRequestHistoryRequest(Struct):
+    wallet: str
+    page: int | None | UnsetType = UNSET
+    page_size: int | None | UnsetType = UNSET
+
+
+class GetVaultSharesRequest(GetCuratedVaultsRequest):
+    pass
+
+
+class GetVaultsRequest(Struct):
+    page: int | UnsetType = 1
+    page_size: int | UnsetType = 100
+
+
+class GetWithdrawalHistoryRequest(GetDepositHistoryRequest):
+    pass
+
+
+class IndexCandle(Struct):
+    close_price: str
+    high_price: str
+    low_price: str
+    open_price: str
+    price: str
+    timestamp: int
+    timestamp_bucket: int
+
+
+class InterestPayment(Struct):
+    interest: str
+    subaccount_id: int
+    timestamp: int
+
+
+class LegUnpricedParams(Struct):
+    amount: Decimal
+    direction: Direction
+    instrument_name: str
+
+
+class LendingDetails(Struct):
+    borrow_apy: str
+    supply_apy: str
+    total_borrow: str
+    total_borrow_cap: str
+
+
+class LiquidityRole(StrEnum):
+    maker = 'maker'
+    taker = 'taker'
+
+
+class ManagerCollateral(Struct):
+    address: str
+    erc20: Erc20Details
+    im_discount: str
+    min_deposit_usd: str
+    mm_discount: str
+    name: str
+
+
+class MarginType(StrEnum):
+    SM = 'SM'
+    PM2 = 'PM2'
+
+
+class MarketType(StrEnum):
+    ALL = 'ALL'
+    SRM_BASE_ONLY = 'SRM_BASE_ONLY'
+    SRM_OPTION_ONLY = 'SRM_OPTION_ONLY'
+    SRM_PERP_ONLY = 'SRM_PERP_ONLY'
+    CASH = 'CASH'
+
+
+class MmpConfigResult(Struct):
+    currency: str
+    is_frozen: bool
+    mmp_amount_limit: str
+    mmp_delta_limit: str
+    mmp_frozen_time: int
+    mmp_interval: int
+    mmp_unfreeze_time: int
+    subaccount_id: int
+
+
+class MmpScopeRequest(Struct):
+    subaccount_id: int
+    currency: str | None | UnsetType = UNSET
+
+
+class OffchainAckResponse(Struct):
+    status: str
+
+
+class OffchainKeyScope(StrEnum):
+    account_info = 'account_info'
+    delete_session_key = 'delete_session_key'
+
+
+class Ohlc(Struct):
+    close: str
+    high: str
+    low: str
+    open: str
+
+
+class OnchainActionHistoryEntry(Struct):
+    acc: str
+    action_id: int
+    action_type: int
+    action_type_label: str
+    block_number: int
+    data: str
+    l1_sender: str
+    queue: str
+    status: str
+    updated_at: int
+    error_code: int | None | UnsetType = UNSET
+    error_message: str | None | UnsetType = UNSET
+    fallback_at: int | None | UnsetType = UNSET
+    first_failed_at: int | None | UnsetType = UNSET
+    last_failed_at: int | None | UnsetType = UNSET
+    op_uuid: str | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class OpenInterestStats(Struct):
+    current_open_interest: str
+    interest_cap: str
+
+
+class OptionDetails(Struct):
+    expiry: int
+    index: str
+    option_type: str
+    strike: str
+    settlement_price: str | None | UnsetType = UNSET
+
+
+class OptionPricing(
+    Struct,
+    rename={
+        'ask_iv': 'ai',
+        'bid_iv': 'bi',
+        'delta': 'd',
+        'discount_factor': 'df',
+        'forward_price': 'f',
+        'gamma': 'g',
+        'iv': 'i',
+        'mark_price': 'm',
+        'rho': 'r',
+        'theta': 't',
+        'vega': 'v',
+    },
+):
+    ask_iv: str
+    bid_iv: str
+    delta: str
+    discount_factor: str
+    forward_price: str
+    gamma: str
+    iv: str
+    mark_price: str
+    rho: str
+    theta: str
+    vega: str
+
+
+class OptionSettlementPricesResult(Struct):
+    expiries: list[ExpirySettlementPrice]
+
+
+class OptionSettlementResponse(Struct):
+    amount: str
+    expiry: int
+    instrument_name: str
+    settlement_price: str
+    settlement_value: str
+    subaccount_id: int
+
+
+class OracleSignatureDataResponse(Struct):
+    signatures: list[str]
+    signers: list[Address]
+
+
+class OrderActionDataResponse(Struct):
+    asset_address: str
+    asset_sub_id: str
+    desired_amount: Decimal
+    is_bid: bool
+    limit_price: Decimal
+    recipient_id: int
+    worst_fee: Decimal
+
+
+class OrderActionInputData(Struct):
+    data: OrderActionDataResponse
+    expiry: int
+    module: str
+    nonce: int
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class OrderDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: OrderActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
+class OrderStatus(StrEnum):
     open = 'open'
     filled = 'filled'
+    rejected = 'rejected'
     cancelled = 'cancelled'
     expired = 'expired'
     untriggered = 'untriggered'
     algo_active = 'algo_active'
 
 
-class OrderType(Enum):
+class OrderType(StrEnum):
     limit = 'limit'
     market = 'market'
 
 
-class TimeInForce(Enum):
-    gtc = 'gtc'
-    post_only = 'post_only'
-    fok = 'fok'
-    ioc = 'ioc'
-
-
-class TriggerPriceType(Enum):
-    mark = 'mark'
-    index = 'index'
-
-
-class TriggerType(Enum):
-    stoploss = 'stoploss'
-    takeprofit = 'takeprofit'
-
-
-class PrivateCancelTriggerOrderResultSchema(Struct):
-    amount: Decimal
-    average_price: Decimal
-    cancel_reason: CancelReason
-    creation_timestamp: int
-    direction: Direction
-    filled_amount: Decimal
-    instrument_name: str
-    is_transfer: bool
-    label: str
-    last_update_timestamp: int
-    limit_price: Decimal
-    max_fee: Decimal
-    mmp: bool
-    nonce: int
-    order_fee: Decimal
-    order_id: str
-    order_status: OrderStatus
-    order_type: OrderType
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-    time_in_force: TimeInForce
-    quote_id: Optional[str] = None
-    algo_duration_sec: Optional[int] = None
-    algo_num_slices: Optional[int] = None
-    algo_slices_completed: Optional[int] = None
-    algo_type: Optional[AlgoType] = None
-    extra_fee: Optional[Decimal] = Decimal('0')
-    replaced_order_id: Optional[str] = None
-    signed_limit_price: Optional[Decimal] = None
-    trigger_price: Optional[Decimal] = None
-    trigger_price_type: Optional[TriggerPriceType] = None
-    trigger_reject_message: Optional[str] = None
-    trigger_type: Optional[TriggerType] = None
-
-
-class MarginType(Enum):
-    PM = 'PM'
-    SM = 'SM'
-    PM2 = 'PM2'
-
-
-class PublicCreateSubaccountDebugParamsSchema(Struct):
-    amount: Decimal
-    asset_name: str
-    margin_type: MarginType
-    nonce: int
-    signature_expiry_sec: int
-    signer: str
-    wallet: str
-    currency: Optional[str] = None
-
-
-class PublicCreateSubaccountDebugResultSchema(Struct):
-    action_hash: str
-    encoded_data: str
-    encoded_data_hashed: str
-    typed_data_hash: str
-
-
-class PublicGetReferralPerformanceParamsSchema(Struct):
-    end_ms: int
-    start_ms: int
-    referral_code: Optional[str] = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    wallet: Optional[str] = None
-
-
-class ReferralPerformanceByInstrumentTypeSchema(Struct):
-    builder_fee: Decimal
-    fee_reward: Decimal
-    notional_volume: Decimal
-    referred_fee: Decimal
-    unique_traders_referred: int
-
-
-class PrivateDepositParamsSchema(Struct):
-    amount: Decimal
-    asset_name: str
-    nonce: int
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-    is_atomic_signing: bool = False
-
-
-class PrivateDepositResultSchema(Struct):
-    status: str
-    transaction_id: str
-
-
-class Scope(Enum):
-    admin = 'admin'
-    account = 'account'
-    read_only = 'read_only'
-
-
-class PrivateRegisterScopedSessionKeyParamsSchema(Struct):
-    expiry_sec: int
-    public_session_key: str
-    wallet: str
-    ip_whitelist: Optional[List[str]] = None
-    label: Optional[str] = None
-    scope: Scope = Scope('read_only')
-    signed_raw_tx: Optional[str] = None
-
-
-class PrivateRegisterScopedSessionKeyResultSchema(Struct):
-    expiry_sec: int
-    public_session_key: str
-    scope: Scope
-    ip_whitelist: Optional[List[str]] = None
-    label: Optional[str] = None
-    transaction_id: Optional[str] = None
-
-
-class PrivateGetOrderParamsSchema(PrivateCancelTriggerOrderParamsSchema):
-    pass
-
-
-class PrivateGetOrderResultSchema(PrivateCancelTriggerOrderResultSchema):
-    pass
-
-
-class PrivateGetOrdersParamsSchema(Struct):
-    subaccount_id: int
-    instrument_name: Optional[str] = None
-    label: Optional[str] = None
-    page: int = 1
-    page_size: int = 100
-    status: Optional[OrderStatus] = None
-
-
-class OrderResponseSchema(PrivateCancelTriggerOrderResultSchema):
-    pass
-
-
-class PaginationInfoSchema(Struct):
+class Pagination(Struct):
     count: int
     num_pages: int
 
 
-class Period(Enum):
-    field_60 = 60
-    field_300 = 300
-    field_900 = 900
-    field_1800 = 1800
-    field_3600 = 3600
-    field_14400 = 14400
-    field_28800 = 28800
-    field_86400 = 86400
-    field_604800 = 604800
-
-
-class PublicGetTradingviewChartDataParamsSchema(Struct):
-    end_timestamp: int
-    instrument_name: str
-    period: Period
-    start_timestamp: int
-
-
-class TradingviewChartDataResponseSchema(Struct):
-    close_price: Decimal
-    high_price: Decimal
-    low_price: Decimal
-    open_price: Decimal
-    timestamp: int
-    timestamp_bucket: int
-    volume_contracts: Decimal
-    volume_usd: Decimal
-
-
-class PrivateGetSubaccountValueHistoryParamsSchema(Struct):
-    end_timestamp: int
-    period: int
-    start_timestamp: int
+class PendingDepositEntry(Struct):
+    action_id: int
+    action_type: str
+    amount: str
+    asset: str
+    block_number: int
+    deposit_type: str
+    log_index: int
+    manager_id: int
+    status: str
     subaccount_id: int
-
-
-class SubAccountValueHistoryResponseSchema(Struct):
-    currency: str
-    delayed_maintenance_margin: Decimal
-    initial_margin: Decimal
-    maintenance_margin: Decimal
-    margin_type: str
-    subaccount_value: Decimal
     timestamp: int
+    tx_hash: str
+    updated_at_ms: int
+    credit_nonce: str | None | UnsetType = UNSET
 
 
-class PublicGetSpotFeedHistoryParamsSchema(Struct):
+class PerformanceResolution(StrEnum):
+    field_1h = '1h'
+    field_8h = '8h'
+    field_24h = '24h'
+    field_1wk = '1wk'
+
+
+class PerpDetails(Struct):
+    aggregate_funding: str
+    funding_rate: str
+    index: str
+    max_rate_per_hour: str
+    min_rate_per_hour: str
+    static_interest_rate: str
+
+
+class PerpFeedDataResponse(Struct):
+    confidence: str
     currency: str
-    end_timestamp: int
-    period: int
-    start_timestamp: int
-
-
-class SpotFeedHistoryResponseSchema(Struct):
-    price: Decimal
+    deadline: int
+    signatures: OracleSignatureDataResponse
+    spot_diff_value: str
     timestamp: int
-    timestamp_bucket: int
+    type: str
 
 
-class PrivateCreateSubaccountParamsSchema(Struct):
-    amount: Decimal
-    asset_name: str
-    margin_type: MarginType
-    nonce: int
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    wallet: str
-    currency: Optional[str] = None
+class PerpSettlementEventResponse(Struct):
+    batch_status: BatchStatus
+    batch_uuid: str
+    funding: str
+    instrument_name: str
+    pnl: str
+    subaccount_id: int
+    timestamp: int
+    tx_hash: str | None | UnsetType = UNSET
 
 
-class PrivateCreateSubaccountResultSchema(PrivateDepositResultSchema):
+class PerpSettlementHistoryResponse(Struct):
+    events: list[PerpSettlementEventResponse]
+    pagination: Pagination
+
+
+class PollQuotesRequest(GetQuotesRequest):
     pass
 
 
-class PrivateGetOptionSettlementHistoryParamsSchema(Struct):
-    subaccount_id: Optional[int] = None
-    wallet: Optional[str] = None
+class PollRfqsRequest(Struct):
+    subaccount_id: int
+    from_timestamp: int | UnsetType = 0
+    page: int | UnsetType = 1
+    page_size: int | UnsetType = 20
+    rfq_id: str | None | UnsetType = UNSET
+    rfq_subaccount_id: int | None | UnsetType = UNSET
+    status: str | None | UnsetType = UNSET
+    to_timestamp: int | UnsetType = 9223372036854775807
 
 
-class OptionSettlementResponseSchema(Struct):
-    amount: Decimal
-    expiry: int
+class Position(Struct):
+    amount: str
+    amount_step: str
+    average_price: str
+    average_price_excl_fees: str
+    creation_timestamp: int
+    cumulative_funding: str
+    delta: str
+    gamma: str
+    index_price: str
+    initial_margin: str
     instrument_name: str
-    option_settlement_pnl: Decimal
-    option_settlement_pnl_excl_fees: Decimal
-    settlement_price: Decimal
-    subaccount_id: int
+    instrument_type: AssetType
+    maintenance_margin: str
+    mark_price: str
+    mark_value: str
+    net_settlements: str
+    open_orders_margin: str
+    pending_funding: str
+    realized_pnl: str
+    realized_pnl_excl_fees: str
+    theta: str
+    total_fees: str
+    unrealized_pnl: str
+    unrealized_pnl_excl_fees: str
+    vega: str
+    leverage: str | None | UnsetType = UNSET
+    liquidation_price: str | None | UnsetType = UNSET
 
 
-class PublicLoginParamsSchema(Struct):
-    signature: str
-    timestamp: str
-    wallet: str
-
-
-class PublicLoginResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[int]
-
-
-class Status1(Enum):
-    unseen = 'unseen'
-    seen = 'seen'
-    hidden = 'hidden'
-
-
-class PrivateUpdateNotificationsParamsSchema(Struct):
-    notification_ids: List[int]
-    subaccount_id: int
-    status: Status1 = Status1('seen')
-
-
-class PrivateUpdateNotificationsResultSchema(Struct):
-    updated_count: int
-
-
-class PrivateSessionKeysParamsSchema(Struct):
-    wallet: str
-
-
-class SessionKeyResponseSchema(Struct):
-    expiry_sec: int
-    ip_whitelist: List[str]
-    label: str
-    public_session_key: str
-    registered_sec: int
-    scope: str
-
-
-class PrivateCancelByNonceParamsSchema(Struct):
-    instrument_name: str
-    nonce: int
-    subaccount_id: int
-    wallet: str
-
-
-class PrivateCancelByNonceResultSchema(Struct):
-    cancelled_orders: int
-
-
-class LegPricedSchema(Struct):
+class PricedLegParamsAndResponse(Struct):
     amount: Decimal
     direction: Direction
     instrument_name: str
     price: Decimal
 
 
-class PublicExecuteQuoteDebugResultSchema(Struct):
+class PrivateChangeSubaccountLabelResponse(ChangeSubaccountLabelRequest):
+    pass
+
+
+class PrivateCreateSessionKeyResponse(Struct):
+    expiry_sec: int
+    ip_whitelist: list[str]
+    offchain_scopes: list[str]
+    protocol_scopes: list[str]
+    public_session_key: str
+    subaccount_ids: list[int]
+    label: str | None | UnsetType = UNSET
+
+
+class PrivateGetAccountResponse(Struct):
+    cancel_on_disconnect: bool
+    fee_info: AccountFeeInfo
+    is_rfq_maker: bool
+    per_endpoint_tps: dict[str, int]
+    subaccount_ids: list[int]
+    wallet: str
+    websocket_matching_tps: int
+    websocket_non_matching_tps: int
+    websocket_option_tps: int
+    websocket_perp_tps: int
+    creation_timestamp_sec: int | None | UnsetType = UNSET
+    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+
+
+class PrivateGetCollateralsResponse(Struct):
+    collaterals: list[Collateral]
+    subaccount_id: int
+
+
+class PrivateGetPositionsResponse(Struct):
+    positions: list[Position]
+    subaccount_id: int
+
+
+class PrivateGetSubaccountsResponse(Struct):
+    subaccount_ids: list[int]
+    wallet: str
+
+
+class PrivateTransferSpotExternalRequest(Struct):
+    amount: Decimal
+    asset_name: str
+    max_fee_usd: Decimal
+    new_subaccount_manager: int
+    nonce: int
+    recipient_address: str
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    sub_id: int
+    subaccount_id: int
+    to_subaccount_id: int
+
+
+class PrivateTransferSpotExternalResponse(Struct):
+    op_uuid: str
+    operation_id: int
+
+
+class PrivateTransferSpotRequest(Struct):
+    amount: Decimal
+    asset_name: str
+    max_fee_usd: Decimal
+    new_subaccount_manager: int
+    nonce: int
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    sub_id: int
+    subaccount_id: int
+    to_subaccount_id: int
+
+
+class PrivateTransferSpotResponse(PrivateTransferSpotExternalResponse):
+    pass
+
+
+class PrivateWithdrawRequest(Struct):
+    amount_in_underlying: str
+    asset_name: str
+    force_batch: bool
+    max_fee_usd: Decimal
+    nonce: int
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+
+
+class PrivateWithdrawResponse(PrivateTransferSpotExternalResponse):
+    pass
+
+
+class PublicExecuteQuoteDebugRequest(Struct):
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
+    max_fee: Decimal
+    nonce: int
+    quote_id: str
+    rfq_id: str
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+
+
+class PublicGetWalletsFromSessionKeyResponse(Struct):
+    wallets: list[str]
+
+
+class PublicSendQuoteDebugRequest(Struct):
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
+    max_fee: Decimal
+    nonce: int
+    rfq_id: str
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+
+
+class PublicVaultActionResponse(Struct):
+    curator_shares_minted: Decimal
+    event_ts: int
+    event_type: str
+    holder: str
+    management_shares_minted: Decimal
+    nav: Decimal
+    new_high_water_mark: Decimal
+    old_high_water_mark: Decimal
+    operation_uuid: str
+    performance_shares_minted: Decimal
+    protocol_shares_minted: Decimal
+    share_price: Decimal
+    shares_delta: Decimal
+    status: str
+    subaccount_id: int
+    total_shares: Decimal
+
+
+class PublicWithdrawDebugRequest(Struct):
+    amount_in_underlying: str
+    asset_name: str
+    force_batch: bool
+    max_fee_usd: Decimal
+    nonce: int
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+
+
+class QuoteExecuteDebugResult(Struct):
     action_hash: str
     encoded_data: str
     encoded_data_hashed: str
@@ -387,25 +1108,14 @@ class PublicExecuteQuoteDebugResultSchema(Struct):
     typed_data_hash: str
 
 
-class Status2(Enum):
-    open = 'open'
-    filled = 'filled'
-    cancelled = 'cancelled'
-    expired = 'expired'
+class QuoteSendDebugResult(Struct):
+    action_hash: str
+    encoded_data: str
+    encoded_data_hashed: str
+    typed_data_hash: str
 
 
-class PrivateGetQuotesParamsSchema(Struct):
-    subaccount_id: int
-    from_timestamp: int = 0
-    page: int = 1
-    page_size: int = 100
-    quote_id: Optional[str] = None
-    rfq_id: Optional[str] = None
-    status: Optional[Status2] = None
-    to_timestamp: int = 18446744073709552000
-
-
-class CancelReason3(Enum):
+class RFQCancelReason(StrEnum):
     field_ = ''
     user_request = 'user_request'
     insufficient_margin = 'insufficient_margin'
@@ -418,857 +1128,908 @@ class CancelReason3(Enum):
     compliance = 'compliance'
 
 
-class LiquidityRole(Enum):
-    maker = 'maker'
-    taker = 'taker'
+class RFQStatus(StrEnum):
+    open = 'open'
+    filled = 'filled'
+    cancelled = 'cancelled'
+    expired = 'expired'
 
 
-class TxStatus(Enum):
-    requested = 'requested'
-    pending = 'pending'
-    settled = 'settled'
-    reverted = 'reverted'
-    ignored = 'ignored'
-    timed_out = 'timed_out'
+class RPCError(Struct):
+    code: int
+    message: str
+    data: str | None | UnsetType = UNSET
 
 
-class QuoteResultSchema(Struct):
-    cancel_reason: CancelReason3
-    creation_timestamp: int
-    direction: Direction
-    extra_fee: Decimal
-    fee: Decimal
-    fill_pct: Decimal
-    is_transfer: bool
-    label: str
-    last_update_timestamp: int
-    legs: List[LegPricedSchema]
-    legs_hash: str
-    liquidity_role: LiquidityRole
-    max_fee: Decimal
-    mmp: bool
-    nonce: int
-    quote_id: str
-    rfq_id: str
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    status: Status2
-    subaccount_id: int
-    tx_hash: Optional[str] = None
-    tx_status: Optional[TxStatus] = None
-
-
-class PublicGetIndexChartDataParamsSchema(Struct):
+class RateFeedDataResponse(Struct):
+    confidence: str
     currency: str
-    end_timestamp: int
-    period: Period
-    start_timestamp: int
-
-
-class SpotFeedHistoryCandlesResponseSchema(Struct):
-    close_price: Decimal
-    high_price: Decimal
-    low_price: Decimal
-    open_price: Decimal
-    price: Decimal
+    deadline: int
+    expiry: int
+    rate: str
+    signatures: OracleSignatureDataResponse
     timestamp: int
-    timestamp_bucket: int
 
 
-class PrivateCancelBatchRfqsParamsSchema(Struct):
-    subaccount_id: int
-    label: Optional[str] = None
-    nonce: Optional[int] = None
-    rfq_id: Optional[str] = None
+class RateLimitInfo(Struct):
+    consumedPoints: int
+    isFirstInDuration: bool
+    msBeforeNext: int
+    remainingPoints: int
 
 
-class PrivateCancelBatchRfqsResultSchema(Struct):
-    cancelled_ids: List[str]
+class RateLimitResult(Struct):
+    remaining_matching: RateLimitInfo
+    remaining_non_matching: RateLimitInfo
+    remaining_per_endpoint: dict[str, RateLimitInfo]
+    remaining_connections: RateLimitInfo | None | UnsetType = UNSET
 
 
-class PublicWithdrawDebugParamsSchema(Struct):
-    amount: Decimal
-    asset_name: str
-    nonce: int
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-    is_atomic_signing: bool = False
+class ReferralPerformanceByInstrumentType(Struct):
+    builder_fee: str
+    fee_reward: str
+    notional_volume: str
+    referred_fee: str
+    unique_traders_referred: int
 
 
-class PublicWithdrawDebugResultSchema(PublicCreateSubaccountDebugResultSchema):
-    pass
-
-
-class PrivateChangeSubaccountLabelParamsSchema(Struct):
-    label: str
-    subaccount_id: int
-
-
-class PrivateChangeSubaccountLabelResultSchema(PrivateChangeSubaccountLabelParamsSchema):
-    pass
-
-
-class PrivateGetWithdrawalHistoryParamsSchema(Struct):
-    subaccount_id: int
-    end_timestamp: int = 9223372036854776000
-    start_timestamp: int = 0
-
-
-class WithdrawalSchema(Struct):
-    amount: Decimal
-    asset: str
-    timestamp: int
-    tx_hash: str
-    tx_status: TxStatus
-    error_log: Optional[Dict[str, Any]] = None
-
-
-class PrivateOrderDebugParamsSchema(Struct):
-    amount: Decimal
-    direction: Direction
-    instrument_name: str
-    limit_price: Decimal
-    max_fee: Decimal
-    nonce: int
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-    algo_duration_sec: Optional[int] = None
-    algo_num_slices: Optional[int] = None
-    algo_type: Optional[AlgoType] = None
-    client: Optional[str] = '8baller-python-sdk'
-    extra_fee: Decimal = Decimal('0')
-    is_atomic_signing: Optional[bool] = False
-    label: str = ''
-    mmp: bool = False
-    order_type: OrderType = OrderType('limit')
-    reduce_only: bool = False
+class Referrer(Struct):
+    wallet: str
     referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    reject_post_only: bool = True
-    reject_timestamp: int = 9223372036854776000
-    time_in_force: TimeInForce = TimeInForce('gtc')
-    trigger_price: Optional[Decimal] = None
-    trigger_price_type: Optional[TriggerPriceType] = None
-    trigger_type: Optional[TriggerType] = None
+    receiving_wallet: str | None | UnsetType = UNSET
 
 
-class TradeModuleDataSchema(Struct):
-    asset: str
-    desired_amount: Decimal
-    is_bid: bool
-    limit_price: Decimal
-    recipient_id: int
-    sub_id: int
-    trade_id: str
-    worst_fee: Decimal
-
-
-class TradeModuleParamsSchema(Struct):
-    amount: Decimal
-    direction: Direction
-    instrument_name: str
-    limit_price: Decimal
-    max_fee: Decimal
-    nonce: int
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-
-
-class TradeResponseSchema(Struct):
-    direction: Direction
-    expected_rebate: Decimal
-    extra_fee: Decimal
-    index_price: Decimal
-    instrument_name: str
-    is_transfer: bool
-    label: str
-    liquidity_role: LiquidityRole
-    mark_price: Decimal
-    order_id: str
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    subaccount_id: int
-    timestamp: int
-    trade_amount: Decimal
-    trade_fee: Decimal
-    trade_id: str
-    trade_price: Decimal
-    transaction_id: str
-    tx_status: TxStatus
-    quote_id: Optional[str] = None
-    rfq_id: Optional[str] = None
-    tx_hash: Optional[str] = None
-
-
-class PrivateEditSessionKeyParamsSchema(Struct):
-    public_session_key: str
+class RegisterDepositAddressParams(Struct):
+    deposit_type: DepositType
     wallet: str
-    disable: bool = False
-    ip_whitelist: Optional[List[str]] = None
-    label: Optional[str] = None
+    manager_id: int | None | UnsetType = UNSET
+    subaccount_id: int | UnsetType = 0
 
 
-class PrivateEditSessionKeyResultSchema(SessionKeyResponseSchema):
-    pass
-
-
-class PrivatePollQuotesParamsSchema(PrivateGetQuotesParamsSchema):
-    pass
-
-
-class QuoteResultPublicSchema(Struct):
-    cancel_reason: CancelReason3
-    creation_timestamp: int
-    direction: Direction
-    fill_pct: Decimal
-    last_update_timestamp: int
-    legs: List[LegPricedSchema]
-    legs_hash: str
-    liquidity_role: LiquidityRole
-    quote_id: str
-    rfq_id: str
-    status: Status2
-    subaccount_id: int
+class RegisterDepositAddressResult(Struct):
+    deposit_address: str
+    deposit_type: DepositType
     wallet: str
-    tx_hash: Optional[str] = None
-    tx_status: Optional[TxStatus] = None
+    manager_id: int | None | UnsetType = UNSET
+    subaccount_id: int | None | UnsetType = UNSET
 
 
-class PrivateSendQuoteParamsSchema(Struct):
+class ReplaceQuoteRequest(Struct):
     direction: Direction
-    legs: List[LegPricedSchema]
+    legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
     nonce: int
     rfq_id: str
     signature: str
     signature_expiry_sec: int
-    signer: str
+    signer: Address
     subaccount_id: int
-    client: str = '8baller-python-sdk'
-    label: str = ''
-    mmp: bool = False
+    client: str | UnsetType = '8baller-python-sdk'
+    extra_fee: Decimal | UnsetType = Decimal('0')
+    label: str | UnsetType = ''
+    mmp: bool | UnsetType = False
+    nonce_to_cancel: int | None | UnsetType = UNSET
+    quote_id_to_cancel: str | None | UnsetType = UNSET
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
 
-class PrivateSendQuoteResultSchema(QuoteResultSchema):
-    pass
-
-
-class PrivatePollRfqsParamsSchema(Struct):
-    subaccount_id: int
-    from_timestamp: int = 0
-    page: int = 1
-    page_size: int = 100
-    rfq_id: Optional[str] = None
-    rfq_subaccount_id: Optional[int] = None
-    status: Optional[Status2] = None
-    to_timestamp: int = 18446744073709552000
-
-
-class LegUnpricedSchema(Struct):
+class RequestVaultDepositRequest(Struct):
     amount: Decimal
-    direction: Direction
-    instrument_name: str
-
-
-class PrivateOrderParamsSchema(PrivateOrderDebugParamsSchema):
-    pass
-
-
-class PrivateOrderResultSchema(Struct):
-    order: OrderResponseSchema
-    trades: List[TradeResponseSchema]
-
-
-class PublicGetSpotFeedHistoryCandlesParamsSchema(PublicGetIndexChartDataParamsSchema):
-    pass
-
-
-class PublicGetSpotFeedHistoryCandlesResultSchema(Struct):
-    currency: str
-    spot_feed_history: List[SpotFeedHistoryCandlesResponseSchema]
-
-
-class PrivateGetOpenOrdersParamsSchema(Struct):
-    subaccount_id: int
-
-
-class PrivateGetOpenOrdersResultSchema(Struct):
-    orders: List[OrderResponseSchema]
-    subaccount_id: int
-
-
-class InstrumentType(Enum):
-    erc20 = 'erc20'
-    option = 'option'
-    perp = 'perp'
-
-
-class TxStatus5(Enum):
-    settled = 'settled'
-    reverted = 'reverted'
-    timed_out = 'timed_out'
-
-
-class PublicGetTradeHistoryParamsSchema(Struct):
-    currency: Optional[str] = None
-    from_timestamp: int = 0
-    instrument_name: Optional[str] = None
-    instrument_type: Optional[InstrumentType] = None
-    page: int = 1
-    page_size: int = 100
-    subaccount_id: Optional[int] = None
-    to_timestamp: int = 18446744073709552000
-    trade_id: Optional[str] = None
-    tx_hash: Optional[str] = None
-    tx_status: TxStatus5 = TxStatus5('settled')
-
-
-class TradeSettledPublicResponseSchema(Struct):
-    direction: Direction
-    expected_rebate: Decimal
-    extra_fee: Decimal
-    index_price: Decimal
-    instrument_name: str
-    liquidity_role: LiquidityRole
-    mark_price: Decimal
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    subaccount_id: int
-    timestamp: int
-    trade_amount: Decimal
-    trade_fee: Decimal
-    trade_id: str
-    trade_price: Decimal
-    tx_hash: str
-    tx_status: TxStatus5
-    wallet: str
-    quote_id: Optional[str] = None
-    rfq_id: Optional[str] = None
-
-
-class SignedQuoteParamsSchema(Struct):
-    direction: Direction
-    legs: List[LegPricedSchema]
-    max_fee: Decimal
+    deposit_spot_asset: Address
     nonce: int
     signature: str
     signature_expiry_sec: int
-    signer: str
+    signer: Address
     subaccount_id: int
+    vault_subaccount_id: int
 
 
-class PrivateTransferPositionsResultSchema(Struct):
-    maker_quote: QuoteResultSchema
-    taker_quote: QuoteResultSchema
-
-
-class PrivateGetAllPortfoliosParamsSchema(PrivateSessionKeysParamsSchema):
-    pass
-
-
-class CollateralResponseSchema(Struct):
-    amount: Decimal
-    amount_step: Decimal
-    asset_name: str
-    asset_type: InstrumentType
-    average_price: Decimal
-    average_price_excl_fees: Decimal
-    creation_timestamp: int
-    cumulative_interest: Decimal
-    currency: str
-    delta: Decimal
-    delta_currency: str
-    initial_margin: Decimal
-    maintenance_margin: Decimal
-    mark_price: Decimal
-    mark_value: Decimal
-    open_orders_margin: Decimal
-    pending_interest: Decimal
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    total_fees: Decimal
-    unrealized_pnl: Decimal
-    unrealized_pnl_excl_fees: Decimal
-
-
-class PositionResponseSchema(Struct):
-    amount: Decimal
-    amount_step: Decimal
-    average_price: Decimal
-    average_price_excl_fees: Decimal
-    creation_timestamp: int
-    cumulative_funding: Decimal
-    delta: Decimal
-    gamma: Decimal
-    index_price: Decimal
-    initial_margin: Decimal
-    instrument_name: str
-    instrument_type: InstrumentType
-    maintenance_margin: Decimal
-    mark_price: Decimal
-    mark_value: Decimal
-    net_settlements: Decimal
-    open_orders_margin: Decimal
-    pending_funding: Decimal
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    theta: Decimal
-    total_fees: Decimal
-    unrealized_pnl: Decimal
-    unrealized_pnl_excl_fees: Decimal
-    vega: Decimal
-    leverage: Optional[Decimal] = None
-    liquidation_price: Optional[Decimal] = None
-
-
-class PrivateGetRfqsParamsSchema(Struct):
+class RequestVaultWithdrawRequest(Struct):
+    nonce: int
+    shares_to_burn: Decimal
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
     subaccount_id: int
-    from_timestamp: int = 0
-    page: int = 1
-    page_size: int = 100
-    rfq_id: Optional[str] = None
-    status: Optional[Status2] = None
-    to_timestamp: int = 18446744073709552000
+    vault_subaccount_id: int
 
 
-class RFQResultSchema(Struct):
-    cancel_reason: CancelReason3
+class Rfq(Struct):
+    cancel_reason: RFQCancelReason
     creation_timestamp: int
     filled_pct: Decimal
     label: str
     last_update_timestamp: int
-    legs: List[LegUnpricedSchema]
+    legs: list[LegUnpricedParams]
     partial_fill_step: Decimal
     rfq_id: str
-    status: Status2
+    status: RFQStatus
     subaccount_id: int
     valid_until: int
-    wallet: str
-    ask_total_cost: Optional[Decimal] = None
-    bid_total_cost: Optional[Decimal] = None
-    counterparties: Optional[List[str]] = None
-    filled_direction: Optional[Direction] = None
-    mark_total_cost: Optional[Decimal] = None
-    max_total_cost: Optional[Decimal] = None
-    min_total_cost: Optional[Decimal] = None
-    preferred_direction: Optional[Direction] = None
-    reducing_direction: Optional[Direction] = None
-    total_cost: Optional[Decimal] = None
+    wallet: Address
+    ask_total_cost: Decimal | None = None
+    bid_total_cost: Decimal | None = None
+    mark_total_cost: Decimal | None = None
+    max_total_cost: Decimal | None = None
+    min_total_cost: Decimal | None = None
+    total_cost: Decimal | None = None
+    counterparties: list[Address] | UnsetType = UNSET
+    filled_direction: Direction | None | UnsetType = UNSET
 
 
-class PublicGetInstrumentsParamsSchema(Struct):
-    currency: str
-    expired: bool
-    instrument_type: InstrumentType
-
-
-class ERC20PublicDetailsSchema(Struct):
-    decimals: int
-    borrow_index: Decimal = Decimal('1')
-    supply_index: Decimal = Decimal('1')
-    underlying_erc20_address: str = ''
-
-
-class OptionType(Enum):
-    C = 'C'
-    P = 'P'
-
-
-class OptionPublicDetailsSchema(Struct):
-    expiry: int
-    index: str
-    option_type: OptionType
-    strike: Decimal
-    settlement_price: Optional[Decimal] = None
-
-
-class PerpPublicDetailsSchema(Struct):
-    aggregate_funding: Decimal
-    funding_rate: Decimal
-    index: str
-    max_rate_per_hour: Decimal
-    min_rate_per_hour: Decimal
-    static_interest_rate: Decimal
-
-
-class PrivateGetSubaccountsParamsSchema(PrivateSessionKeysParamsSchema):
-    pass
-
-
-class PrivateGetSubaccountsResultSchema(Struct):
-    subaccount_ids: List[int]
-    wallet: str
-
-
-class PrivateResetMmpParamsSchema(Struct):
+class RfqGetBestQuoteRequest(Struct):
     subaccount_id: int
-    currency: Optional[str] = None
+    client: str | UnsetType = '8baller-python-sdk'
+    direction: Direction | UnsetType = Direction('buy')
+    extra_fee: Decimal | UnsetType = Decimal('0')
+    legs: list[LegUnpricedParams] | UnsetType = field(default_factory=list)
+    rfq_id: str | None | UnsetType = UNSET
 
 
-class Result(Enum):
-    ok = 'ok'
-
-
-class PrivateResetMmpResponseSchema(Struct):
-    id: Union[str, int]
-    result: Result
-
-
-class PrivateGetSubaccountParamsSchema(PrivateGetOpenOrdersParamsSchema):
-    pass
-
-
-class PrivateCancelAllParamsSchema(Struct):
-    subaccount_id: int
-    cancel_trigger_orders: bool = False
-
-
-class PrivateCancelAllResponseSchema(PrivateResetMmpResponseSchema):
-    pass
-
-
-class PublicGetLiquidationHistoryParamsSchema(Struct):
-    end_timestamp: int = 9223372036854776000
-    page: int = 1
-    page_size: int = 100
-    start_timestamp: int = 0
-    subaccount_id: Optional[int] = None
-
-
-class AuctionType(Enum):
-    solvent = 'solvent'
-    insolvent = 'insolvent'
-
-
-class AuctionBidEventSchema(Struct):
-    amounts_liquidated: Dict[str, Decimal]
-    cash_received: Decimal
-    discount_pnl: Decimal
-    percent_liquidated: Decimal
-    positions_realized_pnl: Dict[str, Decimal]
-    positions_realized_pnl_excl_fees: Dict[str, Decimal]
-    realized_pnl: Decimal
-    realized_pnl_excl_fees: Decimal
-    timestamp: int
-    tx_hash: str
-
-
-class PrivateGetDepositHistoryParamsSchema(PrivateGetWithdrawalHistoryParamsSchema):
-    pass
-
-
-class DepositSchema(Struct):
-    amount: Decimal
-    asset: str
-    timestamp: int
-    transaction_id: str
-    tx_hash: str
-    tx_status: TxStatus
-    error_log: Optional[Dict[str, Any]] = None
-
-
-class PublicRegisterSessionKeyParamsSchema(Struct):
-    expiry_sec: int
-    label: str
-    public_session_key: str
-    signed_raw_tx: str
-    wallet: str
-
-
-class PublicRegisterSessionKeyResultSchema(Struct):
-    label: str
-    public_session_key: str
-    transaction_id: str
-
-
-class PublicGetVaultBalancesParamsSchema(Struct):
-    smart_contract_owner: Optional[str] = None
-    wallet: Optional[str] = None
-
-
-class VaultBalanceResponseSchema(Struct):
-    address: str
-    amount: Decimal
-    chain_id: int
-    name: str
-    vault_asset_type: str
-
-
-class PrivateCancelRfqParamsSchema(Struct):
-    rfq_id: str
-    subaccount_id: int
-
-
-class PrivateCancelRfqResponseSchema(PrivateResetMmpResponseSchema):
-    pass
-
-
-class PrivateGetTradeHistoryParamsSchema(Struct):
-    from_timestamp: int = 0
-    instrument_name: Optional[str] = None
-    order_id: Optional[str] = None
-    page: int = 1
-    page_size: int = 100
-    quote_id: Optional[str] = None
-    subaccount_id: Optional[int] = None
-    to_timestamp: int = 18446744073709552000
-    wallet: Optional[str] = None
-
-
-class PrivateGetTradeHistoryResultSchema(Struct):
-    subaccount_id: int
-    trades: List[TradeResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicGetAllCurrenciesParamsSchema(PublicGetVaultStatisticsParamsSchema):
-    pass
-
-
-class MarketType(Enum):
-    ALL = 'ALL'
-    SRM_BASE_ONLY = 'SRM_BASE_ONLY'
-    SRM_OPTION_ONLY = 'SRM_OPTION_ONLY'
-    SRM_PERP_ONLY = 'SRM_PERP_ONLY'
-    CASH = 'CASH'
-
-
-class OpenInterestStatsSchema(Struct):
-    current_open_interest: Decimal
-    interest_cap: Decimal
-    manager_currency: Optional[str] = None
-
-
-class ManagerContractResponseSchema(Struct):
-    address: str
+class RiskUniverseManager(Struct):
+    collaterals: list[ManagerCollateral]
+    instruments: list[str]
+    manager_id: int
     margin_type: MarginType
-    currency: Optional[str] = None
 
 
-class PM2CollateralDiscountsSchema(Struct):
-    im_discount: Decimal
-    manager_currency: str
-    mm_discount: Decimal
-
-
-class ProtocolAssetAddressesSchema(Struct):
-    option: Optional[str] = None
-    perp: Optional[str] = None
-    spot: Optional[str] = None
-    underlying_erc20: Optional[str] = None
-
-
-class SRMPerpMarginRequirementsPublicSchema(Struct):
-    im_perp_req: Decimal
-    max_leverage: Decimal
-    mm_perp_req: Decimal
-
-
-class PrivateGetErc20TransferHistoryParamsSchema(Struct):
-    end_timestamp: int = 9223372036854776000
-    start_timestamp: int = 0
-    subaccount_id: Optional[int] = None
-    wallet: Optional[str] = None
-
-
-class ERC20TransferSchema(Struct):
-    amount: Decimal
-    asset: str
-    counterparty_subaccount_id: int
-    is_outgoing: bool
+class SecurityModuleDetails(Struct):
+    cash_asset: str
+    cash_currency: str
     subaccount_id: int
-    timestamp: int
-    tx_hash: str
 
 
-class PrivateGetAccountParamsSchema(PrivateSessionKeysParamsSchema):
-    pass
+class SendQuoteRequest(Struct):
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
+    max_fee: Decimal
+    nonce: int
+    rfq_id: str
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+    client: str | UnsetType = '8baller-python-sdk'
+    extra_fee: Decimal | UnsetType = Decimal('0')
+    label: str | UnsetType = ''
+    mmp: bool | UnsetType = False
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
 
-class AccountFeeInfoSchema(Struct):
-    base_fee_discount: Decimal
-    rfq_maker_discount: Decimal
-    rfq_taker_discount: Decimal
-    option_maker_fee: Optional[Decimal] = None
-    option_taker_fee: Optional[Decimal] = None
-    perp_maker_fee: Optional[Decimal] = None
-    perp_taker_fee: Optional[Decimal] = None
-    spot_maker_fee: Optional[Decimal] = None
-    spot_taker_fee: Optional[Decimal] = None
+class SendRfqRequest(Struct):
+    legs: list[LegUnpricedParams]
+    subaccount_id: int
+    client: str | UnsetType = '8baller-python-sdk'
+    counterparties: list[str] | UnsetType = UNSET
+    extra_fee: Decimal | UnsetType = Decimal('0')
+    label: str | UnsetType = ''
+    max_total_cost: Decimal | None | UnsetType = UNSET
+    min_total_cost: Decimal | None | UnsetType = UNSET
+    partial_fill_step: Decimal | UnsetType = Decimal('1')
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
 
-class PrivateSetMmpConfigParamsSchema(Struct):
+class SessionKey(Struct):
+    expiry_sec: int
+    ip_whitelist: list[str]
+    label: str
+    offchain_scopes: list[str]
+    protocol_scopes: list[str]
+    public_session_key: str
+    registered_sec: int
+    subaccount_ids: list[int]
+
+
+class SessionKeysRequest(Struct):
+    wallet: str
+
+
+class SetMmpConfigRequest(Struct):
     currency: str
     mmp_frozen_time: int
     mmp_interval: int
     subaccount_id: int
-    mmp_amount_limit: Decimal = Decimal('0')
-    mmp_delta_limit: Decimal = Decimal('0')
+    mmp_amount_limit: Decimal | UnsetType = Decimal('0')
+    mmp_delta_limit: Decimal | UnsetType = Decimal('0')
 
 
-class PrivateSetMmpConfigResultSchema(PrivateSetMmpConfigParamsSchema):
-    pass
-
-
-class SimulatedCollateralSchema(Struct):
-    amount: Decimal
-    asset_name: str
-
-
-class SimulatedPositionSchema(Struct):
-    amount: Decimal
-    instrument_name: str
-    entry_price: Optional[Decimal] = None
-
-
-class PublicGetMarginResultSchema(Struct):
-    is_valid_trade: bool
-    post_initial_margin: Decimal
-    post_maintenance_margin: Decimal
-    pre_initial_margin: Decimal
-    pre_maintenance_margin: Decimal
+class SetMmpConfigResponse(Struct):
+    currency: str
+    mmp_amount_limit: str
+    mmp_delta_limit: str
+    mmp_frozen_time: int
+    mmp_interval: int
     subaccount_id: int
 
 
-class PrivateCancelBatchQuotesParamsSchema(Struct):
-    subaccount_id: int
-    label: Optional[str] = None
-    nonce: Optional[int] = None
-    quote_id: Optional[str] = None
-    rfq_id: Optional[str] = None
-
-
-class PrivateCancelBatchQuotesResultSchema(PrivateCancelBatchRfqsResultSchema):
-    pass
-
-
-class PublicGetTimeParamsSchema(PublicGetVaultStatisticsParamsSchema):
-    pass
-
-
-class PublicGetTimeResponseSchema(Struct):
-    id: Union[str, int]
-    result: int
-
-
-class PublicGetAllInstrumentsParamsSchema(Struct):
-    expired: bool
-    instrument_type: InstrumentType
-    currency: Optional[str] = None
-    page: int = 1
-    page_size: int = 100
-
-
-class PublicGetLatestSignedFeedsParamsSchema(Struct):
-    currency: Optional[str] = None
-    expiry: Optional[int] = None
-
-
-class OracleSignatureDataSchema(Struct):
-    signatures: Optional[List[str]] = None
-    signers: Optional[List[str]] = None
-
-
-class Type(Enum):
-    P = 'P'
-    A = 'A'
-    B = 'B'
-
-
-class PerpFeedDataSchema(Struct):
-    confidence: Decimal
-    currency: str
-    deadline: int
-    signatures: OracleSignatureDataSchema
-    spot_diff_value: Decimal
-    timestamp: int
-    type: Type
-
-
-class RateFeedDataSchema(Struct):
-    confidence: Decimal
-    currency: str
-    deadline: int
-    expiry: int
-    rate: Decimal
-    signatures: OracleSignatureDataSchema
-    timestamp: int
-
-
-class FeedSourceType(Enum):
-    S = 'S'
-    O = 'O'
-
-
-class SpotFeedDataSchema(Struct):
-    confidence: Decimal
-    currency: str
-    deadline: int
-    price: Decimal
-    signatures: OracleSignatureDataSchema
-    timestamp: int
-    feed_source_type: FeedSourceType = FeedSourceType('S')
-
-
-class VolSVIParamDataSchema(Struct):
-    SVI_a: Decimal
-    SVI_b: Decimal
-    SVI_fwd: Decimal
-    SVI_m: Decimal
-    SVI_refTau: Decimal
-    SVI_rho: Decimal
-    SVI_sigma: Decimal
-
-
-class PublicSendQuoteDebugParamsSchema(PrivateSendQuoteParamsSchema):
-    pass
-
-
-class PublicSendQuoteDebugResultSchema(PublicCreateSubaccountDebugResultSchema):
-    pass
-
-
-class PublicGetTickerParamsSchema(Struct):
-    instrument_name: str
-
-
-class OptionPricingSchema(Struct):
-    ask_iv: Decimal
-    bid_iv: Decimal
-    delta: Decimal
-    discount_factor: Decimal
-    forward_price: Decimal
-    gamma: Decimal
-    iv: Decimal
-    mark_price: Decimal
-    rho: Decimal
-    theta: Decimal
-    vega: Decimal
-
-
-class PrivateExecuteQuoteParamsSchema(Struct):
+class SettledTrade(Struct):
     direction: Direction
-    legs: List[LegPricedSchema]
+    expected_rebate: Decimal
+    extra_fee: Decimal
+    index_price: Decimal
+    instrument_name: str
+    liquidity_role: LiquidityRole
+    mark_price: Decimal
+    realized_pnl: Decimal
+    realized_pnl_excl_fees: Decimal
+    subaccount_id: int
+    timestamp: int
+    trade_amount: Decimal
+    trade_fee: Decimal
+    trade_id: str
+    trade_price: Decimal
+    tx_hash: str
+    wallet: str
+    quote_id: str | None = None
+    rfq_id: str | None = None
+    batch_status: BatchStatus | None | UnsetType = UNSET
+
+
+class SignedTransferQuoteRequest(Struct):
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
+    max_fee: Decimal
+    nonce: str
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+
+
+class SpotFeedDataResponse(Struct):
+    confidence: str
+    currency: str
+    deadline: int
+    price: str
+    signatures: OracleSignatureDataResponse
+    timestamp: int
+    feed_source_type: str | None | UnsetType = UNSET
+
+
+class SpotPublicDetails(Struct):
+    borrow_index: str
+    decimals: int
+    supply_index: str
+    underlying_erc20_address: str
+
+
+class SpotUniverse(Struct):
+    oi: OpenInterestStats
+    pm2_im_discount: str
+    pm2_mm_discount: str
+    risk_universe_id: int
+    srm_im_discount: str
+    srm_mm_discount: str
+    lending: LendingDetails | None | UnsetType = UNSET
+
+
+class TickerSlimSnapshot(
+    Struct,
+    rename={
+        'best_ask_price': 'A',
+        'best_bid_price': 'B',
+        'index_price': 'I',
+        'mark_price': 'M',
+        'best_ask_amount': 'a',
+        'best_bid_amount': 'b',
+        'max_price': 'maxp',
+        'min_price': 'minp',
+        'timestamp': 't',
+        'funding_rate': 'f',
+    },
+):
+    best_ask_price: str
+    best_bid_price: str
+    index_price: str
+    mark_price: str
+    best_ask_amount: str
+    best_bid_amount: str
+    max_price: str
+    min_price: str
+    stats: DailyTradingStatistics
+    timestamp: int
+    funding_rate: str | None | UnsetType = UNSET
+    option_pricing: OptionPricing | None | UnsetType = UNSET
+
+
+class TimeInForce(StrEnum):
+    gtc = 'gtc'
+    post_only = 'post_only'
+    fok = 'fok'
+    ioc = 'ioc'
+
+
+class Trade(Struct):
+    direction: Direction
+    expected_rebate: Decimal
+    extra_fee: Decimal
+    index_price: Decimal
+    instrument_name: str
+    is_transfer: bool
+    liquidity_role: LiquidityRole
+    mark_price: Decimal
+    op_uuid: str
+    order_id: str
+    realized_pnl: Decimal
+    realized_pnl_excl_fees: Decimal
+    subaccount_id: int
+    timestamp: int
+    trade_amount: Decimal
+    trade_fee: Decimal
+    trade_id: str
+    trade_price: Decimal
+    quote_id: str | None = None
+    rfq_id: str | None = None
+    batch_status: BatchStatus | None | UnsetType = UNSET
+    label: str | UnsetType = ''
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class TradeHistoryResponse(Struct):
+    direction: Direction
+    expected_rebate: Decimal
+    extra_fee: Decimal
+    index_price: Decimal
+    instrument_name: str
+    is_transfer: bool
+    label: str
+    liquidity_role: LiquidityRole
+    mark_price: Decimal
+    op_uuid: str
+    order_id: str
+    realized_pnl: Decimal
+    realized_pnl_excl_fees: Decimal
+    subaccount_id: int
+    timestamp: int
+    trade_amount: Decimal
+    trade_fee: Decimal
+    trade_id: str
+    trade_price: Decimal
+    quote_id: str | None = None
+    rfq_id: str | None = None
+    batch_status: BatchStatus | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class TradingviewCandle(Struct):
+    close_price: str
+    high_price: str
+    low_price: str
+    open_price: str
+    timestamp: int
+    timestamp_bucket: int
+    volume_contracts: str
+    volume_usd: str
+
+
+class TransferEntry(Struct):
+    amount: Decimal
+    asset: str
+    batch_status: BatchStatus
+    batch_uuid: str
+    fee: Decimal
+    from_subaccount_id: int
+    from_wallet: str
+    is_outgoing: bool
+    operation_id: str
+    timestamp: int
+    to_subaccount_id: int
+    to_wallet: str
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class TransferHistoryResult(Struct):
+    transfers: list[TransferEntry]
+
+
+class TransferPositionsRequest(Struct):
+    maker_params: SignedTransferQuoteRequest
+    taker_params: SignedTransferQuoteRequest
+    wallet: Address
+
+
+class TriggerPriceType(StrEnum):
+    mark = 'mark'
+    index = 'index'  # type: ignore
+
+
+class TriggerType(StrEnum):
+    stoploss = 'stoploss'
+    takeprofit = 'takeprofit'
+
+
+class UniverseManagers(Struct):
+    risk_universe_id: int
+    pm: int | None | UnsetType = UNSET
+    risk_universe_name: str | None | UnsetType = UNSET
+    sm: int | None | UnsetType = UNSET
+
+
+class UpdateVaultInfoRequest(Struct):
+    subaccount_id: int
+    description: str | None | UnsetType = UNSET
+    mtm_cap: Decimal | None | UnsetType = UNSET
+    name: str | None | UnsetType = UNSET
+    whitelist_only: bool | None | UnsetType = UNSET
+
+
+class UpdateWhitelistedRecipientsRequest(Struct):
+    add: list[str]
+    nonce: int
+    remove: list[str]
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    wallet: str
+
+
+class UpdateWhitelistedRecipientsResponse(Struct):
+    op_uuid: str
+    operation_id: int
+    whitelisted_recipients: list[str]
+
+
+class VaultActionResponse(Struct):
+    after_shares: Decimal
+    amount: Decimal
+    before_shares: Decimal
+    creation_timestamp_ms: int
+    entry_price: Decimal
+    error_reason: str
+    event_ts: int
+    event_type: str
+    exit_price: Decimal
+    operation_id: int
+    operation_uuid: str
+    share_price: Decimal
+    shares_delta: Decimal
+    shares_requested: Decimal
+    status: str
+    user_action_hash: str
+    vault_nonce: str
+    vault_subaccount_id: int
+    wallet: str
+
+
+class VaultConfig(Struct):
+    cooldown_sec: int
+    deposit_spot_asset: Address
+    management_fee_bps: int
+    max_slippage_bps: int
+    performance_fee_bps: int
+    benchmark_asset: Address | None | UnsetType = UNSET
+
+
+class VaultCreateResponse(PrivateTransferSpotExternalResponse):
+    pass
+
+
+class VaultDepositHold(Struct):
+    amount: str
+    asset_name: str
+    currency: str
+    vault_id: int
+
+
+class VaultForceBurnResponse(PrivateTransferSpotExternalResponse):
+    pass
+
+
+class VaultIdsResponse(Struct):
+    subaccount_ids: list[int]
+
+
+class VaultPerformancePointResponse(Struct):
+    curator_shares: Decimal
+    global_hwm: Decimal
+    share_price: Decimal
+    total_shares: Decimal
+    ts: int
+    benchmark_price: Decimal | None = None
+    nav: Decimal | None = None
+    nav_benchmark: Decimal | None = None
+
+
+class VaultRequestId(Struct):
+    vault_nonce: str
+    vault_subaccount_id: int
+    wallet: Address
+
+
+class VaultSettleResponse(PrivateTransferSpotExternalResponse):
+    pass
+
+
+class VolSVIParamDataResponse(Struct):
+    SVI_a: str
+    SVI_b: str
+    SVI_fwd: str
+    SVI_m: str
+    SVI_refTau: str
+    SVI_rho: str
+    SVI_sigma: str
+
+
+class WithdrawalEntry(Struct):
+    amount: Decimal
+    asset: str
+    batch_status: BatchStatus
+    batch_uuid: str
+    erc20_address: str
+    fee: Decimal
+    operation_id: str
+    recipient: str
+    subaccount_id: int
+    timestamp: int
+    wallet: str
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class WithdrawalHistoryResult(Struct):
+    withdrawals: list[WithdrawalEntry]
+
+
+class Action(Struct):
+    data: list[int]
+    expiry: int
+    module: Address
+    nonce: int
+    owner: Address
+    signer: Address
+    subaccount_id: int
+
+
+class Asset(Struct):
+    address: str
+    asset_id: str
+    asset_name: str
+    asset_type: AssetType
+    currency: str
+    is_collateral: bool
+    is_position: bool
+    sub_id: str
+    erc20_details: SpotPublicDetails | None | UnsetType = UNSET
+    option_details: OptionDetails | None | UnsetType = UNSET
+    perp_details: PerpDetails | None | UnsetType = UNSET
+
+
+class AssetUniverse(Struct):
+    oi: OpenInterestStats
+    risk_universe_id: int
+    risk_universe_name: str | None | UnsetType = UNSET
+
+
+class BurnSharesRequest(Struct):
+    nonce: int
+    request_id: VaultRequestId
+    share_price: Decimal
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+    withdraw_hash: str
+
+
+class CreateOrderRequest(Struct):
+    amount: Decimal
+    direction: Direction
+    instrument_name: str
+    limit_price: Decimal
+    max_fee: Decimal
+    nonce: str
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+    algo_duration_sec: int | None | UnsetType = UNSET
+    algo_num_slices: int | None | UnsetType = UNSET
+    algo_type: AlgoType | None | UnsetType = UNSET
+    client: str | None | UnsetType = '8baller-python-sdk'
+    extra_fee: Decimal | None | UnsetType = UNSET
+    is_atomic_signing: bool | None | UnsetType = UNSET
+    label: str | None | UnsetType = UNSET
+    mmp: bool | None | UnsetType = UNSET
+    order_type: OrderType | UnsetType = OrderType('limit')
+    reduce_only: bool | None | UnsetType = UNSET
+    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    reject_post_only: bool | None | UnsetType = UNSET
+    reject_timestamp: int | None | UnsetType = UNSET
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
+    trigger_price: Decimal | None | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
+    trigger_type: TriggerType | None | UnsetType = UNSET
+
+
+class ExecuteQuoteRequest(Struct):
+    direction: Direction
+    legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
     nonce: int
     quote_id: str
     rfq_id: str
     signature: str
     signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+    client: str | UnsetType = '8baller-python-sdk'
+    enable_taker_protection: bool | UnsetType = False
+    label: str | UnsetType = ''
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+
+
+class ForwardFeedDataResponse(Struct):
+    confidence: str
+    currency: str
+    deadline: int
+    expiry: int
+    fwd_diff: str
+    signatures: OracleSignatureDataResponse
+    spot_aggregate_latest: str
+    spot_aggregate_start: str
+    timestamp: int
+
+
+class GetOnchainActionHistoryResponse(Struct):
+    actions: list[OnchainActionHistoryEntry]
+    pagination: Pagination
+
+
+class GetPendingDepositsResult(Struct):
+    pending_deposits: list[PendingDepositEntry]
+    wallet: str
+
+
+class GetReferralPerformanceResult(Struct):
+    fee_share_percentage: str
+    rewards: dict[str, dict[str, dict[str, ReferralPerformanceByInstrumentType]]]
+    stdrv_balance: str
+    total_builder_fee_collected: str
+    total_fee_rewards: str
+    total_notional_volume: str
+    total_referred_fees: str
+    referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+
+
+class GetTickersResponse(Struct):
+    tickers: dict[str, TickerSlimSnapshot]
+
+
+class GetVaultPerformanceHistoryRequest(Struct):
+    resolution: PerformanceResolution
+    subaccount_id: int
+    from_: int | None | UnsetType = field(name='from', default=UNSET)
+    limit: int | None | UnsetType = UNSET
+    to: int | None | UnsetType = UNSET
+
+
+class GetWalletsFromSessionKeyRequest(Struct):
+    public_session_key: str
+    scope: OffchainKeyScope | None | UnsetType = UNSET
+
+
+class Instrument(Struct):
+    amount_step: str
+    base_asset_address: str
+    base_asset_sub_id: str
+    base_currency: str
+    base_fee: str
+    fifo_min_allocation: str
+    instrument_name: str
+    instrument_type: AssetType
+    is_active: bool
+    maker_fee_rate: str
+    maximum_amount: str
+    minimum_amount: str
+    pro_rata_amount_step: str
+    pro_rata_fraction: str
+    quote_currency: str
+    scheduled_activation: int
+    scheduled_deactivation: int
+    taker_fee_rate: str
+    tick_size: str
+    erc20_details: SpotPublicDetails | None | UnsetType = UNSET
+    mark_price_fee_rate_cap: str | None | UnsetType = UNSET
+    option_details: OptionDetails | None | UnsetType = UNSET
+    perp_details: PerpDetails | None | UnsetType = UNSET
+
+
+class InterestHistoryResult(Struct):
+    events: list[InterestPayment]
+
+
+class InterestRateCandle(Struct):
+    borrow_apy: Ohlc
+    risk_universe_id: int
+    supply_apy: Ohlc
+    timestamp: int
+    total_borrow: str
+    total_supply: str
+
+
+class InterestRateHistoryResult(Struct):
+    interest_rate_history: list[InterestRateCandle]
+
+
+class MintSharesRequest(Struct):
+    deposit_hash: str
+    nonce: int
+    request_id: VaultRequestId
+    share_price: Decimal
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
+    subaccount_id: int
+
+
+class OptionSettlementHistoryResponse(Struct):
+    settlements: list[OptionSettlementResponse]
+
+
+class Order(Struct):
+    amount: Decimal
+    average_price: Decimal
+    creation_timestamp: int
+    direction: Direction
+    extra_fee: Decimal
+    filled_amount: Decimal
+    instrument_name: str
+    is_transfer: bool
+    last_update_timestamp: int
+    limit_price: Decimal
+    max_fee: Decimal
+    mmp: bool
+    nonce: str
+    order_fee: Decimal
+    order_id: str
+    order_status: OrderStatus
+    order_type: OrderType
+    signature: str
+    signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    client: str = '8baller-python-sdk'
-    enable_taker_protection: bool = False
-    label: str = ''
+    time_in_force: TimeInForce
+    quote_id: str | None = None
+    replaced_order_id: str | None = None
+    signed_limit_price: Decimal | None = None
+    trigger_price: Decimal | None = None
+    algo_duration_sec: int | None | UnsetType = UNSET
+    algo_num_slices: int | None | UnsetType = UNSET
+    algo_slices_completed: int | None | UnsetType = UNSET
+    algo_type: AlgoType | None | UnsetType = UNSET
+    cancel_reason: CancelReason | UnsetType = CancelReason('')
+    label: str | UnsetType = ''
+    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
+    trigger_reject_message: str | None | UnsetType = UNSET
+    trigger_type: TriggerType | None | UnsetType = UNSET
 
 
-class PrivateExecuteQuoteResultSchema(Struct):
-    cancel_reason: CancelReason3
+class OrderCreatedResponse(Struct):
+    order: Order
+    trades: list[Trade]
+
+
+class OrderQuoteRequest(Struct):
+    amount: Decimal
+    direction: Direction
+    instrument_name: str
+    limit_price: Decimal
+    max_fee: Decimal
+    nonce: str
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+    client: str | UnsetType = '8baller-python-sdk'
+    extra_fee: Decimal | None | UnsetType = UNSET
+    is_atomic_signing: bool | UnsetType = False
+    label: str | UnsetType = ''
+    mmp: bool | UnsetType = False
+    order_type: OrderType | UnsetType = OrderType('limit')
+    reduce_only: bool | UnsetType = False
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    reject_post_only: bool | UnsetType = True
+    reject_timestamp: int | UnsetType = 9223372036854775807
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
+    trigger_price: Decimal | None | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
+    trigger_type: TriggerType | None | UnsetType = UNSET
+
+
+class OrderQuoteResponse(Struct):
+    estimated_fee: str
+    estimated_fill_amount: str
+    estimated_fill_price: str
+    estimated_order_status: OrderStatus
+    estimated_realized_pnl: str
+    estimated_realized_pnl_excl_fees: str
+    is_valid: bool
+    post_initial_margin: str
+    pre_initial_margin: str
+    suggested_max_fee: str
+    invalid_reason: str | None | UnsetType = UNSET
+    max_amount: str | None | UnsetType = UNSET
+    post_liquidation_price: str | None | UnsetType = UNSET
+
+
+class PaginatedOrdersResult(Struct):
+    orders: list[Order]
+    pagination: Pagination
+    subaccount_id: int
+
+
+class PaginatedTradesResult(Struct):
+    pagination: Pagination
+    subaccount_id: int
+    trades: list[TradeHistoryResponse]
+
+
+class PaginatedVaultActionHistory(Struct):
+    events: list[PublicVaultActionResponse]
+    pagination: Pagination
+    subaccount_id: int
+
+
+class PaginatedVaultRequestHistory(Struct):
+    actions: list[VaultActionResponse]
+    pagination: Pagination
+    wallet: str
+
+
+class PrivateSessionKeysResponse(Struct):
+    public_session_keys: list[SessionKey]
+
+
+class ProtocolVault(Struct):
+    closed: bool
+    config: VaultConfig
+    global_hwm: Decimal
+    last_fee_settled_at_sec: int
+    protocol_fee_share_bps: int
+    subaccount_id: int
+    total_shares: Decimal
+
+
+class PublicQuote(Struct):
+    cancel_reason: RFQCancelReason
+    creation_timestamp: int
+    direction: Direction
+    fill_pct: Decimal
+    last_update_timestamp: int
+    legs: list[PricedLegParamsAndResponse]
+    legs_hash: str
+    liquidity_role: LiquidityRole
+    quote_id: str
+    rfq_id: str
+    status: RFQStatus
+    subaccount_id: int
+    wallet: Address
+
+
+class PublicRfq(Struct):
+    cancel_reason: RFQCancelReason
+    creation_timestamp: int
+    filled_pct: Decimal
+    last_update_timestamp: int
+    legs: list[LegUnpricedParams]
+    partial_fill_step: Decimal
+    rfq_id: str
+    status: RFQStatus
+    subaccount_id: int
+    valid_until: int
+    wallet: Address
+    fill_rate: Decimal | None = None
+    recent_fill_rate: Decimal | None = None
+    total_cost: Decimal | None = None
+    filled_direction: Direction | None | UnsetType = UNSET
+
+
+class PublicTradesResult(Struct):
+    pagination: Pagination
+    trades: list[SettledTrade]
+
+
+class Quote(Struct):
+    cancel_reason: RFQCancelReason
     creation_timestamp: int
     direction: Direction
     extra_fee: Decimal
@@ -1277,609 +2038,117 @@ class PrivateExecuteQuoteResultSchema(Struct):
     is_transfer: bool
     label: str
     last_update_timestamp: int
-    legs: List[LegPricedSchema]
+    legs: list[PricedLegParamsAndResponse]
     legs_hash: str
     liquidity_role: LiquidityRole
     max_fee: Decimal
     mmp: bool
-    nonce: int
+    nonce: str
+    quote_id: str
+    rfq_id: str
+    signature_expiry_sec: int
+    status: RFQStatus
+    subaccount_id: int
+    batch_status: BatchStatus | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class QuoteExecuteResponse(Struct):
+    cancel_reason: RFQCancelReason
+    creation_timestamp: int
+    direction: Direction
+    extra_fee: Decimal
+    fee: Decimal
+    fill_pct: Decimal
+    is_transfer: bool
+    label: str
+    last_update_timestamp: int
+    legs: list[PricedLegParamsAndResponse]
+    legs_hash: str
+    liquidity_role: LiquidityRole
+    max_fee: Decimal
+    mmp: bool
+    nonce: str
     quote_id: str
     rfq_filled_pct: Decimal
     rfq_id: str
-    signature: str
     signature_expiry_sec: int
-    signer: str
-    status: Status2
-    subaccount_id: int
-    tx_hash: Optional[str] = None
-    tx_status: Optional[TxStatus] = None
-
-
-class PublicGetMakerProgramScoresParamsSchema(Struct):
-    epoch_start_timestamp: int
-    program_name: str
-
-
-class ProgramResponseSchema(Struct):
-    asset_types: List[str]
-    currencies: List[str]
-    end_timestamp: int
-    min_notional: Decimal
-    name: str
-    rewards: Dict[str, Decimal]
-    start_timestamp: int
-
-
-class ScoreBreakdownSchema(Struct):
-    coverage_score: Decimal
-    holder_boost: Decimal
-    quality_score: Decimal
-    total_score: Decimal
-    volume: Decimal
-    volume_multiplier: Decimal
-    wallet: str
-
-
-class PrivateCancelParamsSchema(Struct):
-    instrument_name: str
-    order_id: str
+    status: RFQStatus
     subaccount_id: int
 
 
-class PrivateCancelResultSchema(PrivateCancelTriggerOrderResultSchema):
-    pass
+class QuoteGetResponse(Struct):
+    pagination: Pagination
+    quotes: list[Quote]
 
 
-class PrivateGetLiquidationHistoryParamsSchema(PrivateGetErc20TransferHistoryParamsSchema):
-    pass
+class QuotePollResponse(Struct):
+    pagination: Pagination
+    quotes: list[PublicQuote]
 
 
-class PrivateGetOrderHistoryParamsSchema(Struct):
-    from_timestamp: int = 0
-    page: int = 1
-    page_size: int = 100
-    subaccount_id: Optional[int] = None
-    to_timestamp: int = 18446744073709552000
-    wallet: Optional[str] = None
+class QuoteReplaceResponse(Struct):
+    cancelled_quote: Quote
+    create_quote_error: RPCError | None | UnsetType = UNSET
+    quote: Quote | None | UnsetType = UNSET
 
 
-class PrivateGetOrderHistoryResultSchema(Struct):
-    orders: List[OrderResponseSchema]
-    subaccount_id: int
-    pagination: PaginationInfoSchema | None = None
+class RFQGetResponse(Struct):
+    pagination: Pagination
+    rfqs: list[Rfq]
 
 
-class PublicGetTickersParamsSchema(Struct):
-    instrument_type: InstrumentType
-    currency: Optional[str] = None
-    expiry_date: Optional[Union[str, int]] = None
+class RFQPollResponse(Struct):
+    pagination: Pagination
+    rfqs: list[PublicRfq]
 
 
-class OptionPricingSlimSchema(Struct):
-    ai: Decimal
-    bi: Decimal
-    d: Decimal
-    df: Decimal
-    f: Decimal
-    g: Decimal
-    i: Decimal
-    m: Decimal
-    r: Decimal
-    t: Decimal
-    v: Decimal
+class RejectDepositRequestRequest(Struct):
+    request_id: VaultRequestId
+    reason: str | None | UnsetType = UNSET
 
 
-class AggregateTradingStatsSlimSchema(Struct):
-    c: Decimal
-    h: Decimal
-    l: Decimal
-    n: int
-    oi: Decimal
-    p: Decimal
-    pr: Decimal
-    v: Decimal
-
-
-class TypeEnum(Enum):
-    deposit = 'deposit'
-    withdraw = 'withdraw'
-    transfer = 'transfer'
-    trade = 'trade'
-    settlement = 'settlement'
-    liquidation = 'liquidation'
-    custom = 'custom'
-
-
-class PrivateGetNotificationsParamsSchema(Struct):
-    page: Optional[int] = 1
-    page_size: Optional[int] = 50
-    status: Optional[Status1] = None
-    subaccount_id: Optional[int] = None
-    type: Optional[List[TypeEnum]] = None
-    wallet: Optional[str] = None
-
-
-class NotificationResponseSchema(Struct):
-    event: str
-    event_details: Dict[str, Any]
-    id: int
-    status: str
-    subaccount_id: int
-    timestamp: int
-    transaction_id: Optional[int] = None
-    tx_hash: Optional[str] = None
-
-
-class PrivateGetLiquidatorHistoryParamsSchema(Struct):
-    subaccount_id: int
-    end_timestamp: int = 9223372036854776000
-    page: int = 1
-    page_size: int = 100
-    start_timestamp: int = 0
-
-
-class PrivateGetLiquidatorHistoryResultSchema(Struct):
-    bids: List[AuctionBidEventSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicGetInterestRateHistoryParamsSchema(Struct):
-    from_timestamp_sec: int
-    to_timestamp_sec: int
-    page: int = 1
-    page_size: int = 100
-
-
-class InterestRateHistoryResponseSchema(Struct):
-    block: int
-    borrow_apy: Decimal
-    supply_apy: Decimal
-    timestamp_sec: int
-    total_borrow: Decimal
-    total_supply: Decimal
-
-
-class PublicGetMakerProgramsParamsSchema(PublicGetVaultStatisticsParamsSchema):
-    pass
-
-
-class PublicGetMakerProgramsResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[ProgramResponseSchema]
-
-
-class PublicDeregisterSessionKeyParamsSchema(Struct):
-    public_session_key: str
-    signed_raw_tx: str
-    wallet: str
-
-
-class PublicDeregisterSessionKeyResultSchema(Struct):
-    public_session_key: str
-    transaction_id: str
-
-
-class PrivateGetInterestHistoryParamsSchema(PrivateGetErc20TransferHistoryParamsSchema):
-    pass
-
-
-class InterestPaymentSchema(Struct):
-    interest: Decimal
-    subaccount_id: int
-    timestamp: int
-
-
-class PrivateGetCollateralsParamsSchema(PrivateGetOpenOrdersParamsSchema):
-    pass
-
-
-class PrivateGetCollateralsResultSchema(Struct):
-    collaterals: List[CollateralResponseSchema]
-    subaccount_id: int
-
-
-class PrivateLiquidateParamsSchema(Struct):
-    cash_transfer: Decimal
-    last_seen_trade_id: int
-    liquidated_subaccount_id: int
-    nonce: int
-    percent_bid: Decimal
-    price_limit: Decimal
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-
-
-class PrivateLiquidateResultSchema(Struct):
-    estimated_bid_price: Decimal
-    estimated_discount_pnl: Decimal
-    estimated_percent_bid: Decimal
-    transaction_id: str
-
-
-class PublicDepositDebugParamsSchema(PublicWithdrawDebugParamsSchema):
-    pass
-
-
-class PublicDepositDebugResultSchema(PublicCreateSubaccountDebugResultSchema):
-    pass
-
-
-class PrivateCancelByLabelParamsSchema(Struct):
-    label: str
-    subaccount_id: int
-    instrument_name: Optional[str] = None
-
-
-class PrivateCancelByLabelResultSchema(PrivateCancelByNonceResultSchema):
-    pass
-
-
-class PrivateGetMarginParamsSchema(Struct):
-    subaccount_id: int
-    simulated_collateral_changes: Optional[List[SimulatedCollateralSchema]] = None
-    simulated_position_changes: Optional[List[SimulatedPositionSchema]] = None
-
-
-class PrivateGetMarginResultSchema(PublicGetMarginResultSchema):
-    pass
-
-
-class PublicGetCurrencyParamsSchema(Struct):
-    currency: str
-
-
-class PublicGetCurrencyResultSchema(Struct):
-    asset_cap_and_supply_per_manager: Dict[str, Dict[str, List[OpenInterestStatsSchema]]]
-    borrow_apy: Decimal
-    currency: str
-    instrument_types: List[InstrumentType]
-    managers: List[ManagerContractResponseSchema]
-    market_type: MarketType
-    pm2_collateral_discounts: List[PM2CollateralDiscountsSchema]
-    protocol_asset_addresses: ProtocolAssetAddressesSchema
-    spot_price: Decimal
-    srm_im_discount: Decimal
-    srm_mm_discount: Decimal
-    supply_apy: Decimal
-    total_borrow: Decimal
-    total_supply: Decimal
-    erc20_details: Optional[Dict[str, Union[Optional[str], Optional[int]]]] = None
-    spot_price_24h: Optional[Decimal] = None
-    srm_perp_margin_requirements: Optional[SRMPerpMarginRequirementsPublicSchema] = None
-
-
-class PublicStatisticsParamsSchema(Struct):
-    instrument_name: str
-    currency: Optional[str] = None
-    end_time: Optional[int] = None
-
-
-class PublicStatisticsResultSchema(Struct):
-    daily_fees: Decimal
-    daily_notional_volume: Decimal
-    daily_premium_volume: Decimal
-    daily_trades: int
-    open_interest: Decimal
-    total_fees: Decimal
-    total_notional_volume: Decimal
-    total_premium_volume: Decimal
-    total_trades: int
-
-
-class PrivateCancelByInstrumentParamsSchema(Struct):
-    instrument_name: str
-    subaccount_id: int
-
-
-class PrivateCancelByInstrumentResultSchema(PrivateCancelByNonceResultSchema):
-    pass
-
-
-class PrivateSendRfqParamsSchema(Struct):
-    legs: List[LegUnpricedSchema]
-    subaccount_id: int
-    client: str = '8baller-python-sdk'
-    counterparties: Optional[List[str]] = None
-    extra_fee: Decimal = Decimal('0')
-    label: str = ''
-    max_total_cost: Optional[Decimal] = None
-    min_total_cost: Optional[Decimal] = None
-    partial_fill_step: Decimal = Decimal('1')
-    preferred_direction: Optional[Direction] = None
-    referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-
-
-class PrivateSendRfqResultSchema(RFQResultSchema):
-    pass
-
-
-class SignatureDetailsSchema(Struct):
-    nonce: int
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-
-
-class TransferDetailsSchema(Struct):
-    address: str
-    amount: Decimal
-    sub_id: int
-
-
-class PrivateTransferErc20ResultSchema(PrivateDepositResultSchema):
-    pass
-
-
-class PublicGetInstrumentParamsSchema(PublicGetTickerParamsSchema):
-    pass
-
-
-class PublicGetInstrumentResultSchema(Struct):
-    amount_step: Decimal
-    base_asset_address: str
-    base_asset_sub_id: str
-    base_currency: str
-    base_fee: Decimal
-    fifo_min_allocation: Decimal
-    instrument_name: str
-    instrument_type: InstrumentType
-    is_active: bool
-    maker_fee_rate: Decimal
-    maximum_amount: Decimal
-    minimum_amount: Decimal
-    pro_rata_amount_step: Decimal
-    pro_rata_fraction: Decimal
-    quote_currency: str
-    scheduled_activation: int
-    scheduled_deactivation: int
-    taker_fee_rate: Decimal
-    tick_size: Decimal
-    erc20_details: Optional[ERC20PublicDetailsSchema] = None
-    option_details: Optional[OptionPublicDetailsSchema] = None
-    perp_details: Optional[PerpPublicDetailsSchema] = None
-    mark_price_fee_rate_cap: Optional[Decimal] = None
-
-
-class PublicMarginWatchParamsSchema(Struct):
-    subaccount_id: int
-    force_onchain: bool = False
-    is_delayed_liquidation: bool = False
-
-
-class CollateralPublicResponseSchema(Struct):
-    amount: Decimal
-    asset_name: str
-    asset_type: InstrumentType
-    delta: Decimal
-    delta_currency: str
-    initial_margin: Decimal
-    maintenance_margin: Decimal
-    mark_price: Decimal
-    mark_value: Decimal
-
-
-class PositionPublicResponseSchema(Struct):
-    amount: Decimal
-    delta: Decimal
-    gamma: Decimal
-    index_price: Decimal
-    initial_margin: Decimal
-    instrument_name: str
-    instrument_type: InstrumentType
-    maintenance_margin: Decimal
-    mark_price: Decimal
-    mark_value: Decimal
-    theta: Decimal
-    vega: Decimal
-    liquidation_price: Optional[Decimal] = None
-
-
-class PrivateReplaceParamsSchema(Struct):
+class ReplaceOrderRequest(Struct):
     amount: Decimal
     direction: Direction
     instrument_name: str
     limit_price: Decimal
     max_fee: Decimal
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    algo_duration_sec: Optional[int] = None
-    algo_num_slices: Optional[int] = None
-    algo_type: Optional[AlgoType] = None
-    client: Optional[str] = '8baller-python-sdk'
-    expected_filled_amount: Optional[Decimal] = None
-    extra_fee: Decimal = Decimal('0')
-    is_atomic_signing: Optional[bool] = False
-    label: str = ''
-    mmp: bool = False
-    nonce_to_cancel: Optional[int] = None
-    order_id_to_cancel: Optional[str] = None
-    order_type: OrderType = OrderType('limit')
-    reduce_only: bool = False
-    referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    reject_post_only: bool = True
-    reject_timestamp: int = 9223372036854776000
-    time_in_force: TimeInForce = TimeInForce('gtc')
-    trigger_price: Optional[Decimal] = None
-    trigger_price_type: Optional[TriggerPriceType] = None
-    trigger_type: Optional[TriggerType] = None
+    algo_duration_sec: int | None | UnsetType = UNSET
+    algo_num_slices: int | None | UnsetType = UNSET
+    algo_type: AlgoType | None | UnsetType = UNSET
+    client: str | None | UnsetType = '8baller-python-sdk'
+    expected_filled_amount: Decimal | None | UnsetType = UNSET
+    extra_fee: Decimal | None | UnsetType = UNSET
+    is_atomic_signing: bool | None | UnsetType = UNSET
+    label: str | None | UnsetType = UNSET
+    mmp: bool | None | UnsetType = UNSET
+    nonce_to_cancel: int | None | UnsetType = UNSET
+    order_id_to_cancel: str | None | UnsetType = UNSET
+    order_type: OrderType | UnsetType = OrderType('limit')
+    reduce_only: bool | None | UnsetType = UNSET
+    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    reject_post_only: bool | None | UnsetType = UNSET
+    reject_timestamp: int | None | UnsetType = UNSET
+    time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
+    trigger_price: Decimal | None | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
+    trigger_type: TriggerType | None | UnsetType = UNSET
 
 
-class RPCErrorFormatSchema(Struct):
-    code: int
-    message: str
-    data: Optional[str] = None
+class ReplaceOrderResponse(Struct):
+    cancelled_order: Order
+    create_order_error: RPCError | None | UnsetType = UNSET
+    order: Order | None | UnsetType = UNSET
+    trades: list[Trade] | UnsetType = UNSET
 
 
-class PrivateSetCancelOnDisconnectParamsSchema(Struct):
-    enabled: bool
-    wallet: str
-
-
-class PrivateSetCancelOnDisconnectResponseSchema(PrivateResetMmpResponseSchema):
-    pass
-
-
-class PrivateWithdrawParamsSchema(PrivateDepositParamsSchema):
-    pass
-
-
-class PrivateWithdrawResultSchema(PrivateDepositResultSchema):
-    pass
-
-
-class PrivateReplaceQuoteParamsSchema(Struct):
-    direction: Direction
-    legs: List[LegPricedSchema]
-    max_fee: Decimal
-    nonce: int
-    rfq_id: str
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    subaccount_id: int
-    client: str = '8baller-python-sdk'
-    label: str = ''
-    mmp: bool = False
-    nonce_to_cancel: Optional[int] = None
-    quote_id_to_cancel: Optional[str] = None
-
-
-class PrivateReplaceQuoteResultSchema(Struct):
-    cancelled_quote: QuoteResultSchema
-    create_quote_error: Optional[RPCErrorFormatSchema] = None
-    quote: Optional[QuoteResultSchema] = None
-
-
-class PrivateCancelQuoteParamsSchema(Struct):
-    quote_id: str
-    subaccount_id: int
-
-
-class PrivateCancelQuoteResultSchema(QuoteResultSchema):
-    pass
-
-
-class PrivateExpiredAndCancelledHistoryParamsSchema(Struct):
-    end_timestamp: int
-    expiry: int
-    start_timestamp: int
-    subaccount_id: int
-    wallet: str
-
-
-class PrivateExpiredAndCancelledHistoryResultSchema(Struct):
-    presigned_urls: List[str]
-
-
-class PublicGetOptionSettlementPricesParamsSchema(PublicGetCurrencyParamsSchema):
-    pass
-
-
-class ExpiryResponseSchema(Struct):
-    expiry_date: str
-    utc_expiry_sec: int
-    price: Optional[Decimal] = None
-
-
-class PublicGetVaultShareParamsSchema(Struct):
-    from_timestamp_sec: int
-    to_timestamp_sec: int
-    vault_name: str
-    page: int = 1
-    page_size: int = 100
-
-
-class VaultShareResponseSchema(Struct):
-    base_value: Decimal
-    block_number: int
-    block_timestamp: int
-    usd_value: Decimal
-    underlying_value: Optional[Decimal] = None
-
-
-class PublicGetLiveIncidentsParamsSchema(PublicGetVaultStatisticsParamsSchema):
-    pass
-
-
-class MonitorType(Enum):
-    manual = 'manual'
-    auto = 'auto'
-
-
-class Severity(Enum):
-    low = 'low'
-    medium = 'medium'
-    high = 'high'
-
-
-class IncidentResponseSchema(Struct):
-    creation_timestamp_sec: int
-    label: str
-    message: str
-    monitor_type: MonitorType
-    severity: Severity
-
-
-class PrivateGetFundingHistoryParamsSchema(Struct):
-    end_timestamp: int = 9223372036854776000
-    instrument_name: Optional[str] = None
-    page: int = 1
-    page_size: int = 100
-    start_timestamp: int = 0
-    subaccount_id: Optional[int] = None
-    wallet: Optional[str] = None
-
-
-class FundingPaymentSchema(Struct):
-    funding: Decimal
-    instrument_name: str
-    pnl: Decimal
-    subaccount_id: int
-    timestamp: int
-
-
-class PrivateRfqGetBestQuoteParamsSchema(Struct):
-    legs: List[LegUnpricedSchema]
-    subaccount_id: int
-    client: str = '8baller-python-sdk'
-    counterparties: Optional[List[str]] = None
-    direction: Direction = Direction('buy')
-    extra_fee: Decimal = Decimal('0')
-    label: str = ''
-    max_total_cost: Optional[Decimal] = None
-    min_total_cost: Optional[Decimal] = None
-    partial_fill_step: Decimal = Decimal('1')
-    preferred_direction: Optional[Direction] = None
-    referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    rfq_id: Optional[str] = None
-
-
-class InvalidReason(Enum):
-    Account_is_currently_under_maintenance_margin_requirements__trading_is_frozen_ = (
-        'Account is currently under maintenance margin requirements, trading is frozen.'
-    )
-    This_order_would_cause_account_to_fall_under_maintenance_margin_requirements_ = (
-        'This order would cause account to fall under maintenance margin requirements.'
-    )
-    Insufficient_buying_power__only_a_single_risk_reducing_open_order_is_allowed_ = (
-        'Insufficient buying power, only a single risk-reducing open order is allowed.'
-    )
-    Insufficient_buying_power__consider_reducing_order_size_ = (
-        'Insufficient buying power, consider reducing order size.'
-    )
-    Insufficient_buying_power__consider_reducing_order_size_or_canceling_other_orders_ = (
-        'Insufficient buying power, consider reducing order size or canceling other orders.'
-    )
-    Consider_canceling_other_limit_orders_or_using_IOC__FOK__or_market_orders__This_order_is_risk_reducing__but_if_filled_with_other_open_orders__buying_power_might_be_insufficient_ = 'Consider canceling other limit orders or using IOC, FOK, or market orders. This order is risk-reducing, but if filled with other open orders, buying power might be insufficient.'
-    Insufficient_buying_power_ = 'Insufficient buying power.'
-
-
-class PrivateRfqGetBestQuoteResultSchema(Struct):
+class RfqGetBestQuoteResponse(Struct):
     direction: Direction
     estimated_fee: Decimal
     estimated_realized_pnl: Decimal
@@ -1890,927 +2159,168 @@ class PrivateRfqGetBestQuoteResultSchema(Struct):
     post_initial_margin: Decimal
     pre_initial_margin: Decimal
     suggested_max_fee: Decimal
-    best_quote: Optional[QuoteResultPublicSchema] = None
-    down_liquidation_price: Optional[Decimal] = None
-    invalid_reason: Optional[InvalidReason] = None
-    orderbook_total_cost: Optional[Decimal] = None
-    post_liquidation_price: Optional[Decimal] = None
-    up_liquidation_price: Optional[Decimal] = None
-
-
-class PrivateGetMmpConfigParamsSchema(PrivateResetMmpParamsSchema):
-    pass
-
-
-class MMPConfigResultSchema(Struct):
-    currency: str
-    is_frozen: bool
-    mmp_frozen_time: int
-    mmp_interval: int
-    mmp_unfreeze_time: int
-    subaccount_id: int
-    mmp_amount_limit: Decimal = Decimal('0')
-    mmp_delta_limit: Decimal = Decimal('0')
-
-
-class Period3(Enum):
-    field_900 = 900
-    field_3600 = 3600
-    field_14400 = 14400
-    field_28800 = 28800
-    field_86400 = 86400
-
-
-class PublicGetFundingRateHistoryParamsSchema(Struct):
-    instrument_name: str
-    end_timestamp: int = 9223372036854776000
-    period: Period3 = Period3(3600)
-    start_timestamp: int = 0
-
-
-class FundingRateSchema(Struct):
-    funding_rate: Decimal
-    timestamp: int
-
-
-class PrivateGetPositionsParamsSchema(PrivateGetOpenOrdersParamsSchema):
-    pass
-
-
-class PrivateGetPositionsResultSchema(Struct):
-    positions: List[PositionResponseSchema]
-    subaccount_id: int
-
-
-class PublicGetOptionSettlementHistoryParamsSchema(Struct):
-    page: int = 1
-    page_size: int = 100
-    subaccount_id: Optional[int] = None
-    wallet: Optional[str] = None
-
-
-class PublicGetOptionSettlementHistoryResultSchema(Struct):
-    settlements: List[OptionSettlementResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicBuildRegisterSessionKeyTxParamsSchema(Struct):
-    expiry_sec: int
-    public_session_key: str
-    wallet: str
-    gas: Optional[int] = None
-    nonce: Optional[int] = None
-
-
-class PublicBuildRegisterSessionKeyTxResultSchema(Struct):
-    tx_params: Dict[str, Any]
-
-
-class PrivateCancelAllTriggerOrdersParamsSchema(PrivateGetOpenOrdersParamsSchema):
-    pass
-
-
-class PrivateCancelAllTriggerOrdersResponseSchema(PrivateResetMmpResponseSchema):
-    pass
-
-
-class PublicGetTransactionParamsSchema(Struct):
-    transaction_id: str
-
-
-class PublicGetTransactionResultSchema(Struct):
-    data: dict
-    status: TxStatus
-    error_log: Optional[dict] = None
-    transaction_hash: Optional[str] = None
-
-
-class PublicGetVaultStatisticsResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[VaultStatisticsResponseSchema]
-
-
-class PrivateCancelTriggerOrderResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelTriggerOrderResultSchema
-
-
-class PublicCreateSubaccountDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicCreateSubaccountDebugResultSchema
-
-
-class PublicGetReferralPerformanceResultSchema(Struct):
-    fee_share_percentage: Decimal
-    rewards: Dict[str, Dict[str, Dict[str, ReferralPerformanceByInstrumentTypeSchema]]]
-    stdrv_balance: Decimal
-    total_builder_fee_collected: Decimal
-    total_fee_rewards: Decimal
-    total_notional_volume: Decimal
-    total_referred_fees: Decimal
-    referral_code: str = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-
-
-class PrivateDepositResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateDepositResultSchema
-
-
-class PrivateRegisterScopedSessionKeyResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateRegisterScopedSessionKeyResultSchema
-
-
-class PrivateGetOrderResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetOrderResultSchema
-
-
-class PrivateGetOrdersResultSchema(PrivateGetOrderHistoryResultSchema):
-    pass
-
-
-class PublicGetTradingviewChartDataResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[TradingviewChartDataResponseSchema]
-
-
-class PrivateGetSubaccountValueHistoryResultSchema(Struct):
-    subaccount_id: int
-    subaccount_value_history: List[SubAccountValueHistoryResponseSchema]
-
-
-class PublicGetSpotFeedHistoryResultSchema(Struct):
-    currency: str
-    spot_feed_history: List[SpotFeedHistoryResponseSchema]
-
-
-class PrivateCreateSubaccountResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCreateSubaccountResultSchema
-
-
-class PrivateGetOptionSettlementHistoryResultSchema(Struct):
-    settlements: List[OptionSettlementResponseSchema]
-
-
-class PrivateUpdateNotificationsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateUpdateNotificationsResultSchema
-
-
-class PrivateSessionKeysResultSchema(Struct):
-    public_session_keys: List[SessionKeyResponseSchema]
-
-
-class PrivateCancelByNonceResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelByNonceResultSchema
-
-
-class PublicExecuteQuoteDebugParamsSchema(PrivateExecuteQuoteParamsSchema):
-    pass
-
-
-class PublicExecuteQuoteDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicExecuteQuoteDebugResultSchema
-
-
-class PrivateGetQuotesResultSchema(Struct):
-    quotes: List[QuoteResultSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicGetIndexChartDataResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[SpotFeedHistoryCandlesResponseSchema]
-
-
-class PrivateCancelBatchRfqsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelBatchRfqsResultSchema
-
-
-class PublicWithdrawDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicWithdrawDebugResultSchema
-
-
-class PrivateChangeSubaccountLabelResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateChangeSubaccountLabelResultSchema
-
-
-class PrivateGetWithdrawalHistoryResultSchema(Struct):
-    events: List[WithdrawalSchema]
-
-
-class SignedTradeOrderSchema(Struct):
-    data: TradeModuleDataSchema
-    expiry: int
-    is_atomic_signing: bool
-    module: str
-    nonce: int
-    owner: str
-    signature: str
-    signer: str
-    subaccount_id: int
-
-
-class PrivateTransferPositionParamsSchema(Struct):
-    maker_params: TradeModuleParamsSchema
-    taker_params: TradeModuleParamsSchema
-    wallet: str
-
-
-class PrivateTransferPositionResultSchema(Struct):
-    maker_order: OrderResponseSchema
-    maker_trade: TradeResponseSchema
-    taker_order: OrderResponseSchema
-    taker_trade: TradeResponseSchema
-
-
-class PrivateEditSessionKeyResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateEditSessionKeyResultSchema
-
-
-class PrivatePollQuotesResultSchema(Struct):
-    quotes: List[QuoteResultPublicSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PrivateSendQuoteResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateSendQuoteResultSchema
-
-
-class RFQResultPublicSchema(Struct):
-    cancel_reason: CancelReason3
-    creation_timestamp: int
-    filled_pct: Decimal
-    last_update_timestamp: int
-    legs: List[LegUnpricedSchema]
-    partial_fill_step: Decimal
-    rfq_id: str
-    status: Status2
-    subaccount_id: int
-    valid_until: int
-    wallet: str
-    fill_rate: Optional[Decimal] = None
-    filled_direction: Optional[Direction] = None
-    preferred_direction: Optional[Direction] = None
-    recent_fill_rate: Optional[Decimal] = None
-    reducing_direction: Optional[Direction] = None
-    total_cost: Optional[Decimal] = None
-
-
-class PrivateOrderResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateOrderResultSchema
-
-
-class PublicGetSpotFeedHistoryCandlesResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetSpotFeedHistoryCandlesResultSchema
-
-
-class PrivateGetOpenOrdersResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetOpenOrdersResultSchema
-
-
-class PublicGetTradeHistoryResultSchema(Struct):
-    trades: List[TradeSettledPublicResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PrivateTransferPositionsParamsSchema(Struct):
-    maker_params: SignedQuoteParamsSchema
-    taker_params: SignedQuoteParamsSchema
-    wallet: str
-
-
-class PrivateTransferPositionsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateTransferPositionsResultSchema
-
-
-class PrivateGetSubaccountResultSchema(Struct):
-    collaterals: List[CollateralResponseSchema]
-    collaterals_initial_margin: Decimal
-    collaterals_maintenance_margin: Decimal
-    collaterals_value: Decimal
-    currency: str
-    initial_margin: Decimal
+    down_liquidation_price: Decimal | None = None
+    orderbook_total_cost: Decimal | None = None
+    post_liquidation_price: Decimal | None = None
+    up_liquidation_price: Decimal | None = None
+    best_quote: PublicQuote | None | UnsetType = UNSET
+    invalid_reason: str | None | UnsetType = UNSET
+
+
+class RiskUniverse(Struct):
+    managers: list[RiskUniverseManager]
+    risk_universe_id: int
+    security_module: SecurityModuleDetails
+    description: str | None | UnsetType = UNSET
+    name: str | None | UnsetType = UNSET
+
+
+class SignedAction(Struct):
+    action: Action
+    signature: list[int]
+
+
+class SpotAssetEntry(Struct):
+    address: str
+    erc20: Erc20Details
+    min_deposit_usd: str
+    name: str
+    universes: list[SpotUniverse]
+
+
+class Subaccount(Struct):
+    collaterals: list[Collateral]
+    collaterals_initial_margin: str
+    collaterals_maintenance_margin: str
+    collaterals_value: str
+    currency: list[str]
+    failed_to_fetch: bool
+    initial_margin: str
     is_under_liquidation: bool
     label: str
-    maintenance_margin: Decimal
-    margin_type: MarginType
-    open_orders: List[OrderResponseSchema]
-    open_orders_margin: Decimal
-    positions: List[PositionResponseSchema]
-    positions_initial_margin: Decimal
-    positions_maintenance_margin: Decimal
-    positions_value: Decimal
-    projected_margin_change: Decimal
+    maintenance_margin: str
+    manager_id: int
+    margin_type: str
+    open_orders: list[Order]
+    open_orders_margin: str
+    positions: list[Position]
+    positions_initial_margin: str
+    positions_maintenance_margin: str
+    positions_value: str
+    projected_margin_change: str
+    risk_universe_id: int
     subaccount_id: int
-    subaccount_value: Decimal
+    subaccount_value: str
+    vault_deposit_holds: list[VaultDepositHold]
 
 
-class PrivateGetRfqsResultSchema(Struct):
-    rfqs: List[RFQResultSchema]
-    pagination: PaginationInfoSchema | None = None
+class TransferPositionsResponse(Struct):
+    maker_quote: Quote
+    taker_quote: Quote
 
 
-class InstrumentPublicResponseSchema(PublicGetInstrumentResultSchema):
-    pass
+class Vault(Struct):
+    curator: Address
+    curator_shares: Decimal
+    description: str
+    name: str
+    protocol: ProtocolVault
+    whitelist_only: bool
+    benchmark_price: Decimal | None | UnsetType = UNSET
+    mtm_cap: Decimal | None | UnsetType = UNSET
+    nav_benchmark: Decimal | None | UnsetType = UNSET
+    nav_usd: Decimal | None | UnsetType = UNSET
+    simulated_share_price_usd: Decimal | None | UnsetType = UNSET
 
 
-class PrivateGetSubaccountsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetSubaccountsResultSchema
+class VaultCancelResponse(Struct):
+    cancelled_request_ids: list[VaultRequestId]
+    op_uuid: str
+    operation_id: int
 
 
-class PrivateGetSubaccountResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetSubaccountResultSchema
-
-
-class AuctionHistoryResultSchema(Struct):
-    auction_id: str
-    auction_type: AuctionType
-    bids: List[AuctionBidEventSchema]
-    fee: Decimal
-    start_timestamp: int
+class VaultPerformanceHistoryResult(Struct):
+    points: list[VaultPerformancePointResponse]
+    resolution: PerformanceResolution
     subaccount_id: int
-    tx_hash: str
-    end_timestamp: Optional[int] = None
 
 
-class PrivateGetDepositHistoryResultSchema(Struct):
-    events: List[DepositSchema]
+class VaultRequestAckResponse(Struct):
+    request_id: VaultRequestId
 
 
-class PublicRegisterSessionKeyResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicRegisterSessionKeyResultSchema
+class VaultRequestResponse(Struct):
+    creation_timestamp_ms: int
+    id: VaultRequestId
+    signed_action: SignedAction
+    subaccount_id: int
+    user_action_hash: str
+    wallet: Address
 
 
-class PublicGetVaultBalancesResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[VaultBalanceResponseSchema]
+class VaultShareEntryResponse(Struct):
+    shares: Decimal
+    vault: Vault
 
 
-class PrivateGetTradeHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetTradeHistoryResultSchema
+class VaultSharesResponse(Struct):
+    vaults: list[VaultShareEntryResponse]
 
 
-class CurrencyDetailedResponseSchema(PublicGetCurrencyResultSchema):
-    pass
+class VaultsResponse(Struct):
+    pagination: Pagination
+    vaults: list[Vault]
 
 
-class PrivateGetErc20TransferHistoryResultSchema(Struct):
-    events: List[ERC20TransferSchema]
-
-
-class PrivateGetAccountResultSchema(Struct):
-    cancel_on_disconnect: bool
-    fee_info: AccountFeeInfoSchema
-    is_rfq_maker: bool
-    per_endpoint_tps: Dict[str, Any]
-    subaccount_ids: List[int]
-    wallet: str
-    websocket_matching_tps: int
-    websocket_non_matching_tps: int
-    websocket_option_tps: int
-    websocket_perp_tps: int
-    creation_timestamp_sec: Optional[int] = None
-    referral_code: Optional[str] = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-
-
-class PrivateSetMmpConfigResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateSetMmpConfigResultSchema
-
-
-class PublicGetMarginParamsSchema(Struct):
-    margin_type: MarginType
-    simulated_collaterals: List[SimulatedCollateralSchema]
-    simulated_positions: List[SimulatedPositionSchema]
-    market: Optional[str] = None
-    simulated_collateral_changes: Optional[List[SimulatedCollateralSchema]] = None
-    simulated_position_changes: Optional[List[SimulatedPositionSchema]] = None
-
-
-class PublicGetMarginResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetMarginResultSchema
-
-
-class PrivateCancelBatchQuotesResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelBatchQuotesResultSchema
-
-
-class PublicGetAllInstrumentsResultSchema(Struct):
-    instruments: List[InstrumentPublicResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class ForwardFeedDataSchema(Struct):
-    confidence: Decimal
+class VolFeedDataResponse(Struct):
+    confidence: str
     currency: str
     deadline: int
     expiry: int
-    fwd_diff: Decimal
-    signatures: OracleSignatureDataSchema
-    spot_aggregate_latest: Decimal
-    spot_aggregate_start: Decimal
+    signatures: OracleSignatureDataResponse
     timestamp: int
+    vol_data: VolSVIParamDataResponse
 
 
-class VolFeedDataSchema(Struct):
-    confidence: Decimal
-    currency: str
-    deadline: int
-    expiry: int
-    signatures: OracleSignatureDataSchema
-    timestamp: int
-    vol_data: VolSVIParamDataSchema
-
-
-class PublicSendQuoteDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicSendQuoteDebugResultSchema
-
-
-class PublicGetTickerResultSchema(Struct):
-    amount_step: Decimal
-    base_asset_address: str
-    base_asset_sub_id: str
-    base_currency: str
-    base_fee: Decimal
-    best_ask_amount: Decimal
-    best_ask_price: Decimal
-    best_bid_amount: Decimal
-    best_bid_price: Decimal
-    fifo_min_allocation: Decimal
-    five_percent_ask_depth: Decimal
-    five_percent_bid_depth: Decimal
-    index_price: Decimal
-    instrument_name: str
-    instrument_type: InstrumentType
-    is_active: bool
-    maker_fee_rate: Decimal
-    mark_price: Decimal
-    max_price: Decimal
-    maximum_amount: Decimal
-    min_price: Decimal
-    minimum_amount: Decimal
-    open_interest: Dict[str, List[OpenInterestStatsSchema]]
-    pro_rata_amount_step: Decimal
-    pro_rata_fraction: Decimal
-    quote_currency: str
-    scheduled_activation: int
-    scheduled_deactivation: int
-    taker_fee_rate: Decimal
-    tick_size: Decimal
-    timestamp: int
-    erc20_details: Optional[ERC20PublicDetailsSchema] = None
-    option_details: Optional[OptionPublicDetailsSchema] = None
-    option_pricing: Optional[OptionPricingSchema] = None
-    perp_details: Optional[PerpPublicDetailsSchema] = None
-    mark_price_fee_rate_cap: Optional[Decimal] = None
-
-
-class PrivateExecuteQuoteResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateExecuteQuoteResultSchema
-
-
-class PublicGetMakerProgramScoresResultSchema(Struct):
-    program: ProgramResponseSchema
-    scores: List[ScoreBreakdownSchema]
-    total_score: Decimal
-    total_volume: Decimal
-
-
-class PrivateCancelResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelResultSchema
-
-
-class PrivateGetLiquidationHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[AuctionHistoryResultSchema]
-
-
-class PrivateGetOrderHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetOrderHistoryResultSchema
-
-
-class TickerSlimSchema(Struct):
-    A: Decimal
-    B: Decimal
-    I: Decimal
-    M: Decimal
-    a: Decimal
-    b: Decimal
-    maxp: Decimal
-    minp: Decimal
-    stats: AggregateTradingStatsSlimSchema
-    t: int
-    f: Optional[Decimal] = None
-    option_pricing: Optional[OptionPricingSlimSchema] = None
-
-
-class PrivateGetNotificationsResultSchema(Struct):
-    notifications: List[NotificationResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PrivateGetLiquidatorHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetLiquidatorHistoryResultSchema
-
-
-class PublicGetInterestRateHistoryResultSchema(Struct):
-    interest_rates: List[InterestRateHistoryResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicDeregisterSessionKeyResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicDeregisterSessionKeyResultSchema
-
-
-class PrivateGetInterestHistoryResultSchema(Struct):
-    events: List[InterestPaymentSchema]
-
-
-class PrivateGetCollateralsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetCollateralsResultSchema
-
-
-class PrivateLiquidateResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateLiquidateResultSchema
-
-
-class PublicDepositDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicDepositDebugResultSchema
-
-
-class PrivateCancelByLabelResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelByLabelResultSchema
-
-
-class PrivateGetMarginResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetMarginResultSchema
-
-
-class PublicGetCurrencyResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetCurrencyResultSchema
-
-
-class PublicStatisticsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicStatisticsResultSchema
-
-
-class PrivateCancelByInstrumentResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelByInstrumentResultSchema
-
-
-class PrivateSendRfqResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateSendRfqResultSchema
-
-
-class PrivateTransferErc20ParamsSchema(Struct):
-    recipient_details: SignatureDetailsSchema
-    recipient_subaccount_id: int
-    sender_details: SignatureDetailsSchema
+class AggregatedOrdersResult(Struct):
+    orders: list[Order]
     subaccount_id: int
-    transfer: TransferDetailsSchema
 
 
-class PrivateTransferErc20ResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateTransferErc20ResultSchema
+class AggregatedTriggerOrdersResult(AggregatedOrdersResult):
+    pass
 
 
-class PublicGetInstrumentResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetInstrumentResultSchema
+class AssetEntry(Struct):
+    address: str
+    name: str
+    universes: list[AssetUniverse]
 
 
-class PublicMarginWatchResultSchema(Struct):
-    collaterals: List[CollateralPublicResponseSchema]
+class Currency(Struct):
     currency: str
-    initial_margin: Decimal
-    maintenance_margin: Decimal
-    margin_type: MarginType
-    positions: List[PositionPublicResponseSchema]
-    subaccount_id: int
-    subaccount_value: Decimal
-    valuation_timestamp: int
-
-
-class PrivateReplaceResultSchema(Struct):
-    cancelled_order: OrderResponseSchema
-    create_order_error: Optional[RPCErrorFormatSchema] = None
-    order: Optional[OrderResponseSchema] = None
-    trades: Optional[List[TradeResponseSchema]] = None
-
-
-class PrivateWithdrawResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateWithdrawResultSchema
-
-
-class PrivateReplaceQuoteResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateReplaceQuoteResultSchema
-
-
-class PrivateCancelQuoteResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateCancelQuoteResultSchema
-
-
-class PrivateExpiredAndCancelledHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateExpiredAndCancelledHistoryResultSchema
-
-
-class PublicGetOptionSettlementPricesResultSchema(Struct):
-    expiries: List[ExpiryResponseSchema]
-
-
-class PublicGetVaultShareResultSchema(Struct):
-    vault_shares: List[VaultShareResponseSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicGetLiveIncidentsResultSchema(Struct):
-    incidents: List[IncidentResponseSchema]
-
-
-class PrivateGetFundingHistoryResultSchema(Struct):
-    events: List[FundingPaymentSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PrivateRfqGetBestQuoteResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateRfqGetBestQuoteResultSchema
-
-
-class PrivateGetMmpConfigResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[MMPConfigResultSchema]
-
-
-class PublicGetFundingRateHistoryResultSchema(Struct):
-    funding_rate_history: List[FundingRateSchema]
-
-
-class PrivateGetPositionsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetPositionsResultSchema
-
-
-class PublicGetOptionSettlementHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetOptionSettlementHistoryResultSchema
-
-
-class PublicBuildRegisterSessionKeyTxResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicBuildRegisterSessionKeyTxResultSchema
-
-
-class PublicGetTransactionResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetTransactionResultSchema
-
-
-class PublicGetReferralPerformanceResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetReferralPerformanceResultSchema
-
-
-class PrivateGetOrdersResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetOrdersResultSchema
-
-
-class PrivateGetSubaccountValueHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetSubaccountValueHistoryResultSchema
-
-
-class PublicGetSpotFeedHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetSpotFeedHistoryResultSchema
-
-
-class PrivateGetOptionSettlementHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetOptionSettlementHistoryResultSchema
-
-
-class PrivateSessionKeysResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateSessionKeysResultSchema
-
-
-class PrivateGetQuotesResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetQuotesResultSchema
-
-
-class PrivateGetWithdrawalHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetWithdrawalHistoryResultSchema
-
-
-class PrivateOrderDebugResultSchema(Struct):
-    action_hash: str
-    encoded_data: str
-    encoded_data_hashed: str
-    raw_data: SignedTradeOrderSchema
-    typed_data_hash: str
-
-
-class PrivateTransferPositionResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateTransferPositionResultSchema
-
-
-class PrivatePollQuotesResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivatePollQuotesResultSchema
-
-
-class PrivatePollRfqsResultSchema(Struct):
-    rfqs: List[RFQResultPublicSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PublicGetTradeHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetTradeHistoryResultSchema
-
-
-class PrivateGetAllPortfoliosResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[PrivateGetSubaccountResultSchema]
-
-
-class PrivateGetRfqsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetRfqsResultSchema
-
-
-class PublicGetInstrumentsResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[InstrumentPublicResponseSchema]
-
-
-class PublicGetLiquidationHistoryResultSchema(Struct):
-    auctions: List[AuctionHistoryResultSchema]
-    pagination: PaginationInfoSchema | None = None
-
-
-class PrivateGetDepositHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetDepositHistoryResultSchema
-
-
-class PublicGetAllCurrenciesResponseSchema(Struct):
-    id: Union[str, int]
-    result: List[CurrencyDetailedResponseSchema]
-
-
-class PrivateGetErc20TransferHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetErc20TransferHistoryResultSchema
-
-
-class PrivateGetAccountResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetAccountResultSchema
-
-
-class PublicGetAllInstrumentsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetAllInstrumentsResultSchema
-
-
-class PublicGetLatestSignedFeedsResultSchema(Struct):
-    fwd_data: Dict[str, Dict[str, ForwardFeedDataSchema]]
-    perp_data: Dict[str, Dict[str, PerpFeedDataSchema]]
-    rate_data: Dict[str, Dict[str, RateFeedDataSchema]]
-    spot_data: Dict[str, SpotFeedDataSchema]
-    vol_data: Dict[str, Dict[str, VolFeedDataSchema]]
-
-
-class PublicGetTickerResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetTickerResultSchema
-
-
-class PublicGetMakerProgramScoresResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetMakerProgramScoresResultSchema
-
-
-class PublicGetTickersResultSchema(Struct):
-    tickers: Dict[str, TickerSlimSchema]
-
-
-class PrivateGetNotificationsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetNotificationsResultSchema
-
-
-class PublicGetInterestRateHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetInterestRateHistoryResultSchema
-
-
-class PrivateGetInterestHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetInterestHistoryResultSchema
-
-
-class PublicMarginWatchResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicMarginWatchResultSchema
-
-
-class PrivateReplaceResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateReplaceResultSchema
-
-
-class PublicGetOptionSettlementPricesResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetOptionSettlementPricesResultSchema
-
-
-class PublicGetVaultShareResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetVaultShareResultSchema
-
-
-class PublicGetLiveIncidentsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetLiveIncidentsResultSchema
-
-
-class PrivateGetFundingHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateGetFundingHistoryResultSchema
-
-
-class PublicGetFundingRateHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetFundingRateHistoryResultSchema
-
-
-class PrivateOrderDebugResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivateOrderDebugResultSchema
-
-
-class PrivatePollRfqsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PrivatePollRfqsResultSchema
-
-
-class PublicGetLiquidationHistoryResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetLiquidationHistoryResultSchema
-
-
-class PublicGetLatestSignedFeedsResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetLatestSignedFeedsResultSchema
-
-
-class PublicGetTickersResponseSchema(Struct):
-    id: Union[str, int]
-    result: PublicGetTickersResultSchema
+    managers: list[UniverseManagers]
+    market_type: MarketType
+    spot: list[SpotAssetEntry]
+    spot_price: str
+    option: AssetEntry | None | UnsetType = UNSET
+    perp: AssetEntry | None | UnsetType = UNSET
+    spot_price_24h: str | None | UnsetType = UNSET
+
+
+class GetAllInstrumentsResponse(Struct):
+    instruments: list[Instrument]
+    pagination: Pagination
+
+
+class GetLatestSignedFeedsResponse(Struct):
+    fwd_data: dict[str, dict[str, ForwardFeedDataResponse]]
+    perp_data: dict[str, dict[str, PerpFeedDataResponse]]
+    rate_data: dict[str, dict[str, RateFeedDataResponse]]
+    spot_data: dict[str, SpotFeedDataResponse]
+    vol_data: dict[str, dict[str, VolFeedDataResponse]]
+
+
+class MultipleVaultRequestsResponse(Struct):
+    requests: list[VaultRequestResponse]
+    total: int

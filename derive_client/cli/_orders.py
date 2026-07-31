@@ -164,4 +164,4 @@ def cancel_all(ctx):
     subaccount = client.active_subaccount
     result = subaccount.orders.cancel_all()
 
-    print(f"All orders cancelled: {result.value}")
+    print(f"All orders cancelled: {result}")

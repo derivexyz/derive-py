@@ -6,12 +6,10 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from derive_client.data_types.generated_models import (
-    MMPConfigResultSchema,
-    PrivateGetMmpConfigParamsSchema,
-    PrivateResetMmpParamsSchema,
-    PrivateSetMmpConfigParamsSchema,
-    PrivateSetMmpConfigResultSchema,
-    Result,
+    MmpConfigResult,
+    MmpScopeRequest,
+    SetMmpConfigRequest,
+    SetMmpConfigResponse,
 )
 
 if TYPE_CHECKING:
@@ -30,11 +28,11 @@ class MMPOperations:
         """
         self._subaccount = subaccount
 
-    def get_config(self, *, currency: Optional[str] = None) -> list[MMPConfigResultSchema]:
+    def get_config(self, *, currency: Optional[str] = None) -> list[MmpConfigResult]:
         """Get the current mmp config for a subaccount (optionally filtered by currency)."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateGetMmpConfigParamsSchema(
+        params = MmpScopeRequest(
             subaccount_id=subaccount_id,
             currency=currency,
         )
@@ -49,11 +47,11 @@ class MMPOperations:
         mmp_interval: int,
         mmp_amount_limit: Decimal = Decimal("0"),
         mmp_delta_limit: Decimal = Decimal("0"),
-    ) -> PrivateSetMmpConfigResultSchema:
+    ) -> SetMmpConfigResponse:
         """Set the mmp config for the subaccount and currency."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateSetMmpConfigParamsSchema(
+        params = SetMmpConfigRequest(
             subaccount_id=subaccount_id,
             currency=currency,
             mmp_frozen_time=mmp_frozen_time,
@@ -64,11 +62,11 @@ class MMPOperations:
         result = self._subaccount._private_api.rpc.set_mmp_config(params=params)
         return result
 
-    def reset(self, *, currency: Optional[str] = None) -> Result:
+    def reset(self, *, currency: Optional[str] = None) -> str:
         """Resets (unfreezes) the mmp state for a subaccount (optionally filtered by currency)."""
 
         subaccount_id = self._subaccount.id
-        params = PrivateResetMmpParamsSchema(
+        params = MmpScopeRequest(
             subaccount_id=subaccount_id,
             currency=currency,
         )

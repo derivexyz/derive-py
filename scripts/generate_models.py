@@ -1,5 +1,6 @@
 import ast
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,6 +10,45 @@ from libcst import matchers as m
 
 TIMEOUT = 10
 CUSTOM_HEADER = "# ruff: noqa: E741,E501"
+
+# class_name -> {readable_python_name: original_wire_key}
+FIELD_RENAMES: dict[str, dict[str, str]] = {
+    "TickerSlimSnapshot": {
+        "best_ask_price": "A",
+        "best_bid_price": "B",
+        "index_price": "I",
+        "mark_price": "M",
+        "best_ask_amount": "a",
+        "best_bid_amount": "b",
+        "max_price": "maxp",
+        "min_price": "minp",
+        "timestamp": "t",
+        "funding_rate": "f",
+    },
+    "DailyTradingStatistics": {
+        "contract_volume_24h": "c",
+        "high_24h": "h",
+        "low_24h": "l",
+        "trade_count_24h": "n",
+        "open_interest": "oi",
+        "percent_change_24h": "p",
+        "premium_volume_24h": "pr",
+        "notional_volume_24h": "v",
+    },
+    "OptionPricing": {
+        "ask_iv": "ai",
+        "bid_iv": "bi",
+        "delta": "d",
+        "discount_factor": "df",
+        "forward_price": "f",
+        "gamma": "g",
+        "iv": "i",
+        "mark_price": "m",
+        "rho": "r",
+        "theta": "t",
+        "vega": "v",
+    },
+}
 
 
 @dataclass
@@ -47,7 +87,9 @@ def generate_models(
         use_subclass_enum=False,
         strict_nullable=True,
         use_double_quotes=True,
-        field_constraints=True,
+        # sub_id's format:uint128 + minimum crashes datamodel-code-generator's
+        # own root.jinja2 template ("list object has no element 0") when field_constraints=True
+        field_constraints=False,
         disable_timestamp=True,
         custom_file_header=CUSTOM_HEADER,
     )
@@ -129,6 +171,44 @@ def update_get_tx_result_schema(node: ast.ClassDef) -> None:
                 stmt.annotation.slice = ast.Name(id="dict", ctx=ast.Load())
 
 
+def _apply_field_renames(node: ast.ClassDef) -> None:
+    """
+    Rename abbreviated wire-format fields to readable attribute names on
+    classes listed in FIELD_RENAMES, and attach the matching msgspec
+    `rename=` class keyword so the wire format is untouched.
+
+    Raises if an expected wire key is missing, rather than silently
+    no-op'ing — a mismatch means the spec's shape moved and the mapping
+    needs updating, not that the rename should be skipped.
+    """
+    renames = FIELD_RENAMES.get(node.name)
+    if not renames:
+        return
+
+    wire_key_by_field: dict[str, str] = {}
+    for stmt in node.body:
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            wire_key = stmt.target.id
+            if wire_key in renames.values():
+                readable_name = next(k for k, v in renames.items() if v == wire_key)
+                wire_key_by_field[readable_name] = wire_key
+                stmt.target = ast.Name(id=readable_name, ctx=ast.Store())
+
+    missing = set(renames.values()) - set(wire_key_by_field.values())
+    if missing:
+        raise ValueError(
+            f"{node.name}: FIELD_RENAMES expects wire keys {sorted(missing)} "
+            f"but they weren't found on the generated class. The spec likely "
+            f"changed shape — update FIELD_RENAMES to match."
+        )
+
+    rename_dict = ast.Dict(
+        keys=[ast.Constant(value=k) for k in wire_key_by_field],
+        values=[ast.Constant(value=v) for v in wire_key_by_field.values()],
+    )
+    node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
+
+
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -143,6 +223,8 @@ class OptionalRewriter(ast.NodeTransformer):
 
         if not is_struct_class(node):
             return node
+
+        _apply_field_renames(node)
         node.body = reorder_fields(node.body)
         return node
 
@@ -162,6 +244,63 @@ class OptionalRewriter(ast.NodeTransformer):
                         return
 
 
+def patch_bare_none_aliases(tree: ast.Module) -> int:
+    """
+    Rewrite bare module-level `NAME = None` assignments into `NAME: TypeAlias = None`.
+
+    datamodel-code-generator maps a JSON Schema `{"type": "null"}` (e.g. Derive's
+    EmptyRequest — "This method takes no parameters; send an empty object `{}`")
+    to a plain `NAME = None` assignment. That's the correct runtime value —
+    encode_json_exclude_none() already treats params=None as "encode to {}",
+    matching the schema's own description — but pyright rejects using a bare
+    variable as a type annotation ("Variable not allowed in type expression")
+    wherever generate-api.py emits `params: EmptyRequest`. An explicit
+    TypeAlias annotation is the fix; it doesn't change the runtime value,
+    pyright treats `X: TypeAlias = None` identically to the literal `None`
+    token in annotation position.
+
+    Scoped deliberately narrow (bare `= None` only) so this can't misfire on
+    unrelated module-level constants like TIMEOUT = 10 or CUSTOM_HEADER = "...".
+    """
+    count = 0
+    for i, node in enumerate(tree.body):
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and isinstance(node.value, ast.Constant)
+            and node.value.value is None
+        ):
+            new_node = ast.AnnAssign(
+                target=node.targets[0],
+                annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),
+                value=node.value,
+                simple=1,
+            )
+            ast.copy_location(new_node, node)
+            tree.body[i] = new_node
+            count += 1
+    return count
+
+
+def ensure_typing_import(tree: ast.Module, name: str) -> None:
+    """Ensure `from typing import {name}` is present, appending to an existing
+    `from typing import ...` if one exists rather than adding a duplicate."""
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.module == "typing":
+            if any(alias.name == name for alias in node.names):
+                return
+            node.names.append(ast.alias(name=name, asname=None))
+            return
+
+    insert_at = 0
+    for i, node in enumerate(tree.body):
+        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+            insert_at = i + 1
+    new_import = ast.ImportFrom(module="typing", names=[ast.alias(name=name, asname=None)], level=0)
+    tree.body.insert(insert_at, new_import)
+
+
 def patch_code(src: str) -> str:
     tree = ast.parse(src)
     tracker = EnumTracker()
@@ -171,8 +310,17 @@ def patch_code(src: str) -> str:
     tree = fixer.visit(tree)
     tree = OptionalRewriter().visit(tree)
 
+    if patch_bare_none_aliases(tree):
+        ensure_typing_import(tree, "TypeAlias")
+
     ast.fix_missing_locations(tree)
-    return ast.unparse(tree)
+
+    code_str = ast.unparse(tree)
+
+    # Append type ignore to index assignments to suppress pyright method override conflicts
+    code_str = re.sub(r"(\bindex\s*=\s*['\"]index['\"])", r"\1  # type: ignore", code_str)
+
+    return code_str
 
 
 def patch_file(path: Path) -> None:
@@ -228,27 +376,37 @@ class DefaultValueFixer(ast.NodeTransformer):
         if not isinstance(node.target, ast.Name) or node.value is None:
             return node
 
-        type_name = self._get_type_name(node.annotation)
-        if not type_name or not isinstance(node.value, ast.Constant):
+        type_names = self._get_type_names(node.annotation)
+        if not type_names or not isinstance(node.value, ast.Constant):
             return node
 
         if node.value.value is None:
             return node
 
-        # Fix known custom types that need constructor calls
-        if type_name in self.custom_types or type_name in self.enum_types:
-            node.value = ast.Call(func=ast.Name(id=type_name, ctx=ast.Load()), args=[node.value], keywords=[])
+        # Fix known custom types or enums that need constructor calls
+        for type_name in type_names:
+            if type_name in self.custom_types or type_name in self.enum_types:
+                node.value = ast.Call(func=ast.Name(id=type_name, ctx=ast.Load()), args=[node.value], keywords=[])
+                break
 
         return node
 
-    def _get_type_name(self, annotation: ast.expr) -> str | None:
-        """Extract the main type name from an annotation."""
+    def _get_type_names(self, annotation: ast.expr) -> set[str]:
+        """Extract all type names from an annotation recursively."""
+        names = set()
         if isinstance(annotation, ast.Name):
-            return annotation.id
+            names.add(annotation.id)
         elif isinstance(annotation, ast.Subscript):
-            # Handle Optional[X] -> X
-            return self._get_type_name(annotation.slice)
-        return None
+            names.update(self._get_type_names(annotation.slice))
+            if isinstance(annotation.value, ast.Name):
+                names.add(annotation.value.id)
+        elif isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+            names.update(self._get_type_names(annotation.left))
+            names.update(self._get_type_names(annotation.right))
+        elif isinstance(annotation, ast.Tuple):
+            for elt in annotation.elts:
+                names.update(self._get_type_names(elt))
+        return names
 
 
 def normalize_class_def(node: ast.ClassDef) -> str:
@@ -558,22 +716,27 @@ def deduplicate_channel_models(
 
 
 if __name__ == "__main__":
-    repo_root = Path(__file__).parent.parent
-    input_path = repo_root / "specs" / "openapi-spec.json"
-    output_path = repo_root / "derive_client" / "data_types" / "generated_models.py"
+    sys.path.insert(0, str(Path(__file__).parent))
+    import paths
+
+    if not paths.OPENAPI_SPEC_PATCHED.exists():
+        raise SystemExit(
+            f"{paths.OPENAPI_SPEC_PATCHED} not found. Run `poetry run python scripts/patch_spec.py "
+            f"{paths.OPENAPI_SPEC}` first (patches {paths.OPENAPI_SPEC.name} without modifying it)."
+        )
 
     generate_models(
-        input_path=input_path,
-        output_path=output_path,
+        input_path=paths.OPENAPI_SPEC_PATCHED,
+        output_path=paths.GENERATED_MODELS,
         input_file_type=InputFileType.OpenAPI,
     )
-    patch_pagination_to_optional(output_path)
-    patch_file(output_path)
+    patch_pagination_to_optional(paths.GENERATED_MODELS)
+    patch_file(paths.GENERATED_MODELS)
 
-    ws_input = repo_root / "specs" / "websocket-channels.json"
-    ws_output = repo_root / "derive_client" / "data_types" / "channel_models.py"
-    generate_models(input_path=ws_input, output_path=ws_output, input_file_type=InputFileType.JsonSchema)
-    patch_file(ws_output)
-    deduplicate_channel_models(generated_models_path=output_path, channel_models_path=ws_output)
+    generate_models(
+        input_path=paths.WEBSOCKET_CHANNELS, output_path=paths.CHANNEL_MODELS, input_file_type=InputFileType.JsonSchema
+    )
+    patch_file(paths.CHANNEL_MODELS)
+    deduplicate_channel_models(generated_models_path=paths.GENERATED_MODELS, channel_models_path=paths.CHANNEL_MODELS)
 
     print("Done.")

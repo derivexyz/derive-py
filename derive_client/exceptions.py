@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from derive_client.data_types import BridgeTxResult, ChainID, FeeEstimate, TypedLogReceipt
+    from derive_client.data_types import FeeEstimate
 
 
 class NotConnectedError(RuntimeError):
@@ -42,14 +42,6 @@ class DeriveJSONRPCException(ApiException):
         return f"{base}  [data={self.data!r}]" if self.data is not None else base
 
 
-class BridgeEventParseError(Exception):
-    """Raised when an expected cross-chain bridge event could not be parsed."""
-
-
-class BridgeRouteError(Exception):
-    """Raised when no bridge route exists for the given currency and chains."""
-
-
 class NoAvailableRPC(Exception):
     """Raised when all configured RPC endpoints are temporarily unavailable due to backoff or failures."""
 
@@ -61,7 +53,7 @@ class InsufficientNativeBalance(Exception):
         self,
         message: str,
         *,
-        chain_id: ChainID,
+        chain_id: int,
         balance: int,
         assumed_gas_limit: int,
         fee_estimate: FeeEstimate,
@@ -75,10 +67,6 @@ class InsufficientNativeBalance(Exception):
 
 class InsufficientTokenBalance(Exception):
     """Raised when the token balance is insufficient for the requested operation."""
-
-
-class BridgePrimarySignerRequiredError(Exception):
-    """Raised when bridging is attempted with a secondary session-key signer."""
 
 
 class TxReceiptMissing(Exception):
@@ -97,26 +85,9 @@ class TransactionDropped(Exception):
     """Raised when the transaction the transaction is no longer in the mempool, likely dropped."""
 
 
-class BridgeEventTimeout(Exception):
-    """Raised when no matching bridge event was seen before deadline."""
+class WithdrawalFailed(Exception):
+    """Raised on any terminal *Error batch status."""
 
 
-class PartialBridgeResult(Exception):
-    """Raised after submission when the bridge pipeline fails"""
-
-    def __init__(self, message: str, *, tx_result: BridgeTxResult):
-        super().__init__(message)
-        self.tx_result = tx_result
-
-    @property
-    def cause(self) -> BaseException | None:
-        """Provides access to the orignal Exception."""
-        return self.__cause__
-
-
-class StandardBridgeRelayFailed(Exception):
-    """Raised when the L2 messenger emits FailedRelayedMessage."""
-
-    def __init__(self, message: str, *, event_log: TypedLogReceipt):
-        super().__init__(message)
-        self.event_log = event_log
+class WithdrawalTimeout(Exception):
+    """Raised if neither Settled nor a terminal *Error status is reached within the given timeout."""

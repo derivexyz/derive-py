@@ -8,7 +8,7 @@
       show_root_heading: false
       heading_level: 2
       members_order: source
-      members: ['__init__', 'list', 'transfer', 'transfer_batch']
+      members: ['__init__', 'list', 'transfer']
       show_bases: false
       show_source: false
       inherited_members: false

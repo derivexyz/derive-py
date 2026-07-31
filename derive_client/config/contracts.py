@@ -1,56 +1,74 @@
 """Contract addresses and environment configurations."""
 
+from __future__ import annotations
+
 from derive_client.data_types import ChecksumAddress, DeriveContractAddresses, EnvConfig, Environment
 
-from .constants import ABI_DATA_DIR
+from .constants import ABI_DATA_DIR, ETHEREUM_MAINNET_CHAIN_ID, SEPOLIA_CHAIN_ID
+
+# V3_MODULE_ADDRESSES
+TRADE_MODULE = ChecksumAddress("0xB8D20c2B7a1Ad2EE33Bc50eF10876eD3035b5e7b")
+TRANSFER_MODULE = ChecksumAddress("0x01259207A40925b794C8ac320456F7F6c8FE2636")
+WITHDRAW_MODULE = ChecksumAddress("0x9d0E8f5b25384C7310CB8C6aE32C8fbeb645d083")
+RFQ_MODULE = ChecksumAddress("0x9371352CCef6f5b36EfDFE90942fFE622Ab77F1D")
+EXTERNAL_TRANSFER_MODULE = ChecksumAddress("0x8F9B8f12ddA05FB1F0DDDDe8f5af8cECF54f8aC9")
+WHITELISTED_RECIPIENT_MODULE = ChecksumAddress("0xB86D6DE1b76c9839e4BA860848CD98A1dABd6B54")
+VAULT_MODULE = ChecksumAddress("0x2885c174ebf5524aED9c721d60c12b1537685186")
+LIQUIDATION_MODULE = ChecksumAddress("0x66d23e59DaEEF13904eFA2D4B8658aeD05f59a92")
+CREATE_SESSION_KEY_MODULE = ChecksumAddress("0xe330CF64ff6EbF41699aad344Cb21d78db1D2bb6")
+
+# V3 contract addresses, verified against derive_client/data/abis/sepolia/contracts.json
+ACTION_MANAGER = ChecksumAddress("0x1b4f369b585D40a27F66775844FC265151f278A4")
+VAPP = ChecksumAddress("0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393")
+WITHDRAWAL_OUTBOX = ChecksumAddress("0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988")
+SPOT_VAULT = ChecksumAddress("0xB20790d63f648feA1A23948CDF1B8769DF78a173")
+
 
 CONFIGS: dict[Environment, EnvConfig] = {
     Environment.TEST: EnvConfig(
-        base_url="https://api-demo.lyra.finance",
-        ws_address="wss://api-demo.lyra.finance/ws",
-        rpc_endpoint="https://testnet-rpc.derive.xyz",
-        block_explorer="https://explorer-prod-testnet-0eakp60405.t.conduit.xyz",
+        base_url="https://testnet.api.derive.xyz/v3",
+        ws_address="wss://testnet.api.derive.xyz/v3/ws",
+        chain_id=SEPOLIA_CHAIN_ID,
+        rpc_endpoint="https://sepolia.drpc.org",
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
-        DOMAIN_SEPARATOR="0x9bcf4dc06df5d8bf23af818d5716491b995020f377d3b7b64c29ed14e3dd1105",
+        DOMAIN_SEPARATOR="0x24d674cd5f2b9d564691c51e9d88f649b99246a2244dd74ce27b96578d773e85",
         contracts=DeriveContractAddresses(
-            ETH_PERP=ChecksumAddress("0x010e26422790C6Cb3872330980FAa7628FD20294"),
-            BTC_PERP=ChecksumAddress("0xAFB6Bb95cd70D5367e2C39e9dbEb422B9815339D"),
-            ETH_OPTION=ChecksumAddress("0xBcB494059969DAaB460E0B5d4f5c2366aab79aa1"),
-            BTC_OPTION=ChecksumAddress("0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7"),
-            TRADE_MODULE=ChecksumAddress("0x87F2863866D85E3192a35A73b388BD625D83f2be"),
-            RFQ_MODULE=ChecksumAddress("0x4E4DD8Be1e461913D9A5DBC4B830e67a8694ebCa"),
-            STANDARD_RISK_MANAGER=ChecksumAddress("0x28bE681F7bEa6f465cbcA1D25A2125fe7533391C"),
-            BTC_PORTFOLIO_RISK_MANAGER=ChecksumAddress("0xbaC0328cd4Af53d52F9266Cdbd5bf46720320A20"),
-            ETH_PORTFOLIO_RISK_MANAGER=ChecksumAddress("0xDF448056d7bf3f9Ca13d713114e17f1B7470DeBF"),
-            CASH_ASSET=ChecksumAddress("0x6caf294DaC985ff653d5aE75b4FF8E0A66025928"),
-            USDC_ASSET=ChecksumAddress("0xe80F2a02398BBf1ab2C9cc52caD1978159c215BD"),
-            DEPOSIT_MODULE=ChecksumAddress("0x43223Db33AdA0575D2E100829543f8B04A37a1ec"),
-            WITHDRAWAL_MODULE=ChecksumAddress("0xe850641C5207dc5E9423fB15f89ae6031A05fd92"),
-            TRANSFER_MODULE=ChecksumAddress("0x0CFC1a4a90741aB242cAfaCD798b409E12e68926"),
+            TRADE_MODULE=TRADE_MODULE,
+            TRANSFER_MODULE=TRANSFER_MODULE,
+            WITHDRAW_MODULE=WITHDRAW_MODULE,
+            RFQ_MODULE=RFQ_MODULE,
+            EXTERNAL_TRANSFER_MODULE=EXTERNAL_TRANSFER_MODULE,
+            WHITELISTED_RECIPIENT_MODULE=WHITELISTED_RECIPIENT_MODULE,
+            VAULT_MODULE=VAULT_MODULE,
+            LIQUIDATION_MODULE=LIQUIDATION_MODULE,
+            CREATE_SESSION_KEY_MODULE=CREATE_SESSION_KEY_MODULE,
+            ACTION_MANAGER=ACTION_MANAGER,
+            VAPP=VAPP,
+            WITHDRAWAL_OUTBOX=WITHDRAWAL_OUTBOX,
+            SPOT_VAULT=SPOT_VAULT,
         ),
     ),
     Environment.PROD: EnvConfig(
-        base_url="https://api.lyra.finance",
-        ws_address="wss://api.lyra.finance/ws",
+        base_url="https://api.derive.xyz/v3",
+        ws_address="wss://api.derive.xyz/v3/ws",
         rpc_endpoint="https://957.rpc.thirdweb.com/",
-        block_explorer="https://explorer.lyra.finance",
+        chain_id=ETHEREUM_MAINNET_CHAIN_ID,
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
-        DOMAIN_SEPARATOR="0xd96e5f90797da7ec8dc4e276260c7f3f87fedf68775fbe1ef116e996fc60441b",
+        DOMAIN_SEPARATOR="0xda616dfabb88681b08e1592820a41d55ddc62d68de110e327ae99d734506fe19",
         contracts=DeriveContractAddresses(
-            ETH_PERP=ChecksumAddress("0xAf65752C4643E25C02F693f9D4FE19cF23a095E3"),
-            BTC_PERP=ChecksumAddress("0xDBa83C0C654DB1cd914FA2710bA743e925B53086"),
-            ETH_OPTION=ChecksumAddress("0x4BB4C3CDc7562f08e9910A0C7D8bB7e108861eB4"),
-            BTC_OPTION=ChecksumAddress("0xd0711b9eBE84b778483709CDe62BacFDBAE13623"),
-            TRADE_MODULE=ChecksumAddress("0xB8D20c2B7a1Ad2EE33Bc50eF10876eD3035b5e7b"),
-            RFQ_MODULE=ChecksumAddress("0x9371352CCef6f5b36EfDFE90942fFE622Ab77F1D"),
-            STANDARD_RISK_MANAGER=ChecksumAddress("0x28c9ddF9A3B29c2E6a561c1BC520954e5A33de5D"),
-            BTC_PORTFOLIO_RISK_MANAGER=ChecksumAddress("0x45DA02B9cCF384d7DbDD7b2b13e705BADB43Db0D"),
-            ETH_PORTFOLIO_RISK_MANAGER=ChecksumAddress("0xe7cD9370CdE6C9b5eAbCe8f86d01822d3de205A0"),
-            CASH_ASSET=ChecksumAddress("0x57B03E14d409ADC7fAb6CFc44b5886CAD2D5f02b"),
-            USDC_ASSET=ChecksumAddress("0x6879287835A86F50f784313dBEd5E5cCC5bb8481"),
-            DEPOSIT_MODULE=ChecksumAddress("0x9B3FE5E5a3bcEa5df4E08c41Ce89C4e3Ff01Ace3"),
-            WITHDRAWAL_MODULE=ChecksumAddress("0x9d0E8f5b25384C7310CB8C6aE32C8fbeb645d083"),
-            TRANSFER_MODULE=ChecksumAddress("0x01259207A40925b794C8ac320456F7F6c8FE2636"),
+            TRADE_MODULE=TRADE_MODULE,
+            TRANSFER_MODULE=TRANSFER_MODULE,
+            WITHDRAW_MODULE=WITHDRAW_MODULE,
+            RFQ_MODULE=RFQ_MODULE,
+            EXTERNAL_TRANSFER_MODULE=EXTERNAL_TRANSFER_MODULE,
+            WHITELISTED_RECIPIENT_MODULE=WHITELISTED_RECIPIENT_MODULE,
+            VAULT_MODULE=VAULT_MODULE,
+            LIQUIDATION_MODULE=LIQUIDATION_MODULE,
+            CREATE_SESSION_KEY_MODULE=CREATE_SESSION_KEY_MODULE,
+            ACTION_MANAGER=ACTION_MANAGER,
+            VAPP=VAPP,
+            WITHDRAWAL_OUTBOX=WITHDRAWAL_OUTBOX,
+            SPOT_VAULT=SPOT_VAULT,
         ),
     ),
 }

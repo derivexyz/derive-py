@@ -40,26 +40,6 @@
       show_source: true
       members: false
 
-## BridgeEventParseError
-
-::: derive_client.exceptions.BridgeEventParseError
-    options:
-      show_root_heading: false
-      heading_level: 3
-      show_bases: true
-      show_source: true
-      members: false
-
-## BridgeRouteError
-
-::: derive_client.exceptions.BridgeRouteError
-    options:
-      show_root_heading: false
-      heading_level: 3
-      show_bases: true
-      show_source: true
-      members: false
-
 ## NoAvailableRPC
 
 ::: derive_client.exceptions.NoAvailableRPC
@@ -83,16 +63,6 @@
 ## InsufficientTokenBalance
 
 ::: derive_client.exceptions.InsufficientTokenBalance
-    options:
-      show_root_heading: false
-      heading_level: 3
-      show_bases: true
-      show_source: true
-      members: false
-
-## BridgePrimarySignerRequiredError
-
-::: derive_client.exceptions.BridgePrimarySignerRequiredError
     options:
       show_root_heading: false
       heading_level: 3
@@ -140,9 +110,9 @@
       show_source: true
       members: false
 
-## BridgeEventTimeout
+## WithdrawalFailed
 
-::: derive_client.exceptions.BridgeEventTimeout
+::: derive_client.exceptions.WithdrawalFailed
     options:
       show_root_heading: false
       heading_level: 3
@@ -150,19 +120,9 @@
       show_source: true
       members: false
 
-## PartialBridgeResult
+## WithdrawalTimeout
 
-::: derive_client.exceptions.PartialBridgeResult
-    options:
-      show_root_heading: false
-      heading_level: 3
-      show_bases: true
-      show_source: true
-      members: false
-
-## StandardBridgeRelayFailed
-
-::: derive_client.exceptions.StandardBridgeRelayFailed
+::: derive_client.exceptions.WithdrawalTimeout
     options:
       show_root_heading: false
       heading_level: 3
