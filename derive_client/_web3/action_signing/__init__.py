@@ -1,6 +1,4 @@
 from .module_data import (
-    DepositModuleData,
-    MakerTransferPositionModuleData,
     MakerTransferPositionsModuleData,
     ModuleData,
     RecipientTransferERC20ModuleData,
@@ -8,7 +6,6 @@ from .module_data import (
     RFQQuoteDetails,
     RFQQuoteModuleData,
     SenderTransferERC20ModuleData,
-    TakerTransferPositionModuleData,
     TakerTransferPositionsModuleData,
     TradeModuleData,
     TransferERC20Details,
@@ -29,8 +26,6 @@ from .utils import (
 __all__ = [
     "MAX_INT_256",
     "MIN_INT_256",
-    "DepositModuleData",
-    "MakerTransferPositionModuleData",
     "MakerTransferPositionsModuleData",
     "ModuleData",
     "RFQExecuteModuleData",
@@ -39,7 +34,6 @@ __all__ = [
     "RecipientTransferERC20ModuleData",
     "SenderTransferERC20ModuleData",
     "SignedAction",
-    "TakerTransferPositionModuleData",
     "TakerTransferPositionsModuleData",
     "TradeModuleData",
     "TransferERC20Details",
