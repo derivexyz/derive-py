@@ -23,7 +23,8 @@ def get_action_nonce(nonce_iter: int = 0) -> int:
 
     Uses the current UTC timestamp in milliseconds and a random number up to 3 digits.
 
-    :param nonce_iter: allows to enter a specific number between 0 and 999 unless. If None is passed a random number is chosen
+    :param nonce_iter: allows to enter a specific number between 0 and 999 unless None is passed.
+                       If None is passed a random number is chosen
     """
     if nonce_iter is None:
         nonce_iter = random.randint(0, 999)

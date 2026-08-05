@@ -31,19 +31,20 @@ class RFQQuoteDetails:
 
 @dataclass
 class RFQQuoteModuleData(ModuleData):
-    global_direction: Literal["buy", "sell"]
-    max_fee: Decimal
-    legs: List[RFQQuoteDetails]
-
     """
     params:
-    global_direction: Literal["buy", "sell"] - The global direction of the whole quote. 
-                                               E.g., global_direction="sell" and leg_direction="buy" would result in a short position.
-                                               Note, RFQQuoteDetails.amount is always positive and is passed into the API, 
-                                               but the global direction and leg direction determine the final encoded value.
+    global_direction: Literal["buy", "sell"] - The global direction of the whole quote.
+        E.g., global_direction="sell" and leg_direction="buy" would result in a short
+        position. Note, RFQQuoteDetails.amount is always positive and is passed into
+        the API, but the global direction and leg direction determine the final
+        encoded value.
     max_fee: Decimal - The maximum fee the user is willing to pay for the quote.
     legs: List[RFQQuoteDetails] - List of leg details for the quote.
     """
+
+    global_direction: Literal["buy", "sell"]
+    max_fee: Decimal
+    legs: List[RFQQuoteDetails]
 
     def to_abi_encoded(self):
         return encode(
@@ -78,12 +79,14 @@ class RFQQuoteModuleData(ModuleData):
 class RFQExecuteModuleData(RFQQuoteModuleData):
     """
     params:
-    global_direction: Literal["buy", "sell"] - This must be the OPPOSITE of the direction of the Quote.
-                                               E.g., global_direction="sell" and leg_direction="buy" would result in a short position.
-                                               Note, RFQQuoteDetails.amount is always positive and is passed into the API,
-                                               but under the hood, amount sign is inverted and signed by executor.
+    global_direction: Literal["buy", "sell"] - This must be the OPPOSITE of the
+        direction of the Quote. E.g., global_direction="sell" and leg_direction="buy"
+        would result in a short position. Note, RFQQuoteDetails.amount is always
+        positive and is passed into the API, but under the hood, amount sign is
+        inverted and signed by executor.
     max_fee: Decimal - The maximum fee the user is willing to pay for the quote.
-    legs: List[RFQQuoteDetails] - List of leg details for the quote which execute is targeting.
+    legs: List[RFQQuoteDetails] - List of leg details for the quote which execute is
+        targeting.
     """
 
     def to_abi_encoded(self):
