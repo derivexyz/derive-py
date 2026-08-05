@@ -1,0 +1,41 @@
+"""
+Deposit module data.
+"""
+
+from dataclasses import dataclass
+from decimal import Decimal
+
+from eth_abi.abi import encode
+from web3 import Web3
+
+from .module_data import ModuleData
+
+
+@dataclass
+class DepositModuleData(ModuleData):
+    amount: Decimal
+    asset: str
+    manager: str
+    asset_name: str
+
+    # metadata
+    decimals: int
+
+    def to_abi_encoded(self):
+        amount_decimal = Decimal(self.amount)
+        scaled_amount = int(amount_decimal.scaleb(self.decimals))
+        return encode(
+            ["uint256", "address", "address"],
+            [
+                scaled_amount,
+                Web3.to_checksum_address(self.asset),
+                Web3.to_checksum_address(self.manager),
+            ],
+        )
+
+    def to_json(self):
+        return {
+            "amount": str(self.amount),
+            "asset_name": self.asset_name,
+            "is_atomic_signing": False,
+        }
