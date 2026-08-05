@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import List, Literal
+from typing import Literal, Sequence
 
 from eth_abi.abi import encode
 from web3 import Web3
@@ -44,7 +44,7 @@ class RFQQuoteModuleData(ModuleData):
 
     global_direction: Literal["buy", "sell"]
     max_fee: Decimal
-    legs: List[RFQQuoteDetails]
+    legs: Sequence[RFQQuoteDetails]
 
     def to_abi_encoded(self):
         return encode(

@@ -16,7 +16,7 @@ class MakerTransferPositionsModuleData(ModuleData):
     global_direction: Literal["buy", "sell"]
     positions: List[TransferPositionsDetails]
 
-    _internal_quote_module_data: RFQQuoteModuleData = field(init=False, default=None)
+    _internal_quote_module_data: RFQQuoteModuleData = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self._internal_quote_module_data = RFQQuoteModuleData(
@@ -37,7 +37,7 @@ class TakerTransferPositionsModuleData(ModuleData):
     global_direction: Literal["buy", "sell"]
     positions: List[TransferPositionsDetails]
 
-    _internal_execute_module_data: RFQExecuteModuleData = field(init=False, default=None)
+    _internal_execute_module_data: RFQExecuteModuleData = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self._internal_execute_module_data = RFQExecuteModuleData(

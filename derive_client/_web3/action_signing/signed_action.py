@@ -1,14 +1,18 @@
 from dataclasses import dataclass
+from typing import Generic, TypeVar
 
 from eth_abi.abi import encode
+from eth_account.datastructures import SignedMessage
 from hexbytes import HexBytes
 from web3 import Account, Web3
 
 from .module_data.module_data import ModuleData
 
+TModuleData = TypeVar("TModuleData", bound=ModuleData)
+
 
 @dataclass
-class SignedAction:
+class SignedAction(Generic[TModuleData]):
     """
     Used to sign and validate actions.
 
@@ -37,15 +41,15 @@ class SignedAction:
     signature_expiry_sec: int
     nonce: int
     module_address: str
-    module_data: ModuleData
+    module_data: TModuleData
     DOMAIN_SEPARATOR: str
     ACTION_TYPEHASH: str
     signature: str = ""
 
-    def sign(self, signer_private_key: str):
+    def sign(self, signer_private_key: str) -> str:
         signer_wallet = Web3().eth.account.from_key(signer_private_key)
-        signature: Account = signer_wallet.unsafe_sign_hash(self._to_typed_data_hash())
-        self.signature = signature.signature.hex()
+        signed: SignedMessage = signer_wallet.unsafe_sign_hash(self._to_typed_data_hash())
+        self.signature = signed.signature.hex()
         return self.signature
 
     def to_json(self):

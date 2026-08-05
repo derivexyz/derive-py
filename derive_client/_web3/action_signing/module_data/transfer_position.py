@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from derive_action_signing.module_data.module_data import ModuleData
-from derive_action_signing.module_data.trade import TradeModuleData
+from .module_data import ModuleData
+from .trade import TradeModuleData
 
 
 @dataclass
@@ -17,7 +17,7 @@ class TransferPositionModuleData(ModuleData, ABC):
     recipient_id: int
     position_amount: Decimal  # Original position amount to determine direction
 
-    _internal_trade_module_data: TradeModuleData = field(init=False, default=None)
+    _internal_trade_module_data: TradeModuleData = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self._internal_trade_module_data = TradeModuleData(
