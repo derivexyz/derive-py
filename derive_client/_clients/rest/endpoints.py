@@ -66,6 +66,7 @@ class PublicEndpoints:
     get_tradingview_chart_data = Endpoint("public", "get_tradingview_chart_data")
     get_all_referral_codes = Endpoint("public", "get_all_referral_codes")
     get_referral_performance = Endpoint("public", "get_referral_performance")
+    start_auction = Endpoint("public", "start_auction")
 
 
 class PrivateEndpoints:
@@ -78,7 +79,6 @@ class PrivateEndpoints:
     get_positions = Endpoint("private", "get_positions")
     get_subaccount = Endpoint("private", "get_subaccount")
     get_subaccounts = Endpoint("private", "get_subaccounts")
-    create_session_key = Endpoint("private", "create_session_key")
     edit_session_key = Endpoint("private", "edit_session_key")
     session_keys = Endpoint("private", "session_keys")
     get_account = Endpoint("private", "get_account")
@@ -144,3 +144,5 @@ class PrivateEndpoints:
     transfer_spot_external = Endpoint("private", "transfer_spot_external")
     update_whitelisted_recipients = Endpoint("private", "update_whitelisted_recipients")
     withdraw = Endpoint("private", "withdraw")
+    liquidate = Endpoint("private", "liquidate")
+    set_session_key = Endpoint("private", "set_session_key")

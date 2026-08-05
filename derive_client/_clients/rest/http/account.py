@@ -10,17 +10,17 @@ from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
-    CreateSessionKeyRequest,
     EditSessionKeyRequest,
     GetAccountRequest,
     GetAllPortfoliosRequest,
     GetSubaccountsRequest,
-    PrivateCreateSessionKeyResponse,
     PrivateGetAccountResponse,
     PrivateGetSubaccountsResponse,
     PrivateSessionKeysResponse,
+    PrivateSetSessionKeyResponse,
     SessionKey,
     SessionKeysRequest,
+    SetSessionKeyRequest,
     Subaccount,
     UpdateWhitelistedRecipientsRequest,
     UpdateWhitelistedRecipientsResponse,
@@ -139,7 +139,7 @@ class LightAccount:
         result = self._private_api.rpc.session_keys(params)
         return result
 
-    def create_session_key(
+    def set_session_key(
         self,
         *,
         expiry_sec: int,
@@ -151,7 +151,7 @@ class LightAccount:
         ip_whitelist: list[str] | None = None,
         label: str | None = None,
         subaccount_ids: list[int] | None = None,
-    ) -> PrivateCreateSessionKeyResponse:
+    ) -> PrivateSetSessionKeyResponse:
         """Authorizes a new session key for a wallet from a signed action."""
 
         wallet = self._auth.wallet
@@ -172,7 +172,7 @@ class LightAccount:
             signature_expiry_sec=signature_expiry_sec,
         )
 
-        params = CreateSessionKeyRequest(
+        params = SetSessionKeyRequest(
             expiry_sec=expiry_sec,
             nonce=str(signed_action.nonce),
             offchain_scopes=list(map(str, offchain_scopes)),
@@ -187,7 +187,7 @@ class LightAccount:
             subaccount_ids=subaccount_ids or msgspec.UNSET,
         )
 
-        result = self._private_api.rpc.create_session_key(params)
+        result = self._private_api.rpc.set_session_key(params)
         return result
 
     def edit_session_key(

@@ -199,21 +199,6 @@ class Collateral(Struct):
     unrealized_pnl_excl_fees: str
 
 
-class CreateSessionKeyRequest(Struct):
-    expiry_sec: int
-    nonce: str
-    offchain_scopes: list[str]
-    protocol_scopes: list[str]
-    public_session_key: str
-    signature: str
-    signature_expiry_sec: int
-    signer: str
-    wallet: str
-    ip_whitelist: list[str] | UnsetType = UNSET
-    label: str | None | UnsetType = UNSET
-    subaccount_ids: list[int] | UnsetType = UNSET
-
-
 class CreateVaultRequest(Struct):
     cooldown_sec: int
     deposit_spot_asset: Address
@@ -687,7 +672,6 @@ class OffchainAckResponse(Struct):
 
 class OffchainKeyScope(StrEnum):
     account_info = 'account_info'
-    delete_session_key = 'delete_session_key'
 
 
 class Ohlc(Struct):
@@ -946,16 +930,6 @@ class PrivateChangeSubaccountLabelResponse(ChangeSubaccountLabelRequest):
     pass
 
 
-class PrivateCreateSessionKeyResponse(Struct):
-    expiry_sec: int
-    ip_whitelist: list[str]
-    offchain_scopes: list[str]
-    protocol_scopes: list[str]
-    public_session_key: str
-    subaccount_ids: list[int]
-    label: str | None | UnsetType = UNSET
-
-
 class PrivateGetAccountResponse(Struct):
     cancel_on_disconnect: bool
     fee_info: AccountFeeInfo
@@ -967,6 +941,7 @@ class PrivateGetAccountResponse(Struct):
     websocket_non_matching_tps: int
     websocket_option_tps: int
     websocket_perp_tps: int
+    whitelisted_recipients: list[str]
     creation_timestamp_sec: int | None | UnsetType = UNSET
     referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
@@ -986,6 +961,35 @@ class PrivateGetSubaccountsResponse(Struct):
     wallet: str
 
 
+class PrivateLiquidateRequest(Struct):
+    cash_transfer: Decimal
+    last_seen_trade_id: int
+    liquidated_account_id: int
+    merge_account: bool
+    nonce: int
+    percent_of_acc: Decimal
+    price_limit: Decimal
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+
+
+class PrivateLiquidateResponse(Struct):
+    op_uuid: str
+    operation_id: int
+
+
+class PrivateSetSessionKeyResponse(Struct):
+    expiry_sec: int
+    ip_whitelist: list[str]
+    offchain_scopes: list[str]
+    protocol_scopes: list[str]
+    public_session_key: str
+    subaccount_ids: list[int]
+    label: str | None | UnsetType = UNSET
+
+
 class PrivateTransferSpotExternalRequest(Struct):
     amount: Decimal
     asset_name: str
@@ -1001,9 +1005,8 @@ class PrivateTransferSpotExternalRequest(Struct):
     to_subaccount_id: int
 
 
-class PrivateTransferSpotExternalResponse(Struct):
-    op_uuid: str
-    operation_id: int
+class PrivateTransferSpotExternalResponse(PrivateLiquidateResponse):
+    pass
 
 
 class PrivateTransferSpotRequest(Struct):
@@ -1020,7 +1023,7 @@ class PrivateTransferSpotRequest(Struct):
     to_subaccount_id: int
 
 
-class PrivateTransferSpotResponse(PrivateTransferSpotExternalResponse):
+class PrivateTransferSpotResponse(PrivateLiquidateResponse):
     pass
 
 
@@ -1036,7 +1039,7 @@ class PrivateWithdrawRequest(Struct):
     subaccount_id: int
 
 
-class PrivateWithdrawResponse(PrivateTransferSpotExternalResponse):
+class PrivateWithdrawResponse(PrivateLiquidateResponse):
     pass
 
 
@@ -1067,6 +1070,14 @@ class PublicSendQuoteDebugRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
+
+
+class PublicStartAuctionRequest(Struct):
+    subaccount_id: int
+
+
+class PublicStartAuctionResponse(PrivateLiquidateResponse):
+    pass
 
 
 class PublicVaultActionResponse(Struct):
@@ -1126,6 +1137,7 @@ class RFQCancelReason(StrEnum):
     subaccount_withdrawn = 'subaccount_withdrawn'
     rfq_no_longer_open = 'rfq_no_longer_open'
     compliance = 'compliance'
+    validation_failed = 'validation_failed'
 
 
 class RFQStatus(StrEnum):
@@ -1340,6 +1352,21 @@ class SetMmpConfigResponse(Struct):
     mmp_frozen_time: int
     mmp_interval: int
     subaccount_id: int
+
+
+class SetSessionKeyRequest(Struct):
+    expiry_sec: int
+    nonce: str
+    offchain_scopes: list[str]
+    protocol_scopes: list[str]
+    public_session_key: str
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    wallet: str
+    ip_whitelist: list[str] | UnsetType = UNSET
+    label: str | None | UnsetType = UNSET
+    subaccount_ids: list[int] | UnsetType = UNSET
 
 
 class SettledTrade(Struct):
@@ -1600,7 +1627,7 @@ class VaultConfig(Struct):
     benchmark_asset: Address | None | UnsetType = UNSET
 
 
-class VaultCreateResponse(PrivateTransferSpotExternalResponse):
+class VaultCreateResponse(PrivateLiquidateResponse):
     pass
 
 
@@ -1611,7 +1638,7 @@ class VaultDepositHold(Struct):
     vault_id: int
 
 
-class VaultForceBurnResponse(PrivateTransferSpotExternalResponse):
+class VaultForceBurnResponse(PrivateLiquidateResponse):
     pass
 
 
@@ -1636,7 +1663,7 @@ class VaultRequestId(Struct):
     wallet: Address
 
 
-class VaultSettleResponse(PrivateTransferSpotExternalResponse):
+class VaultSettleResponse(PrivateLiquidateResponse):
     pass
 
 

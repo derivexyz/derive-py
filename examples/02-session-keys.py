@@ -50,9 +50,12 @@ def print_key(label: str, key) -> None:
 # Store the private key, it's what the bot signs with from now on.
 session_wallet = Account.create()
 
-created = client.account.create_session_key(
+created = client.account.set_session_key(
     expiry_sec=int(time.time()) + 24 * 60 * 60,  # the KEY's lifetime: 24h
-    protocol_scopes=[ProtocolScope.TRADE_ALL],
+    protocol_scopes=[
+        ProtocolScope.TRADE_ORDERBOOK_ALL,
+        ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT,
+    ],
     offchain_scopes=[],
     public_session_key=session_wallet.address,
     label="example-session-key",
@@ -71,7 +74,7 @@ print(f"  ip_whitelist:       {edited.ip_whitelist}")
 print(f"  registered_sec:     {edited.registered_sec}")
 
 # Retiring the session key by setting expiry_sec=0 and empty scopes. The key is now dead.
-retired = client.account.create_session_key(
+retired = client.account.set_session_key(
     expiry_sec=0,
     protocol_scopes=[],
     offchain_scopes=[],

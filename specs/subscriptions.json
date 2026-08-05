@@ -1956,7 +1956,8 @@
           "session_key_deregistered",
           "subaccount_withdrawn",
           "rfq_no_longer_open",
-          "compliance"
+          "compliance",
+          "validation_failed"
         ]
       },
       "RFQStatus": {

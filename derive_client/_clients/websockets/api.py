@@ -47,7 +47,6 @@ from derive_client.data_types.generated_models import (
     CancelVaultRequestRequest,
     ChangeSubaccountLabelRequest,
     CreateOrderRequest,
-    CreateSessionKeyRequest,
     CreateVaultRequest,
     Currency,
     DepositHistoryResult,
@@ -137,12 +136,14 @@ from derive_client.data_types.generated_models import (
     PollQuotesRequest,
     PollRfqsRequest,
     PrivateChangeSubaccountLabelResponse,
-    PrivateCreateSessionKeyResponse,
     PrivateGetAccountResponse,
     PrivateGetCollateralsResponse,
     PrivateGetPositionsResponse,
     PrivateGetSubaccountsResponse,
+    PrivateLiquidateRequest,
+    PrivateLiquidateResponse,
     PrivateSessionKeysResponse,
+    PrivateSetSessionKeyResponse,
     PrivateTransferSpotExternalRequest,
     PrivateTransferSpotExternalResponse,
     PrivateTransferSpotRequest,
@@ -153,6 +154,8 @@ from derive_client.data_types.generated_models import (
     PublicGetWalletsFromSessionKeyResponse,
     PublicRfq,
     PublicSendQuoteDebugRequest,
+    PublicStartAuctionRequest,
+    PublicStartAuctionResponse,
     PublicTradesResult,
     PublicWithdrawDebugRequest,
     Quote,
@@ -184,6 +187,7 @@ from derive_client.data_types.generated_models import (
     SessionKeysRequest,
     SetMmpConfigRequest,
     SetMmpConfigResponse,
+    SetSessionKeyRequest,
     SettledTrade,
     Subaccount,
     TickerSlimSnapshot,
@@ -839,6 +843,20 @@ class PublicRPC:
 
         return result
 
+    async def start_auction(
+        self,
+        params: PublicStartAuctionRequest,
+    ) -> PublicStartAuctionResponse:
+        """
+        public/start_auction
+        """
+
+        method = "public/start_auction"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, PublicStartAuctionResponse)
+
+        return result
+
     async def login(
         self,
         params: LoginRequest,
@@ -967,26 +985,6 @@ class PrivateRPC:
 
         return result
 
-    async def create_session_key(
-        self,
-        params: CreateSessionKeyRequest,
-    ) -> PrivateCreateSessionKeyResponse:
-        """
-        Authorizes a new session key for a wallet from a signed action, granting it a
-        set of on-chain (protocol) scopes and off-chain scopes with an expiry, an
-        optional label, an optional IP allowlist, and an optional list of subaccounts it
-        may act on (defaults to all of the wallet's subaccounts). Send the signed action
-        fields (nonce, signer, signature, signature expiry, and module) alongside the
-        requested scopes; the endpoint returns the registered key's public address and
-        its granted scopes, expiry, allowlist, label, and subaccounts.
-        """
-
-        method = "private/create_session_key"
-        envelope = await self._session._send_request(method, params=params)
-        result = decode_result(envelope, PrivateCreateSessionKeyResponse)
-
-        return result
-
     async def edit_session_key(
         self,
         params: EditSessionKeyRequest,
@@ -994,7 +992,7 @@ class PrivateRPC:
         """
         Updates an existing session key's label, IP allowlist, and/or off-chain scopes
         for a given wallet; it cannot change on-chain (protocol) scopes, for which you
-        must re-register with private/create_session_key. Editing only the label needs
+        must re-register with private/set_session_key. Editing only the label needs
         account-info permission, while changing the IP allowlist or off-chain scopes
         requires admin/owner authorization. Returns the updated session key details.
         """
@@ -1203,7 +1201,12 @@ class PrivateRPC:
     ) -> AggregatedOrdersResult:
         """
         Returns all currently open orders for the given subaccount, including each
-        order's instrument, direction, prices, amounts and status. Read-only query.
+        order's instrument, direction, prices, amounts and status. Only orders resting
+        on the order book are returned: pending trigger orders that have not yet fired
+        are available from get_trigger_orders, and active algo orders from
+        get_algo_orders. Once a trigger order fires, the resulting order appears here if
+        it rests on the book rather than filling immediately; algo orders execute as IOC
+        slices and so never rest here. Read-only query.
         """
 
         method = "private/get_open_orders"
@@ -1912,8 +1915,12 @@ class PrivateRPC:
         """
         Returns a paginated history of orders for a single subaccount or for an entire
         wallet (specify exactly one), optionally bounded by a from/to timestamp window.
-        Each page includes the order records plus pagination info with the total count
-        and number of pages.
+        Only orders in a terminal state (filled, cancelled, expired) are recorded here,
+        one record per order. Trigger and algo orders appear once they terminate,
+        carrying their accumulated filled amount; while they are still live — including
+        partially executed algo orders and trigger orders that have not yet fired — read
+        them from get_trigger_orders and get_algo_orders instead. Each page includes the
+        order records plus pagination info with the total count and number of pages.
         """
 
         method = "private/get_order_history"
@@ -2102,6 +2109,34 @@ class PrivateRPC:
         method = "private/withdraw"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, PrivateWithdrawResponse)
+
+        return result
+
+    async def liquidate(
+        self,
+        params: PrivateLiquidateRequest,
+    ) -> PrivateLiquidateResponse:
+        """
+        private/liquidate
+        """
+
+        method = "private/liquidate"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, PrivateLiquidateResponse)
+
+        return result
+
+    async def set_session_key(
+        self,
+        params: SetSessionKeyRequest,
+    ) -> PrivateSetSessionKeyResponse:
+        """
+        private/set_session_key
+        """
+
+        method = "private/set_session_key"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, PrivateSetSessionKeyResponse)
 
         return result
 
