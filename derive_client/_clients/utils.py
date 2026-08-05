@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
 import msgspec
-from derive_action_signing import ModuleData, SignedAction, sign_ws_login
 from dotenv import load_dotenv
 from eth_account.messages import encode_defunct
 from eth_account.signers.local import LocalAccount
@@ -18,6 +17,7 @@ from hexbytes import HexBytes
 from pydantic import BaseModel
 from web3 import AsyncWeb3, Web3
 
+from derive_client._web3.action_signing import ModuleData, SignedAction, sign_ws_login
 from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
 from derive_client.data_types.generated_models import (
     AssetType,

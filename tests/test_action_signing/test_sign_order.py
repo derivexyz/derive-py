@@ -1,9 +1,10 @@
 from decimal import Decimal
 
 import requests
+from web3 import Web3
+
 from derive_client._web3.action_signing import SignedAction, TradeModuleData
 from derive_client._web3.action_signing.utils import MAX_INT_32, get_action_nonce, sign_rest_auth_header
-from web3 import Web3
 
 
 def test_sign_order(

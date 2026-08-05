@@ -1,6 +1,10 @@
 from decimal import Decimal
 
-from derive_client._web3.action_signing import MakerTransferPositionModuleData, SignedAction, TakerTransferPositionModuleData
+from derive_client._web3.action_signing import (
+    MakerTransferPositionModuleData,
+    SignedAction,
+    TakerTransferPositionModuleData,
+)
 from derive_client._web3.action_signing.utils import MAX_INT_32, get_action_nonce
 
 

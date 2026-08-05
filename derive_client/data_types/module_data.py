@@ -2,10 +2,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 
-from derive_action_signing import ModuleData
 from eth_abi.abi import encode
 from web3 import Web3
 
+from derive_client._web3.action_signing import ModuleData
 from derive_client.data_types import ChecksumAddress
 
 

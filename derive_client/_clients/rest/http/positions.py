@@ -5,13 +5,12 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from derive_action_signing import (
+from derive_client._clients.utils import sort_by_instrument_name
+from derive_client._web3.action_signing import (
     MakerTransferPositionsModuleData,
     TakerTransferPositionsModuleData,
     TransferPositionsDetails,
 )
-
-from derive_client._clients.utils import sort_by_instrument_name
 from derive_client.data_types import PositionTransfer
 from derive_client.data_types.generated_models import (
     Direction,

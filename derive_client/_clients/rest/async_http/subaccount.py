@@ -7,7 +7,6 @@ from collections.abc import AsyncIterator
 from decimal import Decimal
 from typing import Optional, cast
 
-from derive_action_signing import ModuleData, SignedAction
 from hexbytes import HexBytes
 
 from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
@@ -20,6 +19,7 @@ from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext
+from derive_client._web3.action_signing import ModuleData, SignedAction
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client._web3.deposits import Deposits, resolve_collateral
 from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID

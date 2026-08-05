@@ -2,9 +2,10 @@ import uuid
 from decimal import Decimal
 
 import requests
+from web3 import Web3
+
 from derive_client._web3.action_signing import RFQQuoteDetails, RFQQuoteModuleData, SignedAction
 from derive_client._web3.action_signing.utils import MAX_INT_32, get_action_nonce
-from web3 import Web3
 
 
 def test_sign_rfq_quote(

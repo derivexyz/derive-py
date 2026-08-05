@@ -6,7 +6,6 @@ import functools
 from decimal import Decimal
 from typing import Iterator, Optional, cast
 
-from derive_action_signing import ModuleData, SignedAction
 from hexbytes import HexBytes
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
@@ -19,6 +18,7 @@ from derive_client._clients.rest.http.rfq import RFQOperations
 from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.transactions import TransactionOperations
 from derive_client._clients.utils import AuthContext
+from derive_client._web3.action_signing import ModuleData, SignedAction
 from derive_client._web3.deposits import Deposits, DepositStep, resolve_collateral
 from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
