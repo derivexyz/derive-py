@@ -80,3 +80,4 @@
     * [exceptions](derive_client/exceptions.md)
     * [utils](derive_client/utils/index.md)
         * [logger](derive_client/utils/logger.md)
+        * [retry](derive_client/utils/retry.md)
