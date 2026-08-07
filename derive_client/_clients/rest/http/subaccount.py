@@ -286,7 +286,7 @@ class Subaccount:
 
         risk_universes = self.markets._risk_universes_cache or self.markets.get_risk_universes()
         collateral = resolve_collateral(risk_universes, manager_id=self.state.manager_id, asset_name=asset_name)
-        recipient = self._auth.account.address  # signer MUST be the recipient
+        recipient = self._auth.wallet
 
         module_data = WithdrawModuleData(
             protocol_asset=collateral.protocol_asset_address,

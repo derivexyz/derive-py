@@ -27,13 +27,16 @@ class WithdrawModuleData(ModuleData):
     force_batch: bool = False
 
     def to_abi_encoded(self) -> bytes:
+        amount = scale_amount(self.amount, self.decimals)
+        if amount <= 0:
+            raise ValueError("withdrawal amount must be strictly positive")
         return encode(
             ["address", "uint256", "address", "uint256", "bool"],
             [
                 Web3.to_checksum_address(self.protocol_asset),
                 scale_amount(self.max_fee_usd),
                 Web3.to_checksum_address(self.recipient),
-                scale_amount(self.amount, self.decimals),
+                amount,
                 self.force_batch,
             ],
         )
