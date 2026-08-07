@@ -440,34 +440,6 @@ async def async_wait_for_settlement(
         await asyncio.sleep(poll_interval)
 
 
-# ---------------------------------------------------------------------------
-# Additions for derive_client/_clients/utils.py
-#
-# Append these after wait_for_settlement / async_wait_for_settlement, and add
-# to the imports:
-#
-#   from derive_client.data_types.generated_models import VaultActionResponse, VaultRequestId
-#   from derive_client.exceptions import VaultRequestFailed, VaultRequestTimeout
-#
-# and to derive_client/exceptions.py, alongside SettlementFailed/SettlementTimeout:
-#
-#   class VaultRequestFailed(Exception):
-#       def __init__(self, message: str, action: "VaultActionResponse"):
-#           super().__init__(message)
-#           self.action = action
-#
-#   class VaultRequestTimeout(Exception):
-#       def __init__(self, message: str, action: "VaultActionResponse | None"):
-#           super().__init__(message)
-#           self.action = action
-#
-# These live here rather than in vaults.py for the same reason
-# wait_for_settlement does: scripts/generate-rest-async-http.py makes methods in
-# a converted module async but does not rewrite time.sleep, so a polling loop
-# inside vaults.py would silently block the event loop. The async twin below is
-# hand-written, as its counterpart is.
-# ---------------------------------------------------------------------------
-
 #: Statuses a vault request can still move on from. Everything else is treated
 #: as terminal, deliberately: the API reference and the vaults guide document
 #: two different vocabularies for this field ("applied/cancelled/rejected"
