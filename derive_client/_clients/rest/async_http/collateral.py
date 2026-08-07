@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
+from derive_client._web3.action_signing import TransferSpotExternalModuleData, TransferSpotModuleData
 from derive_client.data_types import ChecksumAddress
 from derive_client.data_types.generated_models import (
     AssetType,
@@ -17,7 +18,6 @@ from derive_client.data_types.generated_models import (
     PrivateTransferSpotResponse,
     TransferEntry,
 )
-from derive_client.data_types.module_data import TransferSpotExternalModuleData, TransferSpotModuleData
 
 if TYPE_CHECKING:
     from .subaccount import Subaccount
@@ -95,6 +95,7 @@ class CollateralOperations:
         module_data = TransferSpotModuleData(
             to_subaccount_id=to_subaccount_id,
             new_subaccount_manager=new_subaccount_manager,
+            asset_name=asset_name,
             asset=asset.address,
             sub_id=int(asset.sub_id),
             amount=amount,
@@ -161,6 +162,7 @@ class CollateralOperations:
             to_subaccount_id=to_subaccount_id,
             new_subaccount_manager=new_subaccount_manager,
             asset=asset.address,
+            asset_name=asset_name,
             sub_id=int(asset.sub_id),
             amount=amount,
             max_fee_usd=max_fee_usd,

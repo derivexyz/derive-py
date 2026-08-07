@@ -8,6 +8,7 @@ import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.utils import AuthContext
+from derive_client._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
     EditSessionKeyRequest,
@@ -25,7 +26,6 @@ from derive_client.data_types.generated_models import (
     UpdateWhitelistedRecipientsRequest,
     UpdateWhitelistedRecipientsResponse,
 )
-from derive_client.data_types.module_data import SessionKeyModuleData, WhitelistedRecipientModuleData
 
 
 class LightAccount:
@@ -159,7 +159,7 @@ class LightAccount:
         module_data = SessionKeyModuleData(
             session_key=public_session_key,
             expiry_sec=expiry_sec,
-            scopes=[scope.code for scope in protocol_scopes],
+            protocol_scopes=protocol_scopes,
             subaccount_ids=subaccount_ids or [],
         )
 

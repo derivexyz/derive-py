@@ -11,13 +11,18 @@ from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
 import msgspec
 from dotenv import load_dotenv
-from eth_account.messages import encode_defunct
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
 from pydantic import BaseModel
-from web3 import AsyncWeb3, Web3
+from web3 import Web3
 
-from derive_client._web3.action_signing import ModuleData, SignedAction, sign_ws_login
+from derive_client._web3.action_signing import (
+    ModuleData,
+    SignedAction,
+    get_action_nonce,
+    sign_rest_auth_header,
+    sign_ws_login,
+)
 from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
 from derive_client.data_types.generated_models import (
     AssetType,
@@ -40,39 +45,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
-
-
-def sign_rest_auth_header(
-    web3_client: Web3 | AsyncWeb3,
-    smart_contract_wallet: str,
-    session_key_or_wallet_private_key: str,
-) -> dict[str, str]:
-    """
-    Local reimplementation of derive_action_signing.sign_rest_auth_header.
-
-    derive-action-signing==0.0.13 (pinned) still emits the pre-rebrand
-    X-Lyra* header names (X-LYRAWALLET, X-LYRATIMESTAMP, X-LYRASIGNATURE).
-    v3 expects X-DeriveWallet/X-DeriveTimestamp/X-DeriveSignature instead,
-    confirmed against derivexyz/derive-ts's current auth.ts. The server
-    never sees a timestamp under a name it recognizes, hence "Missing
-    timestamp in header". Signing logic (sign the millisecond timestamp
-    string with the session key) is identical to the library, only the
-    header names differ.
-
-    Replace this with the real library call once derive-action-signing
-    ships a version with the updated header names — check `poetry show
-    derive-action-signing` periodically.
-    """
-    timestamp = str(int(time.time() * 1000))
-    signature = web3_client.eth.account.sign_message(
-        encode_defunct(text=timestamp),
-        private_key=session_key_or_wallet_private_key,
-    ).signature.hex()
-    return {
-        "X-DeriveWallet": smart_contract_wallet,
-        "X-DeriveTimestamp": timestamp,
-        "X-DeriveSignature": signature,
-    }
 
 
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
@@ -131,7 +103,7 @@ class AuthContext:
     ) -> SignedAction:
         """Sign action using v2-action-signing library."""
 
-        nonce = nonce or time.time_ns()
+        nonce = nonce or get_action_nonce()
         signature_expiry_sec = signature_expiry_sec or get_default_signature_expiry_sec()
 
         action = SignedAction(
