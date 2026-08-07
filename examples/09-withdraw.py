@@ -27,7 +27,9 @@ from pathlib import Path
 from derive_client import HTTPClient
 from derive_client._clients.utils import wait_for_settlement
 from derive_client.data_types import D
-from derive_client.exceptions import WithdrawalFailed, WithdrawalTimeout
+from derive_client.exceptions import SettlementFailed, SettlementTimeout
+
+TIMEOUT_SEC = 300
 
 env_file = Path(__file__).parent.parent / ".env.template"
 client = HTTPClient.from_env(env_file=env_file)
@@ -47,7 +49,7 @@ if balance < amount:
     raise SystemExit(0)
 
 # WHERE THE MONEY GOES: this is the signer, always.
-print(f"Payout recipient (the signer): {client._auth.account.address}")
+print(f"Payout recipient (the signer): {client._auth.wallet}")
 
 response = subaccount.withdraw(
     asset_name="USDC",
@@ -58,9 +60,12 @@ response = subaccount.withdraw(
 print(f"Withdrawal accepted: op_uuid={response.op_uuid}")
 
 try:
-    tx_result = wait_for_settlement(client, op_uuid=response.op_uuid)
+    tx_result = wait_for_settlement(client, op_uuid=response.op_uuid, timeout=TIMEOUT_SEC)
     print(f"Settled: {tx_result}")
-except WithdrawalFailed as e:
+except SettlementFailed as e:
     print(f"Withdrawal failed: {e}")
-except WithdrawalTimeout:
-    print("Still pending after the timeout -- call wait_for_settlement(client, op_uuid=response.op_uuid) again later.")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
+except SettlementTimeout as e:
+    # Not a failure: the withdrawal is still in flight. Poll again later with the same op_uuid
+    print(f"Still pending: {e}")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")

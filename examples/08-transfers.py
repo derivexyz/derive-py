@@ -31,7 +31,7 @@ from more_itertools import last, partition
 from derive_client import HTTPClient
 from derive_client._clients.utils import wait_for_settlement
 from derive_client.data_types import RiskUniverseID
-from derive_client.exceptions import WithdrawalFailed, WithdrawalTimeout
+from derive_client.exceptions import SettlementFailed, SettlementTimeout
 
 
 def usdc_balance(subaccount) -> Decimal:
@@ -46,7 +46,7 @@ def is_fallback(subaccount) -> bool:
 # Timeout for transaction settlement
 # Funds may already be moved between subaccounts prior to this,
 # but the L1 settlement may not yet be confirmed.
-TIMEOUT_SEC = 300
+TIMEOUT_SEC = 30
 AMOUNT_USDC = Decimal("1")
 
 env_file = Path(__file__).parent.parent / ".env.template"
@@ -101,12 +101,16 @@ internal = source_sub.collateral.transfer_spot(
 print(f"transfer_spot acked (op {internal.op_uuid}); waiting for settlement...")
 try:
     tx_result = wait_for_settlement(client, op_uuid=internal.op_uuid, timeout=TIMEOUT_SEC)
-except WithdrawalTimeout as e:
-    print(f"Timeout while waiting for L1 settlement: {e}")
-    print("Balance on subaccounts may already have updated, but L1 settlement is not confirmed yet.")
-except WithdrawalFailed as e:
-    print(f"Transfer failed (no L1 settlement expected): {e}")
+    print(f"Settled: {tx_result.status}")
+except SettlementFailed as e:
+    print(f"Transfer failed: {e}")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
     raise SystemExit(1)
+except SettlementTimeout as e:
+    # Not a failure: still in flight. Subaccount balances may already reflect
+    # the move before L1 settlement confirms. Poll again with the same op_uuid.
+    print(f"Still pending: {e}")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
 
 
 # Use this to refresh state, .state is cached from construction otherwise
@@ -167,11 +171,28 @@ if usdc_balance(source_sub) < AMOUNT_USDC + MAX_FEE_USD:
     print(f"Source subaccount #{source_sub.id} has less than {AMOUNT_USDC} USDC plus max fee {MAX_FEE_USD}.")
     raise SystemExit(1)
 
-# External transfers only pay out to pre-approved wallets.
-print(f"Whitelisting {recipient_address}")
-whitelist = client.account.update_whitelisted_recipients(add=[recipient_address], remove=[])
-print(f"Whitelist update acked (op {whitelist.op_uuid}); waiting for settlement...")
-# One could wait for settlement here as well, which we omit for expediency.
+# External transfers only pay out to pre-approved wallets. Whitelisting is
+# itself a signed action that settles asynchronously, so skip it when the
+# recipient is already listed rather than re-submitting on every run.
+account_state = client.account.get()
+if recipient_address in account_state.whitelisted_recipients:
+    print(f"{recipient_address} is already whitelisted")
+else:
+    print(f"Whitelisting {recipient_address}")
+    whitelist = client.account.update_whitelisted_recipients(add=[recipient_address], remove=[])
+    print(f"Whitelist update acked (op {whitelist.op_uuid}); waiting for settlement...")
+    try:
+        wait_for_settlement(client, op_uuid=whitelist.op_uuid, timeout=TIMEOUT_SEC)
+    except SettlementFailed as e:
+        print(f"Whitelisting failed, external transfer cannot proceed: {e}")
+        raise SystemExit(1)
+    except SettlementTimeout:
+        print(
+            "Whitelisting still pending: proceeding without L1 settlement. The "
+            "exchange accepts the transfer against off-chain state, which already "
+            "reflects the whitelist, so it will very likely go through. Fine for an "
+            "example against testnet; do not copy this into anything moving real funds."
+        )
 
 # Unlike internal moves, external transfers ALWAYS charge a fee (1 USD
 # standard, plus a subaccount-creation fee when one is created), so
@@ -188,12 +209,14 @@ external = source_sub.collateral.transfer_spot_external(
 print(f"transfer_spot_external acked (op {external.op_uuid}); waiting for settlement...")
 try:
     tx_result = wait_for_settlement(client, op_uuid=external.op_uuid, timeout=TIMEOUT_SEC)
-except WithdrawalTimeout as e:
-    print(f"Timeout while waiting for L1 settlement: {e}")
-    print("Balance on subaccounts may already have updated, but L1 settlement is not confirmed yet.")
-except WithdrawalFailed as e:
-    print(f"Transfer failed (no L1 settlement expected): {e}")
+    print(f"Settled: {tx_result.status}")
+except SettlementFailed as e:
+    print(f"External transfer failed: {e}")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
     raise SystemExit(1)
+except SettlementTimeout as e:
+    print(f"Still pending: {e}")
+    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
 
 # Owner's client can't check the recipient subaccount's balance directly
 # (it operates on the owner wallet, not the session key wallet). A
