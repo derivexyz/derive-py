@@ -30,10 +30,13 @@ from derive_client.data_types.generated_models import (
     GetTransactionResult,
     Instrument,
     LegUnpricedParams,
+    PaginatedVaultRequestHistory,
     PricedLegParamsAndResponse,
     RPCError,
+    VaultActionResponse,
+    VaultRequestId,
 )
-from derive_client.exceptions import SettlementFailed, SettlementTimeout
+from derive_client.exceptions import SettlementFailed, SettlementTimeout, VaultRequestFailed, VaultRequestTimeout
 
 if TYPE_CHECKING:
     from websockets import Data
@@ -435,3 +438,158 @@ async def async_wait_for_settlement(
             raise SettlementTimeout(f"Operation {op_uuid} still {tx_result.status} after {timeout}s", tx_result)
 
         await asyncio.sleep(poll_interval)
+
+
+# ---------------------------------------------------------------------------
+# Additions for derive_client/_clients/utils.py
+#
+# Append these after wait_for_settlement / async_wait_for_settlement, and add
+# to the imports:
+#
+#   from derive_client.data_types.generated_models import VaultActionResponse, VaultRequestId
+#   from derive_client.exceptions import VaultRequestFailed, VaultRequestTimeout
+#
+# and to derive_client/exceptions.py, alongside SettlementFailed/SettlementTimeout:
+#
+#   class VaultRequestFailed(Exception):
+#       def __init__(self, message: str, action: "VaultActionResponse"):
+#           super().__init__(message)
+#           self.action = action
+#
+#   class VaultRequestTimeout(Exception):
+#       def __init__(self, message: str, action: "VaultActionResponse | None"):
+#           super().__init__(message)
+#           self.action = action
+#
+# These live here rather than in vaults.py for the same reason
+# wait_for_settlement does: scripts/generate-rest-async-http.py makes methods in
+# a converted module async but does not rewrite time.sleep, so a polling loop
+# inside vaults.py would silently block the event loop. The async twin below is
+# hand-written, as its counterpart is.
+# ---------------------------------------------------------------------------
+
+#: Statuses a vault request can still move on from. Everything else is treated
+#: as terminal, deliberately: the API reference and the vaults guide document
+#: two different vocabularies for this field ("applied/cancelled/rejected"
+#: versus "sequencer_applied/user_cancel/curator_reject/protocol_reject"), the
+#: generated model types it as a bare str, and an unknown status should stop the
+#: poll rather than hang it.
+VAULT_REQUEST_PENDING_STATUSES = frozenset({"enqueued", "requested"})
+
+#: Terminal statuses that are not a successful settlement. user_cancel is
+#: absent: cancelling is something the caller asked for, not a failure.
+VAULT_REQUEST_FAILURE_STATUSES = frozenset({"curator_reject", "protocol_reject", "rejected", "expired"})
+
+
+def _match_vault_request(history: PaginatedVaultRequestHistory, request_id: VaultRequestId):
+    """Find one request in the wallet's history by its composite id.
+
+    A vault request has no op_uuid until a curator settles it, so there is
+    nothing for wait_for_settlement to poll; the history row is the only handle
+    on a queued intent's outcome.
+    """
+
+    for action in history.actions:
+        if (
+            action.vault_nonce == request_id.vault_nonce
+            and action.vault_subaccount_id == request_id.vault_subaccount_id
+            and action.wallet.lower() == request_id.wallet.lower()
+        ):
+            return action
+    return None
+
+
+def wait_for_vault_request(
+    client: HTTPClient,
+    request_id: VaultRequestId,
+    timeout: int = 900,
+    poll_interval: float = 5.0,
+    page_size: int = 50,
+) -> "VaultActionResponse":
+    """Poll until a queued vault intent reaches a terminal status.
+
+    Settlement is at the curator's discretion, within a 14-day SLA, so the
+    default timeout is a convenience for tests and examples rather than a bound
+    on the protocol: a request that outlives it is still queued, not lost.
+
+    Raises VaultRequestFailed on a rejection or an expiry, and returns the row
+    for a settled or cancelled request.
+    """
+
+    action = None
+    start = time.monotonic()
+    while True:
+        history = client.vaults.request_history(page=1, page_size=page_size)
+        found = _match_vault_request(history, request_id)
+        if found is not None:
+            if found.status != getattr(action, "status", None):
+                client.logger.info(f"Vault request {request_id.vault_nonce}: {found.status}")
+            action = found
+            if action.status not in VAULT_REQUEST_PENDING_STATUSES:
+                if action.status in VAULT_REQUEST_FAILURE_STATUSES:
+                    reason = action.error_reason or action.status
+                    raise VaultRequestFailed(f"Vault request {request_id.vault_nonce} failed: {reason}", action)
+                return action
+
+        if time.monotonic() - start > timeout:
+            status = action.status if action else "not yet in history"
+            raise VaultRequestTimeout(f"Vault request {request_id.vault_nonce} still {status} after {timeout}s", action)
+
+        time.sleep(poll_interval)
+
+
+async def async_wait_for_vault_request(
+    client: AsyncHTTPClient | WebSocketClient,
+    request_id: VaultRequestId,
+    timeout: int = 900,
+    poll_interval: float = 5.0,
+    page_size: int = 50,
+) -> "VaultActionResponse":
+    """Poll until a queued vault intent reaches a terminal status."""
+
+    action = None
+    start = time.monotonic()
+    while True:
+        history = await client.vaults.request_history(page=1, page_size=page_size)
+        found = _match_vault_request(history, request_id)
+        if found is not None:
+            if found.status != getattr(action, "status", None):
+                client.logger.info(f"Vault request {request_id.vault_nonce}: {found.status}")
+            action = found
+            if action.status not in VAULT_REQUEST_PENDING_STATUSES:
+                if action.status in VAULT_REQUEST_FAILURE_STATUSES:
+                    reason = action.error_reason or action.status
+                    raise VaultRequestFailed(f"Vault request {request_id.vault_nonce} failed: {reason}", action)
+                return action
+
+        if time.monotonic() - start > timeout:
+            status = action.status if action else "not yet in history"
+            raise VaultRequestTimeout(f"Vault request {request_id.vault_nonce} still {status} after {timeout}s", action)
+
+        await asyncio.sleep(poll_interval)
+
+
+def wait_for_new_curated_vault(
+    client: HTTPClient,
+    known_vault_ids: set[int],
+    timeout: int = 300,
+    poll_interval: float = 5.0,
+) -> int:
+    """Resolve the subaccount id of a vault this wallet just created.
+
+    create_vault returns an op_uuid but not the new subaccount id, so the id is
+    recovered by diffing the curated set. Call wait_for_settlement on the
+    op_uuid first; this only bridges the gap between the operation settling and
+    the vault appearing in the curated list.
+
+    Racy if the wallet creates two vaults concurrently. It should not.
+    """
+
+    start = time.monotonic()
+    while True:
+        curated = set(client.vaults.list_curated().subaccount_ids)
+        if new := sorted(curated - known_vault_ids):
+            return new[0]
+        if time.monotonic() - start > timeout:
+            raise SettlementTimeout(f"No new curated vault appeared within {timeout}s", None)
+        time.sleep(poll_interval)

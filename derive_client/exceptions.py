@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from derive_client.data_types import FeeEstimate
-    from derive_client.data_types.generated_models import GetTransactionResult
+    from derive_client.data_types.generated_models import GetTransactionResult, VaultActionResponse
 
 
 class NotConnectedError(RuntimeError):
@@ -101,3 +101,31 @@ class SettlementFailed(SettlementError):
 class SettlementTimeout(SettlementError):
     """Still in flight when the timeout elapsed. Not a failure: poll again with
     the same op_uuid, nothing is resubmitted."""
+
+
+class VaultRequestError(Exception):
+    """Base for vault request outcomes that carry the last polled history row."""
+
+    def __init__(self, message: str, action: VaultActionResponse | None = None):
+        super().__init__(message)
+        self.action = action
+
+
+class VaultRequestFailed(VaultRequestError):
+    """The request reached a terminal status that is not a settlement: rejected
+    by the curator, rejected by a protocol check (slippage, margin, cooldown),
+    or expired because its signature lapsed before anyone settled it.
+
+    Not raised for a cancellation, which is an outcome the caller asked for.
+    """
+
+
+class VaultRequestTimeout(VaultRequestError):
+    """Still queued when the timeout elapsed. Not a failure: settlement is at
+    the curator's discretion within a 14-day SLA, so a request that outlives a
+    client-side timeout is waiting, not lost. Poll again with the same request
+    id, or cancel it.
+
+    `action` is None when the request had not yet appeared in the history at
+    all, which is normal in the first seconds after queueing.
+    """
