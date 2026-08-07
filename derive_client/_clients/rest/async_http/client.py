@@ -22,6 +22,7 @@ from derive_client._clients.rest.async_http.session import AsyncHTTPSession, _re
 from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
+from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
@@ -254,6 +255,12 @@ class AsyncHTTPClient:
         """Market maker protection settings."""
 
         return self.active_subaccount.mmp
+
+    @property
+    def vaults(self) -> VaultOperations:
+        """Vault operations."""
+
+        return self.active_subaccount.vaults
 
     @contextlib.asynccontextmanager
     async def timeout(self, seconds: float) -> AsyncGenerator[None, None]:

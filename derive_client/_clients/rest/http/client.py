@@ -21,6 +21,7 @@ from derive_client._clients.rest.http.session import HTTPSession
 from derive_client._clients.rest.http.subaccount import Subaccount
 from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.transactions import TransactionOperations
+from derive_client._clients.rest.http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.deposits import DepositStep
@@ -250,6 +251,12 @@ class HTTPClient:
         """Market maker protection settings."""
 
         return self.active_subaccount.mmp
+
+    @property
+    def vaults(self) -> VaultOperations:
+        """Vault operations."""
+
+        return self.active_subaccount.vaults
 
     @contextlib.contextmanager
     def timeout(self, seconds: float) -> Generator[None, None, None]:

@@ -18,6 +18,7 @@ from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
+from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext
 from derive_client._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
@@ -234,6 +235,12 @@ class Subaccount:
         """Market maker protection settings."""
 
         return self._mmp
+
+    @property
+    def vaults(self) -> VaultOperations:
+        """Vault operations."""
+
+        return VaultOperations(subaccount=self)
 
     def sign_action(
         self,
