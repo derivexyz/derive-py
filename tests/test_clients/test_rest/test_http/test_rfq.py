@@ -89,9 +89,9 @@ def _create_priced_legs(client, rfq):
         # Derive RPC 11107: Quote maker total cost too high  [data={'worst_cost': '6.33919554', 'total_cost': '80.596'}]
         # Use mark price (more realistic than index for options)
         # Add a small buffer to ensure quote is profitable
-        base_price = Decimal(str(ticker["I"]))
+        base_price = Decimal(ticker.mark_price)
         if base_price == Decimal("0.0"):
-            base_price = Decimal(str(ticker["index_price"]))
+            base_price = Decimal(ticker.index_price)
 
         if unpriced_leg.direction == Direction.buy:
             # Maker is selling - quote ask side (higher)
@@ -162,14 +162,13 @@ def test_rfq_poll_quotes(client_owner_wallet):
     assert isinstance(quotes, QuotePollResponse)
 
 
-@pytest.mark.skip("Requires an open position, no liquidity on testnet yet.")
 def test_rfq_get_best_quote(client_owner_wallet):
     unpriced_legs = _create_unpriced_legs(client_owner_wallet)
     best_quote = client_owner_wallet.rfq.get_best_quote(legs=unpriced_legs)
     assert isinstance(best_quote, RfqGetBestQuoteResponse)
 
 
-@pytest.mark.skip("Requires an open position, no liquidity on testnet yet.")
+@pytest.mark.skip("Need to configure second wallet properly.")
 def test_rfq_full_lifecycle(client_admin_wallet, client_owner_wallet):
     # Derive RPC 11007: Self-crossing disallowed: use two wallets
 
