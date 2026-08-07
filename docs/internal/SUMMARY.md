@@ -71,7 +71,6 @@
     * [config](derive_client/config/index.md)
         * [constants](derive_client/config/constants.md)
         * [contracts](derive_client/config/contracts.md)
-        * [networks](derive_client/config/networks.md)
     * [data_types](derive_client/data_types/index.md)
         * [channel_models](derive_client/data_types/channel_models.md)
         * [enums](derive_client/data_types/enums.md)
