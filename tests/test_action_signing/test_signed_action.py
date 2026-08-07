@@ -185,8 +185,9 @@ def test_expected_encodings_are_word_aligned():
 
 
 def test_expected_signature_is_65_bytes():
-    assert len(EXPECTED_SIGNATURE) == 132
-    assert EXPECTED_SIGNATURE.startswith("0x")
+    """r||s||v, unprefixed -- the server rejects a 0x-prefixed signature."""
+    assert len(EXPECTED_SIGNATURE) == 130
+    assert not EXPECTED_SIGNATURE.startswith("0x")
 
 
 def test_constants_accept_an_unprefixed_value(action):

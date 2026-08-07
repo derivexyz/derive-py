@@ -76,7 +76,10 @@ class TestScaleAmount:
         with pytest.raises(ValueError):
             scale_amount(Decimal("1.5000005"), 6)
 
-    @pytest.mark.parametrize("value", [Decimal("0"), Decimal("-1")])
-    def test_rejects_non_positive(self, value):
+    def test_allows_zero(self):
+        """max_fee_usd is legitimately 0 on internal transfers."""
+        assert scale_amount(Decimal("0")) == 0
+
+    def test_rejects_negative(self):
         with pytest.raises(ValueError):
-            scale_amount(value)
+            scale_amount(Decimal("-1"))
