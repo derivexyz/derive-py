@@ -49,7 +49,7 @@ class SignedAction(Generic[TModuleData]):
     def sign(self, signer_private_key: str) -> str:
         signer_wallet = Web3().eth.account.from_key(signer_private_key)
         signed: SignedMessage = signer_wallet.unsafe_sign_hash(self._to_typed_data_hash())
-        self.signature = signed.signature.to_0x_hex()
+        self.signature = signed.signature.hex()
         return self.signature
 
     def to_json(self):
