@@ -845,7 +845,6 @@ class PerpDetails(Struct):
     index: str
     max_rate_per_hour: str
     min_rate_per_hour: str
-    static_interest_rate: str
 
 
 class PerpFeedDataResponse(Struct):
@@ -1799,6 +1798,15 @@ class ForwardFeedDataResponse(Struct):
     timestamp: int
 
 
+class FundingFeedDataResponse(Struct):
+    confidence: str
+    currency: str
+    deadline: int
+    funding_rate: str
+    signatures: OracleSignatureDataResponse
+    timestamp: int
+
+
 class GetOnchainActionHistoryResponse(Struct):
     actions: list[OnchainActionHistoryEntry]
     pagination: Pagination
@@ -2344,6 +2352,7 @@ class GetAllInstrumentsResponse(Struct):
 
 
 class GetLatestSignedFeedsResponse(Struct):
+    funding_data: dict[str, FundingFeedDataResponse]
     fwd_data: dict[str, dict[str, ForwardFeedDataResponse]]
     perp_data: dict[str, dict[str, PerpFeedDataResponse]]
     rate_data: dict[str, dict[str, RateFeedDataResponse]]

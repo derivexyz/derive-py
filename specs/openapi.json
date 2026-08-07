@@ -3539,7 +3539,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns the most recent oracle-signed feed data — spot, forward, volatility (SVI), rate, and perp feeds — each with signer addresses and signatures for on-chain submission. Optional `currency` and `expiry` filters narrow the result (use `expiry` 0 for spot/perp only); both default to all. Public endpoint.",
+        "description": "Returns the most recent oracle-signed feed data — spot, forward, volatility (SVI), rate, perp, and perpetual funding-rate feeds — each with signer addresses and signatures for on-chain submission. Optional `currency` and `expiry` filters narrow the result (use `expiry` 0 for the non-expiry feeds: spot, perp and funding); both default to all. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -5639,6 +5639,42 @@
           }
         }
       },
+      "FundingFeedDataResponse": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "deadline",
+          "funding_rate",
+          "signatures",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "funding_rate": {
+            "description": "Per-hour funding rate as a decimal string.",
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/OracleSignatureDataResponse"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "FundingRateCandle": {
         "description": "Single funding-rate OHLC candle. `funding_rate` mirrors `close` for backward compatibility with the pre-OHLC response shape; `timestamp` is the bucket start in UTC milliseconds.",
         "type": "object",
@@ -6190,6 +6226,7 @@
       "GetLatestSignedFeedsResponse": {
         "type": "object",
         "required": [
+          "funding_data",
           "fwd_data",
           "perp_data",
           "rate_data",
@@ -6197,6 +6234,13 @@
           "vol_data"
         ],
         "properties": {
+          "funding_data": {
+            "description": "currency -> latest funding-rate feed data",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FundingFeedDataResponse"
+            }
+          },
           "fwd_data": {
             "description": "currency -> expiry -> latest forward feed data",
             "type": "object",
@@ -8944,8 +8988,7 @@
           "funding_rate",
           "index",
           "max_rate_per_hour",
-          "min_rate_per_hour",
-          "static_interest_rate"
+          "min_rate_per_hour"
         ],
         "properties": {
           "aggregate_funding": {
@@ -8961,9 +9004,6 @@
             "type": "string"
           },
           "min_rate_per_hour": {
-            "type": "string"
-          },
-          "static_interest_rate": {
             "type": "string"
           }
         }

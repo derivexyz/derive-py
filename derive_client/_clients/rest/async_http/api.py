@@ -711,9 +711,10 @@ class AsyncPublicRPC:
     ) -> GetLatestSignedFeedsResponse:
         """
         Returns the most recent oracle-signed feed data — spot, forward, volatility
-        (SVI), rate, and perp feeds — each with signer addresses and signatures for on-
-        chain submission. Optional `currency` and `expiry` filters narrow the result
-        (use `expiry` 0 for spot/perp only); both default to all. Public endpoint.
+        (SVI), rate, perp, and perpetual funding-rate feeds — each with signer addresses
+        and signatures for on-chain submission. Optional `currency` and `expiry` filters
+        narrow the result (use `expiry` 0 for the non-expiry feeds: spot, perp and
+        funding); both default to all. Public endpoint.
         """
 
         url = self._endpoints.get_latest_signed_feeds
