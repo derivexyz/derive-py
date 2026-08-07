@@ -5,14 +5,7 @@ from decimal import Decimal
 from eth_account.messages import encode_defunct
 from web3 import AsyncWeb3, Web3
 
-MAX_INT_256 = 2**255 - 1
-MIN_INT_256 = -(2**255)
-
-#: The protocol holds decimals at 1e12 but takes them at 1e18 on the wire. It
-#: REJECTS, rather than truncates, an e18 word carrying sub-1e12 precision, so
-#: more than 12 decimal places can never produce a valid vault signature.
-#: Confirmed against derive-ts signing/encoding.ts assertE12Precision.
-VAULT_PRECISION_DECIMALS = 12
+from derive_client.config.constants import MAX_INT_256, MIN_INT_256, VAULT_PRECISION_DECIMALS
 
 
 def decimal_to_big_int(value: Decimal) -> int:
