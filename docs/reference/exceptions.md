@@ -110,9 +110,9 @@
       show_source: true
       members: false
 
-## WithdrawalFailed
+## SettlementError
 
-::: derive_client.exceptions.WithdrawalFailed
+::: derive_client.exceptions.SettlementError
     options:
       show_root_heading: false
       heading_level: 3
@@ -120,9 +120,19 @@
       show_source: true
       members: false
 
-## WithdrawalTimeout
+## SettlementFailed
 
-::: derive_client.exceptions.WithdrawalTimeout
+::: derive_client.exceptions.SettlementFailed
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
+## SettlementTimeout
+
+::: derive_client.exceptions.SettlementTimeout
     options:
       show_root_heading: false
       heading_level: 3
