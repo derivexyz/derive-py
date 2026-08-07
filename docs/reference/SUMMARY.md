@@ -17,6 +17,7 @@
         * [RiskUniverseID](data_types/enums/riskuniverseid.md)
         * [GasPriority](data_types/enums/gaspriority.md)
         * [Environment](data_types/enums/environment.md)
+        * [VaultAction](data_types/enums/vaultaction.md)
         * [ProtocolScope](data_types/enums/protocolscope.md)
         * [OffchainScope](data_types/enums/offchainscope.md)
         * [EthereumJSONRPCErrorCode](data_types/enums/ethereumjsonrpcerrorcode.md)

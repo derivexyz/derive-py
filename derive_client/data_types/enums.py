@@ -26,6 +26,17 @@ class Environment(Enum):
     TEST = "test"
 
 
+class VaultAction(IntEnum):
+    """VaultAction enum for vault operations."""
+
+    CREATE = 0
+    DEPOSIT = 1
+    WITHDRAW = 2
+    CANCEL = 3
+    MINT_SHARES = 4
+    BURN_SHARES = 5
+
+
 class ProtocolScope(StrEnum):
     """On-chain authority a session key holds."""
 
