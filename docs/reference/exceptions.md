@@ -140,3 +140,33 @@
       show_source: true
       members: false
 
+## VaultRequestError
+
+::: derive_client.exceptions.VaultRequestError
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
+## VaultRequestFailed
+
+::: derive_client.exceptions.VaultRequestFailed
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
+## VaultRequestTimeout
+
+::: derive_client.exceptions.VaultRequestTimeout
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
