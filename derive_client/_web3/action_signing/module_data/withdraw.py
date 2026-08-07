@@ -1,34 +1,47 @@
-"""
-Withdraw module data
-"""
-
 from dataclasses import dataclass
 from decimal import Decimal
 
 from eth_abi.abi import encode
 from web3 import Web3
 
+from ..utils import scale_amount
 from .module_data import ModuleData
 
 
 @dataclass
 class WithdrawModuleData(ModuleData):
-    asset: str
+    """Withdrawal to L1.
+
+    The exchange forces `recipient` to equal the signer; it is not
+    independently authoritative. Signing with a session key sends funds to
+    the session key's own address. `amount` is in the asset's native ERC-20
+    decimals, with no additional scaling.
+    """
+
+    protocol_asset: str  # address, for to_abi_encoded
+    asset_name: str  # e.g. "USDC", for to_json
+    max_fee_usd: Decimal
+    recipient: str  # must equal the signer
     amount: Decimal
     decimals: int
-    asset_name: str
+    force_batch: bool = False
 
-    def to_abi_encoded(self):
-        amount_decimal = Decimal(self.amount)
-        scaled_amount = int(amount_decimal.scaleb(self.decimals))
+    def to_abi_encoded(self) -> bytes:
         return encode(
-            ["address", "uint"],
-            [Web3.to_checksum_address(self.asset), scaled_amount],
+            ["address", "uint256", "address", "uint256", "bool"],
+            [
+                Web3.to_checksum_address(self.protocol_asset),
+                scale_amount(self.max_fee_usd),
+                Web3.to_checksum_address(self.recipient),
+                scale_amount(self.amount, self.decimals),
+                self.force_batch,
+            ],
         )
 
-    def to_json(self):
+    def to_json(self) -> dict:
         return {
-            "amount": str(self.amount),
             "asset_name": self.asset_name,
-            "is_atomic_signing": False,
+            "amount_in_underlying": str(self.amount),
+            "max_fee_usd": str(self.max_fee_usd),
+            "force_batch": self.force_batch,
         }
