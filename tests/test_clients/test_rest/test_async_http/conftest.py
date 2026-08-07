@@ -1,5 +1,3 @@
-import time
-
 import pytest
 import pytest_asyncio
 
@@ -7,11 +5,6 @@ from derive_client._clients.rest.async_http.client import AsyncHTTPClient
 from derive_client.data_types import Environment
 from derive_client.data_types.generated_models import Vault
 from tests.conftest import ADMIN_TEST_WALLET, OWNER_TEST_WALLET, SESSION_KEY_PRIVATE_KEY, SUBACCOUNT_ID_75723
-
-
-@pytest.fixture(autouse=True)
-def slow_down_every_test(request):
-    time.sleep(1)
 
 
 @pytest_asyncio.fixture(scope="session")

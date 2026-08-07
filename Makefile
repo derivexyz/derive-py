@@ -54,9 +54,10 @@ clean-test:
 	find . -name 'log.txt' -exec rm -fr {} +
 	find . -name 'log.*.txt' -exec rm -fr {} +
 
+# plow through requests when TOO MANY REQUESTS error is returned the brutal way (not bucket)
 .PHONY: tests
 tests:
-	poetry run pytest tests -vv --reruns 4 --reruns-delay 15
+	poetry run pytest tests -vv --reruns 2 --reruns-delay 10
 
 .PHONY: fmt
 fmt:
