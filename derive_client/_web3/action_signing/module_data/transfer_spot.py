@@ -21,6 +21,9 @@ class TransferSpotModuleData(ModuleData):
     max_fee_usd: Decimal
 
     def to_abi_encoded(self) -> bytes:
+        amount = scale_amount(self.amount)
+        if amount == 0:
+            raise ValueError("transfer amount must be strictly positive")
         return encode(
             ["uint256", "uint256", "address", "uint256", "uint256", "uint256"],
             [
@@ -28,7 +31,7 @@ class TransferSpotModuleData(ModuleData):
                 self.new_subaccount_manager,
                 Web3.to_checksum_address(self.asset),
                 self.sub_id,
-                scale_amount(self.amount),
+                amount,
                 scale_amount(self.max_fee_usd),
             ],
         )

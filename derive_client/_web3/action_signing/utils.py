@@ -60,23 +60,13 @@ def sign_ws_login(web3_client: Web3, smart_contract_wallet: str, session_key_or_
     }
 
 
-# def uint_word(value: int) -> bytes:
-#     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-#         raise ValueError(f"expected a non-negative integer, got {value!r}")
-#     return value.to_bytes(32, "big")
-
-
-# def address_word(address: str) -> bytes:
-#     return encode(["address"], [Web3.to_checksum_address(address)])
-
-
 def scale_amount(value: Decimal, decimals: int = 18) -> int:
     scaled = value * Decimal(10) ** decimals
     if scaled != scaled.to_integral_value():
         raise ValueError(f"{value} exceeds the precision of {decimals} decimals")
     result = int(scaled)
-    if result <= 0:
-        raise ValueError(f"amount must be strictly positive, got {value}")
+    if result < 0:
+        raise ValueError(f"must not be negative, got {value}")
     return result
 
 

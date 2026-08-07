@@ -26,6 +26,9 @@ class TransferSpotExternalModuleData(ModuleData):
     recipient: str  # emitted as recipient_address; owner of the destination account
 
     def to_abi_encoded(self) -> bytes:
+        amount = scale_amount(self.amount)
+        if amount == 0:
+            raise ValueError("transfer amount must be strictly positive")
         return encode(
             ["uint256", "uint256", "address", "uint256", "uint256", "uint256", "address"],
             [
@@ -33,7 +36,7 @@ class TransferSpotExternalModuleData(ModuleData):
                 self.new_subaccount_manager,
                 Web3.to_checksum_address(self.asset),
                 self.sub_id,
-                scale_amount(self.amount),
+                amount,
                 scale_amount(self.max_fee_usd),
                 Web3.to_checksum_address(self.recipient),
             ],
