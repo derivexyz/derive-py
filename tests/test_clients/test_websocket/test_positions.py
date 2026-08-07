@@ -12,7 +12,7 @@ from derive_client.data_types.generated_models import (
 )
 
 
-async def _min_position_transfer(position) -> PositionTransfer:
+def _min_position_transfer(position) -> PositionTransfer:
     """The smallest transferable slice of a position as a transfer object."""
 
     step = Decimal(position.amount_step)

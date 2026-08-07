@@ -24,7 +24,7 @@ from derive_client.data_types.generated_models import (
 from tests.conftest import assert_api_calls
 
 
-async def _resolve_currency(client) -> str:
+def _resolve_currency(client) -> str:
     """
     v3 change: Subaccount.currency is now list[str], not a single str (was
     used as a literal "all" sentinel for SM/all-currency subaccounts here).
@@ -46,7 +46,7 @@ async def _create_unpriced_legs(client):
     #   'note': 'sometimes due to risk caching of instruments local tests
     #           will create new currency_id without risk updating cache'
     # }]
-    currency = await _resolve_currency(client)
+    currency = _resolve_currency(client)
 
     n_legs = 2
     direction = Direction.buy
@@ -76,7 +76,7 @@ async def _create_priced_legs(client, rfq):
     # Price legs using current market prices
     priced_legs = []
 
-    currency = await _resolve_currency(client)
+    currency = _resolve_currency(client)
     for unpriced_leg in rfq.legs:
         expiry = unpriced_leg.instrument_name.split("-")[1]
         tickers = await client.markets.get_tickers(

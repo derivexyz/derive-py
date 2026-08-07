@@ -42,6 +42,14 @@ ASYNC_RENAMES = {
 # (see _web3), so "add await" alone is never the right fix for these.
 DEPOSIT_PLAN_METHODS = {"plan_deposit", "plan_new_subaccount"}
 
+# Test helpers that stay synchronous. Pure functions over already-fetched
+# data: making them coroutines breaks their call sites, which use map() and
+# comprehensions rather than await.
+SYNC_TEST_FUNCTIONS = {
+    "_min_position_transfer",
+    "_resolve_currency",
+}
+
 
 class AsyncConverter(cst.CSTTransformer):
     """Convert sync client code to async."""
@@ -531,7 +539,8 @@ class AsyncTestConverter(cst.CSTTransformer):
     def _should_skip(self, node: cst.FunctionDef) -> bool:
         """Check if function should not be made async."""
 
-        return bool(node.name.value.startswith("__"))
+        name = node.name.value
+        return name.startswith("__") or name in SYNC_TEST_FUNCTIONS
 
     def _is_client_call(self, node: cst.Call) -> bool:
         """Check if this is a client method call that needs await."""
@@ -554,10 +563,15 @@ class AsyncTestConverter(cst.CSTTransformer):
         return False
 
     def _is_helper_call(self, node: cst.Call) -> bool:
-        """Check if this is a helper function call that needs await."""
+        """Check if this is a helper function call that needs await.
 
-        # Pattern: _create_order(...) or other helper functions
-        return bool(isinstance(node.func, cst.Name) and node.func.value.startswith("_"))
+        The leading underscore is load-bearing: it is how a helper opts into
+        being awaited. Anything in SYNC_TEST_FUNCTIONS opts back out.
+        """
+
+        if not isinstance(node.func, cst.Name):
+            return False
+        return node.func.value.startswith("_") and node.func.value not in SYNC_TEST_FUNCTIONS
 
 
 def generate_async_client():
