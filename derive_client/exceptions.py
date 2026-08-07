@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from derive_client.data_types import FeeEstimate
+    from derive_client.data_types.generated_models import GetTransactionResult
 
 
 class NotConnectedError(RuntimeError):
@@ -85,9 +86,18 @@ class TransactionDropped(Exception):
     """Raised when the transaction the transaction is no longer in the mempool, likely dropped."""
 
 
-class WithdrawalFailed(Exception):
-    """Raised on any terminal *Error batch status."""
+class SettlementError(Exception):
+    """Base for settlement outcomes that carry the last polled result."""
+
+    def __init__(self, message: str, tx_result: GetTransactionResult | None = None):
+        super().__init__(message)
+        self.tx_result = tx_result
 
 
-class WithdrawalTimeout(Exception):
-    """Raised if neither Settled nor a terminal *Error status is reached within the given timeout."""
+class SettlementFailed(SettlementError):
+    """Terminal *Error status reported by the exchange. The operation will not settle."""
+
+
+class SettlementTimeout(SettlementError):
+    """Still in flight when the timeout elapsed. Not a failure: poll again with
+    the same op_uuid, nothing is resubmitted."""

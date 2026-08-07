@@ -33,7 +33,7 @@ from derive_client.data_types.generated_models import (
     PricedLegParamsAndResponse,
     RPCError,
 )
-from derive_client.exceptions import WithdrawalFailed, WithdrawalTimeout
+from derive_client.exceptions import SettlementFailed, SettlementTimeout
 
 if TYPE_CHECKING:
     from websockets import Data
@@ -397,13 +397,13 @@ def wait_for_settlement(
             client.logger.info(f"Transaction hash for {op_uuid}: {tx_hash}")
 
         if tx_result.status is not None and tx_result.status.value.endswith("Error"):
-            raise WithdrawalFailed(f"Withdrawal {op_uuid} failed: {tx_result.status}:\n{tx_result}")
+            raise SettlementFailed(f"Operation {op_uuid} failed: {tx_result.status}", tx_result)
 
         if tx_result.status == BatchStatus.Settled:
             return tx_result
 
         if time.monotonic() - start > timeout:
-            raise WithdrawalTimeout(f"Withdrawal {op_uuid} still {tx_result.status} after {timeout}s:\n{tx_result}")
+            raise SettlementTimeout(f"Operation {op_uuid} still {tx_result.status} after {timeout}s", tx_result)
 
         time.sleep(poll_interval)
 
@@ -426,12 +426,12 @@ async def async_wait_for_settlement(
             client.logger.info(f"Transaction hash for {op_uuid}: {tx_hash}")
 
         if tx_result.status is not None and tx_result.status.value.endswith("Error"):
-            raise WithdrawalFailed(f"Withdrawal {op_uuid} failed: {tx_result.status}:\n{tx_result}")
+            raise SettlementFailed(f"Operation {op_uuid} failed: {tx_result.status}", tx_result)
 
         if tx_result.status == BatchStatus.Settled:
             return tx_result
 
         if time.monotonic() - start > timeout:
-            raise WithdrawalTimeout(f"Withdrawal {op_uuid} still {tx_result.status} after {timeout}s:\n{tx_result}")
+            raise SettlementTimeout(f"Operation {op_uuid} still {tx_result.status} after {timeout}s", tx_result)
 
         await asyncio.sleep(poll_interval)
