@@ -12,7 +12,7 @@ from derive_client.data_types.generated_models import (
 )
 
 
-async def min_position_transfer(position) -> PositionTransfer:
+async def _min_position_transfer(position) -> PositionTransfer:
     """The smallest transferable slice of a position as a transfer object."""
 
     step = Decimal(position.amount_step)
@@ -41,7 +41,7 @@ async def test_position_transfer(client_owner_wallet):
     else:
         pytest.fail("No open positions found in either subaccount.")
 
-    positions_to_transfer = list(map(min_position_transfer, source_positions))
+    positions_to_transfer = list(map(_min_position_transfer, source_positions))
 
     transfer_position_response: TransferPositionsResponse = await source_account.positions.transfer(
         positions=positions_to_transfer,
