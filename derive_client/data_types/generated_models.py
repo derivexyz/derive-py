@@ -932,6 +932,7 @@ class PrivateChangeSubaccountLabelResponse(ChangeSubaccountLabelRequest):
 
 class PrivateGetAccountResponse(Struct):
     cancel_on_disconnect: bool
+    fallback_subaccount_id: int
     fee_info: AccountFeeInfo
     is_rfq_maker: bool
     per_endpoint_tps: dict[str, int]
@@ -1037,6 +1038,7 @@ class PrivateWithdrawRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
+    recipient: str | None | UnsetType = UNSET
 
 
 class PrivateWithdrawResponse(PrivateLiquidateResponse):
@@ -1108,6 +1110,7 @@ class PublicWithdrawDebugRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
+    recipient: str | None | UnsetType = UNSET
 
 
 class QuoteExecuteDebugResult(Struct):

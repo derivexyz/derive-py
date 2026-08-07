@@ -9349,6 +9349,7 @@
         "type": "object",
         "required": [
           "cancel_on_disconnect",
+          "fallback_subaccount_id",
           "fee_info",
           "is_rfq_maker",
           "per_endpoint_tps",
@@ -9369,6 +9370,12 @@
               "integer",
               "null"
             ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "fallback_subaccount_id": {
+            "description": "Subaccount that receives deposits whose requested destination is unusable — unknown manager id, or the per-wallet subaccount cap already reached. Allocated with the account, and always in the fallback risk universe (id 0).",
+            "type": "integer",
             "format": "uint64",
             "minimum": 0.0
           },
@@ -9851,6 +9858,14 @@
           "nonce": {
             "type": "integer",
             "format": "int64"
+          },
+          "recipient": {
+            "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted.\n\nA non-owner signer (session key) may only pay out to an address on the owner's `whitelisted_recipients`, unless the key holds `Admin`.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "signature": {
             "type": "string"
@@ -10409,6 +10424,14 @@
           "nonce": {
             "type": "integer",
             "format": "int64"
+          },
+          "recipient": {
+            "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted — matching what `private/withdraw` reconstructs.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "signature_expiry_sec": {
             "type": "integer",
