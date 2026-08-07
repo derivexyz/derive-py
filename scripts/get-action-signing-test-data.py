@@ -316,15 +316,16 @@ def format_constant(name: str, value: str | int) -> str:
     """Hex split at 32-byte boundaries, one word per line.
 
     ABI data divides evenly. A 65-byte signature leaves a 2-char remainder,
-    which lands on its own line as the v byte — r, s, v.
+    which lands on its own line as the v byte -- r, s, v.
     """
     if isinstance(value, int):
         return f"{name} = {value}"
-    body = value[2:] if value.startswith("0x") else ""
-    if not body or len(body) <= 64:
+    body = value.removeprefix("0x")
+    if len(body) <= 64 or any(c not in "0123456789abcdefABCDEF" for c in body):
         return f'{name} = "{value}"'
+    prefix = "0x" if value.startswith("0x") else ""
     words = [body[i : i + 64] for i in range(0, len(body), 64)]
-    lines = [f'    "0x{words[0]}"'] + [f'    "{word}"' for word in words[1:]]
+    lines = [f'    "{prefix}{words[0]}"'] + [f'    "{word}"' for word in words[1:]]
     return f"{name} = (\n" + "\n".join(lines) + "\n)"
 
 
