@@ -82,14 +82,14 @@ class AuthContext:
     def signed_headers(self):
         return sign_rest_auth_header(
             web3_client=self.w3,  # type: ignore
-            smart_contract_wallet=self.wallet,
+            derive_wallet=self.wallet,
             session_key_or_wallet_private_key=HexBytes(self.account.key).to_0x_hex(),
         )
 
     def sign_ws_login(self) -> dict[str, str]:
         return sign_ws_login(
             web3_client=self.w3,  # type: ignore
-            smart_contract_wallet=self.wallet,
+            derive_wallet=self.wallet,
             session_key_or_wallet_private_key=HexBytes(self.account.key).to_0x_hex(),
         )
 

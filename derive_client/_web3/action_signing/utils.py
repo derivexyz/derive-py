@@ -7,7 +7,6 @@ from web3 import AsyncWeb3, Web3
 
 MAX_INT_256 = 2**255 - 1
 MIN_INT_256 = -(2**255)
-MAX_INT_32 = 2**31 - 1
 
 
 def decimal_to_big_int(value: Decimal) -> int:
@@ -33,7 +32,7 @@ def utc_now_ms() -> int:
 
 def sign_rest_auth_header(
     web3_client: Web3 | AsyncWeb3,
-    smart_contract_wallet: str,
+    derive_wallet: str,
     session_key_or_wallet_private_key: str,
 ) -> dict[str, str]:
     timestamp = str(int(time.time() * 1000))
@@ -42,20 +41,24 @@ def sign_rest_auth_header(
         private_key=session_key_or_wallet_private_key,
     ).signature.hex()
     return {
-        "X-DeriveWallet": smart_contract_wallet,
+        "X-DeriveWallet": derive_wallet,
         "X-DeriveTimestamp": timestamp,
         "X-DeriveSignature": signature,
     }
 
 
-def sign_ws_login(web3_client: Web3, smart_contract_wallet: str, session_key_or_wallet_private_key: str):
-    timestamp = str(utc_now_ms())
+def sign_ws_login(
+    web3_client: Web3,
+    derive_wallet: str,
+    session_key_or_wallet_private_key: str,
+) -> dict[str, str | int]:
+    timestamp = utc_now_ms()
     signature = web3_client.eth.account.sign_message(
-        encode_defunct(text=timestamp), private_key=session_key_or_wallet_private_key
+        encode_defunct(text=str(timestamp)), private_key=session_key_or_wallet_private_key
     ).signature.hex()
     return {
-        "wallet": smart_contract_wallet,
-        "timestamp": str(timestamp),
+        "wallet": derive_wallet,
+        "timestamp": timestamp,
         "signature": signature,
     }
 
@@ -68,10 +71,3 @@ def scale_amount(value: Decimal, decimals: int = 18) -> int:
     if result < 0:
         raise ValueError(f"must not be negative, got {value}")
     return result
-
-
-def assert_e12_precision(scaled: int, field: str) -> None:
-    """The exchange runs at 1e12; sub-1e12 precision in an e18 word is rejected,
-    not truncated, so such a signature can never validate."""
-    if scaled % 1_000_000 != 0:
-        raise ValueError(f"{field} has more than 12 decimal places")
