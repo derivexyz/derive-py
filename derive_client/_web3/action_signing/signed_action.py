@@ -49,18 +49,23 @@ class SignedAction(Generic[TModuleData]):
     def sign(self, signer_private_key: str) -> str:
         signer_wallet = Web3().eth.account.from_key(signer_private_key)
         signed: SignedMessage = signer_wallet.unsafe_sign_hash(self._to_typed_data_hash())
-        self.signature = signed.signature.hex()
+        self.signature = signed.signature.to_0x_hex()
         return self.signature
 
     def to_json(self):
-        return {
-            "subaccount_id": self.subaccount_id,
-            "nonce": self.nonce,
+        envelope = {
+            # String, not int: a nanosecond nonce exceeds 2^53 and is corrupted
+            # by any JSON consumer using doubles.
+            "nonce": str(self.nonce),
             "signer": self.signer,
             "signature_expiry_sec": self.signature_expiry_sec,
             "signature": self.signature,
-            **self.module_data.to_json(),
         }
+        if self.module_data.WALLET_SCOPED:
+            envelope["wallet"] = self.owner
+        else:
+            envelope["subaccount_id"] = self.subaccount_id
+        return {**envelope, **self.module_data.to_json()}
 
     def validate_signature(self):
         data_hash = self._to_typed_data_hash()
@@ -72,29 +77,30 @@ class SignedAction(Generic[TModuleData]):
         if recovered.lower() != self.signer.lower():
             raise ValueError("Invalid signature. Recovered signer does not match expected signer.")
 
-    @property
-    def domain_separator(self) -> bytes:
+    @staticmethod
+    def _to_bytes32(value: str, name: str) -> bytes:
+        raw = value[2:] if value.startswith("0x") else value
         try:
-            return bytes.fromhex(self.DOMAIN_SEPARATOR[2:])
+            result = bytes.fromhex(raw)
         except (ValueError, TypeError) as e:
             raise ValueError(
-                "Unable to extract bytes from DOMAIN_SEPARATOR. "
-                "Ensure value is copied from Protocol Constants in docs.derive.xyz."
+                f"{name} is not valid hex: {value!r}. "
+                "Ensure the value is copied from Protocol Constants in docs.derive.xyz."
             ) from e
+        if len(result) != 32:
+            raise ValueError(f"{name} must be 32 bytes, got {len(result)}: {value!r}")
+        return result
+
+    @property
+    def domain_separator(self) -> bytes:
+        return self._to_bytes32(self.DOMAIN_SEPARATOR, "DOMAIN_SEPARATOR")
 
     @property
     def action_typehash(self) -> bytes:
-        try:
-            return bytes.fromhex(self.ACTION_TYPEHASH[2:])
-        except (ValueError, TypeError) as e:
-            raise ValueError(
-                "Unable to extract bytes from ACTION_TYPEHASH. "
-                "Ensure value is copied from Protocol Constants in docs.derive.xyz."
-            ) from e
+        return self._to_bytes32(self.ACTION_TYPEHASH, "ACTION_TYPEHASH")
 
     def _to_typed_data_hash(self) -> HexBytes:
-        encoded_typed_data_hash = "".join(["0x1901", self.DOMAIN_SEPARATOR[2:], self._get_action_hash().hex()])
-        return Web3.keccak(hexstr=encoded_typed_data_hash)
+        return Web3.keccak(b"\x19\x01" + self.domain_separator + self._get_action_hash())
 
     def _get_action_hash(self) -> HexBytes:
         return Web3.keccak(
