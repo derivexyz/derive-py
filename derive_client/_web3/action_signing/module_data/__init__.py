@@ -1,12 +1,15 @@
 from .module_data import ModuleData
 from .rfq import RFQExecuteModuleData, RFQQuoteDetails, RFQQuoteModuleData
+from .session_key import SessionKeyModuleData
 from .trade import TradeModuleData
-from .transfer_erc20 import RecipientTransferERC20ModuleData, SenderTransferERC20ModuleData, TransferERC20Details
 from .transfer_positions import (
     MakerTransferPositionsModuleData,
     TakerTransferPositionsModuleData,
     TransferPositionsDetails,
 )
+from .transfer_spot import TransferSpotModuleData
+from .transfer_spot_external import TransferSpotExternalModuleData
+from .whitelisted_recipients import WhitelistedRecipientModuleData
 from .withdraw import WithdrawModuleData
 
 __all__ = [
@@ -15,11 +18,12 @@ __all__ = [
     "RFQExecuteModuleData",
     "RFQQuoteDetails",
     "RFQQuoteModuleData",
-    "RecipientTransferERC20ModuleData",
-    "SenderTransferERC20ModuleData",
+    "SessionKeyModuleData",
     "TakerTransferPositionsModuleData",
     "TradeModuleData",
-    "TransferERC20Details",
     "TransferPositionsDetails",
+    "TransferSpotModuleData",
+    "TransferSpotExternalModuleData",
+    "WhitelistedRecipientModuleData",
     "WithdrawModuleData",
 ]
