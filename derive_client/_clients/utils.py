@@ -394,7 +394,7 @@ def wait_for_settlement(
     tx_hash = None
     start = time.monotonic()
     while True:
-        tx_result = client.transactions.get(op_uuid=op_uuid)
+        tx_result = client.system.get_transaction(op_uuid=op_uuid)
         if tx_result.transaction_hash != tx_hash:
             tx_hash = tx_result.transaction_hash
             client.logger.info(f"Transaction hash for {op_uuid}: {tx_hash}")
@@ -422,7 +422,7 @@ async def async_wait_for_settlement(
     tx_hash = None
     start = time.monotonic()
     while True:
-        tx_result = await client.transactions.get(op_uuid=op_uuid)
+        tx_result = await client.system.get_transaction(op_uuid=op_uuid)
 
         if tx_result.transaction_hash != tx_hash:
             tx_hash = tx_result.transaction_hash

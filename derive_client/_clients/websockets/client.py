@@ -22,8 +22,8 @@ from derive_client._clients.rest.async_http.orders import OrderOperations
 from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.subaccount import Subaccount
+from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
-from derive_client._clients.rest.async_http.transactions import TransactionOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
@@ -81,7 +81,7 @@ class WebSocketClient:
         self._private_api = PrivateAPI(session=self._session)
 
         self._markets = MarketOperations(public_api=self._public_api, logger=self._logger)  # type: ignore
-        self._transactions = TransactionOperations(public_api=self._public_api, logger=self._logger)  # type: ignore
+        self._system = SystemOperations(public_api=self._public_api, logger=self._logger)  # type: ignore
 
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
@@ -196,7 +196,7 @@ class WebSocketClient:
             config=self._config,
             logger=self._logger,
             markets=self._markets,
-            transactions=self._transactions,
+            system=self._system,
             deposits=self._deposits,
             public_api=self._public_api,  # type: ignore
             private_api=self._private_api,  # type: ignore
@@ -278,10 +278,10 @@ class WebSocketClient:
         return self._markets
 
     @property
-    def transactions(self) -> TransactionOperations:
-        """Query transaction status and details."""
+    def system(self) -> SystemOperations:
+        """Access system operations."""
 
-        return self._transactions
+        return self._system
 
     @property
     def collateral(self) -> CollateralOperations:

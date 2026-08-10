@@ -1,4 +1,4 @@
-"""Transaction operations."""
+"""System operations."""
 
 from __future__ import annotations
 
@@ -10,26 +10,23 @@ from derive_client.data_types.generated_models import (
 )
 
 
-class TransactionOperations:
-    """High-level transaction operations."""
+class SystemOperations:
+    """High-level system operations."""
 
     def __init__(self, *, public_api: AsyncPublicAPI, logger: LoggerType):
         """
-        Initialize transactions operations.
+        Initialize system operations.
 
         Args:
             public_api: PublicAPI instance providing access to public APIs
+            logger: Logger instance for logging
         """
 
         self._public_api = public_api
         self._logger = logger
 
-    async def get(self, *, op_uuid: str) -> GetTransactionResult:
-        """
-        Get a transaction by its operation UUID.
-
-        v3 change: the request field is now op_uuid (was transaction_id).
-        """
+    async def get_transaction(self, *, op_uuid: str) -> GetTransactionResult:
+        """Get a transaction by its operation UUID."""
 
         params = GetTransactionParams(op_uuid=op_uuid)
         result = await self._public_api.rpc.get_transaction(params)
