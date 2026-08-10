@@ -82,3 +82,13 @@ def curated_vault(client_admin_wallet) -> int:
     if not curated:
         pytest.skip("this wallet curates no vault; create one with --create-vault on the capture script")
     return curated[0]
+
+
+@pytest.fixture(params=["subaccount", "wallet"])
+def history_scope(request, client_admin_wallet):
+    """Owner of a HistoryOperations namespace: the active Subaccount
+    (subaccount-scoped history) or the LightAccount (wallet-scoped history)."""
+
+    if request.param == "wallet":
+        return client_admin_wallet.account
+    return client_admin_wallet.active_subaccount
