@@ -3,18 +3,36 @@
 import pytest
 
 from derive_client.data_types.generated_models import (
+    GetAccountRequest,
     GetOrderHistoryRequest,
     GetSubaccountsRequest,
+    GetWalletsFromSessionKeyRequest,
     PaginatedOrdersResult,
+    PrivateGetAccountResponse,
     PrivateGetSubaccountsResponse,
+    PublicGetWalletsFromSessionKeyResponse,
 )
+
+
+@pytest.mark.asyncio
+async def test_public_api(client_admin_wallet):
+    params = GetWalletsFromSessionKeyRequest(public_session_key=client_admin_wallet._auth.account.address)
+    result = await client_admin_wallet.public_api.rpc.get_wallets_from_session_key(params)
+    assert isinstance(result, PublicGetWalletsFromSessionKeyResponse)
+
+
+@pytest.mark.asyncio
+async def test_private_api(client_admin_wallet):
+    params = GetAccountRequest(wallet=client_admin_wallet._auth.wallet)
+    result = await client_admin_wallet.private_api.rpc.get_account(params)
+    assert isinstance(result, PrivateGetAccountResponse)
 
 
 @pytest.mark.asyncio
 async def test_get_private_get_subaccounts(client_admin_wallet):
     wallet = client_admin_wallet._auth.wallet
     params = GetSubaccountsRequest(wallet=wallet)
-    result = await client_admin_wallet._private_api.rpc.get_subaccounts(params=params)
+    result = await client_admin_wallet.private_api.rpc.get_subaccounts(params=params)
     assert isinstance(result, PrivateGetSubaccountsResponse)
 
 
@@ -22,5 +40,5 @@ async def test_get_private_get_subaccounts(client_admin_wallet):
 async def test_get_private_get_order_history(client_admin_wallet):
     subaccount_id = client_admin_wallet.active_subaccount.id
     params = GetOrderHistoryRequest(subaccount_id=subaccount_id)
-    result = await client_admin_wallet._private_api.rpc.get_order_history(params=params)
+    result = await client_admin_wallet.private_api.rpc.get_order_history(params=params)
     assert isinstance(result, PaginatedOrdersResult)

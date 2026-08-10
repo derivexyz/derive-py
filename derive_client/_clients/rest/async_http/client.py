@@ -147,6 +147,18 @@ class AsyncHTTPClient:
         return self._logger
 
     @property
+    def public_api(self) -> AsyncPublicAPI:
+        """Direct access to the public API for requests."""
+
+        return self._public_api
+
+    @property
+    def private_api(self) -> AsyncPrivateAPI:
+        """Direct access to the private API for requests."""
+
+        return self._private_api
+
+    @property
     def account(self) -> LightAccount:
         """Get the LightAccount instance (this is not a web3 contract instance)."""
 
