@@ -10,6 +10,7 @@ from .enums import (
     OffchainScope,
     ProtocolScope,
     RiskUniverseID,
+    VaultAction,
 )
 from .generated_models import (
     AssetType,
@@ -69,5 +70,6 @@ __all__ = [
     "TypedTransaction",
     "TypedTxReceipt",
     "RiskUniverseID",
+    "VaultAction",
     "Wei",
 ]

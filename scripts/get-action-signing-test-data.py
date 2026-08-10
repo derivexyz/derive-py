@@ -3,7 +3,7 @@
 Expected values in expected.py are captured from the corresponding *_debug
 endpoint on testnet and frozen. Regenerate with:
 
-    python -m scripts.get_test_data
+    python -m scripts.get-action-signing-test-data
 
 Every non-vault encoder here was confirmed byte-identical to the server's,
 including session key and whitelisted recipients, which are canonical

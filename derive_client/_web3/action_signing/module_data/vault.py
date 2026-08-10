@@ -1,35 +1,16 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
-from enum import IntEnum
 from typing import ClassVar, Optional
 
 from eth_abi.abi import encode
 from web3 import Web3
 
+from derive_client.config.constants import ZERO_ADDRESS
+from derive_client.data_types import VaultAction
+
 from ..utils import format_units, scale_vault_amount, to_bytes32, to_uint
 from .module_data import ModuleData
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-
-
-class VaultAction(IntEnum):
-    """Word 0 of every vault payload.
-
-    All six vault actions are signed under the single VAULT_MODULE address, so
-    this word is the protocol's ONLY discriminator between them. Mint and burn
-    are otherwise byte-identical, and cancel is a strict prefix of withdraw's
-    field layout. High bytes must be exactly zero: since the July 2026
-    canonical-ABI change the server rejects dirty high bytes rather than
-    silently truncating them.
-    """
-
-    CREATE = 0
-    DEPOSIT = 1
-    WITHDRAW = 2
-    CANCEL = 3
-    MINT_SHARES = 4
-    BURN_SHARES = 5
 
 
 @dataclass

@@ -21,7 +21,7 @@ class WithdrawModuleData(ModuleData):
     protocol_asset: str  # address, for to_abi_encoded
     asset_name: str  # e.g. "USDC", for to_json
     max_fee_usd: Decimal
-    recipient: str  # must equal the signer
+    recipient: str
     amount: Decimal
     decimals: int
     force_batch: bool = False
