@@ -106,14 +106,14 @@ def generate_operation_docs(nav: mkdocs_gen_files.Nav):
     """Generate docs for operation classes - show all public methods."""
 
     operations = {
-        "MarketOperations": "derive_client._clients.rest.http.markets",
         "CollateralOperations": "derive_client._clients.rest.http.collateral",
+        "HistoryOperations": "derive_client._clients.rest.http.history",
+        "MarketOperations": "derive_client._clients.rest.http.markets",
         "MMPOperations": "derive_client._clients.rest.http.mmp",
         "OrderOperations": "derive_client._clients.rest.http.orders",
         "PositionOperations": "derive_client._clients.rest.http.positions",
         "RFQOperations": "derive_client._clients.rest.http.rfq",
         "SystemOperations": "derive_client._clients.rest.http.system",
-        "TradeOperations": "derive_client._clients.rest.http.trades",
         "VaultOperations": "derive_client._clients.rest.http.vaults",
     }
 

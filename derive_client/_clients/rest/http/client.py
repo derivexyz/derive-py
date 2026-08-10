@@ -12,6 +12,7 @@ from web3 import Web3
 from derive_client._clients.rest.http.account import LightAccount
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.collateral import CollateralOperations
+from derive_client._clients.rest.http.history import HistoryOperations
 from derive_client._clients.rest.http.markets import MarketOperations
 from derive_client._clients.rest.http.mmp import MMPOperations
 from derive_client._clients.rest.http.orders import OrderOperations
@@ -20,7 +21,6 @@ from derive_client._clients.rest.http.rfq import RFQOperations
 from derive_client._clients.rest.http.session import HTTPSession
 from derive_client._clients.rest.http.subaccount import Subaccount
 from derive_client._clients.rest.http.system import SystemOperations
-from derive_client._clients.rest.http.trades import TradeOperations
 from derive_client._clients.rest.http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits
@@ -241,10 +241,10 @@ class HTTPClient:
         return self.active_subaccount.rfq
 
     @property
-    def trades(self) -> TradeOperations:
-        """View trade history."""
+    def history(self) -> HistoryOperations:
+        """Historical records for the ACTIVE SUBACCOUNT. For wallet-wide history use `client.account.history`."""
 
-        return self.active_subaccount.trades
+        return self.active_subaccount.history
 
     @property
     def mmp(self) -> MMPOperations:

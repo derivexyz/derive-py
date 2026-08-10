@@ -5,14 +5,14 @@
     * [LightAccount](accounts/lightaccount.md)
     * [Subaccount](accounts/subaccount.md)
 * Operations
-    * [MarketOperations](operations/marketoperations.md)
     * [CollateralOperations](operations/collateraloperations.md)
+    * [HistoryOperations](operations/historyoperations.md)
+    * [MarketOperations](operations/marketoperations.md)
     * [MMPOperations](operations/mmpoperations.md)
     * [OrderOperations](operations/orderoperations.md)
     * [PositionOperations](operations/positionoperations.md)
     * [RFQOperations](operations/rfqoperations.md)
     * [SystemOperations](operations/systemoperations.md)
-    * [TradeOperations](operations/tradeoperations.md)
     * [VaultOperations](operations/vaultoperations.md)
 * Data Types
     * [Enums](data_types/enums.md)

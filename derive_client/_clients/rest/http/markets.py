@@ -8,10 +8,12 @@ import msgspec
 
 from derive_client._clients.rest.http.api import PublicAPI
 from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type
+from derive_client.config import INT64_MAX
 from derive_client.data_types import LoggerType
 from derive_client.data_types.generated_models import (
     Asset,
     AssetType,
+    BatchStatus,
     Currency,
     GetAllInstrumentsRequest,
     GetAllInstrumentsResponse,
@@ -20,10 +22,12 @@ from derive_client.data_types.generated_models import (
     GetInstrumentRequest,
     GetLatestSignedFeedsRequest,
     GetLatestSignedFeedsResponse,
+    GetPublicTradeHistoryRequest,
     GetTickerRequest,
     GetTickersRequest,
     Instrument,
     RiskUniverse,
+    SettledTrade,
     TickerSlimSnapshot,
 )
 
@@ -273,3 +277,33 @@ class MarketOperations:
         )
         result = self._public_api.rpc.get_tickers(params)
         return result.tickers
+
+    def trade_history(
+        self,
+        currency: str | None = None,
+        from_timestamp: int = 0,
+        instrument_name: str | None = None,
+        instrument_type: AssetType | None = None,
+        page: int = 1,
+        page_size: int = 100,
+        subaccount_id: int | None = None,
+        to_timestamp: int = INT64_MAX,
+        trade_id: str | None = None,
+        batch_status: Optional[BatchStatus] = BatchStatus.Settled,
+    ) -> list[SettledTrade]:
+        """Returns paginated, anonymized settled trades with optional filters."""
+
+        params = GetPublicTradeHistoryRequest(
+            currency=currency,
+            from_timestamp=from_timestamp,
+            instrument_name=instrument_name,
+            instrument_type=instrument_type,
+            page=page,
+            page_size=page_size,
+            subaccount_id=subaccount_id,
+            to_timestamp=to_timestamp,
+            trade_id=trade_id,
+            batch_status=batch_status,
+        )
+        result = self._public_api.rpc.get_trade_history(params)
+        return result.trades

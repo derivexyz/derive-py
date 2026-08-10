@@ -7,6 +7,7 @@ from typing import Optional
 import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
+from derive_client._clients.rest.http.history import HistoryOperations
 from derive_client._clients.utils import AuthContext
 from derive_client._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
@@ -57,6 +58,7 @@ class LightAccount:
         self._public_api = public_api
         self._private_api = private_api
         self._state = _state
+        self._history = HistoryOperations.for_wallet(self)
 
     @classmethod
     def from_api(
@@ -267,6 +269,12 @@ class LightAccount:
         params = GetAccountRequest(wallet=self.address)
         result = self._private_api.rpc.get_account(params)
         return result
+
+    @property
+    def history(self) -> HistoryOperations:
+        """Historical records across every subaccount of this wallet."""
+
+        return self._history
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__qualname__}({self.address}) object at {hex(id(self))}>"

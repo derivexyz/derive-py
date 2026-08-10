@@ -10,6 +10,7 @@ from derive_client.data_types.generated_models import (
     GetLatestSignedFeedsResponse,
     Instrument,
     RiskUniverse,
+    SettledTrade,
     TickerSlimSnapshot,
 )
 
@@ -106,3 +107,9 @@ def test_markets_get_tickers(client_admin_wallet):
 
     assert isinstance(tickers, dict)
     assert all(isinstance(ticker, TickerSlimSnapshot) for ticker in tickers.values())
+
+
+def test_markets_trade_history(client_admin_wallet):
+    trades = client_admin_wallet.markets.trade_history()
+    assert isinstance(trades, list)
+    assert all(isinstance(t, SettledTrade) for t in trades)

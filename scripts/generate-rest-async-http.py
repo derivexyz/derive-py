@@ -15,6 +15,7 @@ ASYNC_OPERATION_MODULES = {
     "orders",
     "positions",
     "system",
+    "history",
     "rfq",
     "mmp",
     "vaults",
@@ -31,6 +32,8 @@ SYNC_METHODS = {
     "_sign_vault_action",
     "_sign_intent",
     "_sign_settle",
+    "for_wallet",
+    "for_subaccount",
 }
 
 # Identifiers renamed at every use site (constructor calls, imports, type
