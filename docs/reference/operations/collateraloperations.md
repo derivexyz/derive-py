@@ -8,7 +8,7 @@
       show_root_heading: false
       heading_level: 2
       members_order: source
-      members: ['__init__', 'get', 'get_transfer_history', 'transfer_spot', 'transfer_spot_external']
+      members: ['__init__', 'get', 'transfer_spot', 'transfer_spot_external']
       show_bases: false
       show_source: false
       inherited_members: false
