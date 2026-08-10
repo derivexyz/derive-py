@@ -11,13 +11,13 @@ from hexbytes import HexBytes
 
 from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
 from derive_client._clients.rest.async_http.collateral import CollateralOperations
+from derive_client._clients.rest.async_http.history import HistoryOperations
 from derive_client._clients.rest.async_http.markets import MarketOperations
 from derive_client._clients.rest.async_http.mmp import MMPOperations
 from derive_client._clients.rest.async_http.orders import OrderOperations
 from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.system import SystemOperations
-from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext
 from derive_client._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
@@ -77,10 +77,10 @@ class Subaccount:
 
         self._collateral = CollateralOperations(subaccount=self)
         self._orders = OrderOperations(subaccount=self)
-        self._trades = TradeOperations(subaccount=self)
         self._positions = PositionOperations(subaccount=self)
         self._rfq = RFQOperations(subaccount=self)
         self._mmp = MMPOperations(subaccount=self)
+        self._history = HistoryOperations.for_subaccount(self)
 
         self._state: SubaccountState | None = _state
 
@@ -225,12 +225,6 @@ class Subaccount:
         return self._rfq
 
     @property
-    def trades(self) -> TradeOperations:
-        """View trade history."""
-
-        return self._trades
-
-    @property
     def mmp(self) -> MMPOperations:
         """Market maker protection settings."""
 
@@ -241,6 +235,12 @@ class Subaccount:
         """Vault operations."""
 
         return VaultOperations(subaccount=self)
+
+    @property
+    def history(self) -> HistoryOperations:
+        """Historical records for this subaccount only."""
+
+        return self._history
 
     def sign_action(
         self,

@@ -10,13 +10,11 @@ from derive_client.data_types import ChecksumAddress
 from derive_client.data_types.generated_models import (
     AssetType,
     GetCollateralsRequest,
-    GetErc20TransferHistoryRequest,
     PrivateGetCollateralsResponse,
     PrivateTransferSpotExternalRequest,
     PrivateTransferSpotExternalResponse,
     PrivateTransferSpotRequest,
     PrivateTransferSpotResponse,
-    TransferEntry,
 )
 
 if TYPE_CHECKING:
@@ -42,26 +40,6 @@ class CollateralOperations:
         params = GetCollateralsRequest(subaccount_id=subaccount_id)
         result = await self._subaccount._private_api.rpc.get_collaterals(params)
         return result
-
-    async def get_transfer_history(
-        self,
-        *,
-        start_timestamp: Optional[int] = None,
-        end_timestamp: Optional[int] = None,
-        wallet: bool = False,
-    ) -> list[TransferEntry]:
-        """Settled spot (ERC-20) transfer history; transfer_spot() and
-        transfer_spot_external() calls that have settled, for this
-        subaccount, or the whole wallet if wallet=True."""
-
-        params = GetErc20TransferHistoryRequest(
-            subaccount_id=None if wallet else self._subaccount.id,
-            wallet=self._subaccount._auth.wallet if wallet else None,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-        )
-        result = await self._subaccount._private_api.rpc.get_erc20_transfer_history(params)
-        return result.transfers
 
     async def transfer_spot(
         self,
