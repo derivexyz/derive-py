@@ -118,6 +118,19 @@ def patch_split_enums(node: Any) -> Tuple[Any, int]:
     return node, changed
 
 
+def drop_mm_credits_required(data: dict) -> None:
+    """
+    Remove `mm_credits` from `Subaccount.required` (in-place).
+
+    The spec marks it required, but the server does not send it.
+    """
+    schema = data["components"]["schemas"]["Subaccount"]
+    try:
+        schema["required"].remove("mm_credits")
+    except ValueError as e:
+        raise RuntimeError("'mm_credits' absent from Subaccount.required: patch obsolete, remove it") from e
+
+
 def main():
     p = argparse.ArgumentParser(description="Patch openapi-spec.json (erc20_details, split-enum oneOf) before codegen.")
     p.add_argument("json_path", type=Path, help="Path to openapi-spec.json")
@@ -141,6 +154,7 @@ def main():
 
     data, erc20_count = patch_node(data)
     data, enum_count = patch_split_enums(data)
+    drop_mm_credits_required(data)
 
     with out.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

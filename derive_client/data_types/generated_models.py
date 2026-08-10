@@ -2239,7 +2239,6 @@ class Subaccount(Struct):
     maintenance_margin: str
     manager_id: int
     margin_type: str
-    mm_credits: str
     open_orders: list[Order]
     open_orders_margin: str
     positions: list[Position]
@@ -2251,6 +2250,7 @@ class Subaccount(Struct):
     subaccount_id: int
     subaccount_value: str
     vault_deposit_holds: list[VaultDepositHold]
+    mm_credits: str | UnsetType = UNSET
 
 
 class TransferPositionsResponse(Struct):
