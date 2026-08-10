@@ -3,16 +3,8 @@
 import pytest
 
 from derive_client.data_types.generated_models import (
-    SettledTrade,
     TradeHistoryResponse,
 )
-
-
-@pytest.mark.asyncio
-async def test_trades_public_list(client_admin_wallet):
-    trades = await client_admin_wallet.trades.list_public()
-    assert isinstance(trades, list)
-    assert all(isinstance(t, SettledTrade) for t in trades)
 
 
 @pytest.mark.asyncio

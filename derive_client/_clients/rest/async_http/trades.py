@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from derive_client.config import INT64_MAX
 from derive_client.data_types.generated_models import (
-    AssetType,
-    BatchStatus,
-    GetPublicTradeHistoryRequest,
     GetTradeHistoryRequest,
-    SettledTrade,
     TradeHistoryResponse,
 )
 
@@ -29,38 +25,6 @@ class TradeOperations:
             subaccount: Subaccount instance providing access to auth, config, and APIs
         """
         self._subaccount = subaccount
-
-    async def list_public(
-        self,
-        currency: str | None = None,
-        from_timestamp: int = 0,
-        instrument_name: str | None = None,
-        instrument_type: AssetType | None = None,
-        page: int = 1,
-        page_size: int = 100,
-        subaccount_id: int | None = None,
-        to_timestamp: int = INT64_MAX,
-        trade_id: str | None = None,
-        batch_status: Optional[BatchStatus] = BatchStatus.Settled,
-    ) -> list[SettledTrade]:
-        """
-        Get trade history for a subaccount, with filter parameters.
-        """
-
-        params = GetPublicTradeHistoryRequest(
-            currency=currency,
-            from_timestamp=from_timestamp,
-            instrument_name=instrument_name,
-            instrument_type=instrument_type,
-            page=page,
-            page_size=page_size,
-            subaccount_id=subaccount_id,
-            to_timestamp=to_timestamp,
-            trade_id=trade_id,
-            batch_status=batch_status,
-        )
-        result = await self._subaccount._public_api.rpc.get_trade_history(params)
-        return result.trades
 
     async def list_private(
         self,
