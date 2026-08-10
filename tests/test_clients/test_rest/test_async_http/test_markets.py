@@ -120,7 +120,7 @@ async def test_markets_get_tickers(client_admin_wallet):
 
 
 @pytest.mark.asyncio
-async def test_trades_public_list(client_admin_wallet):
-    trades = await client_admin_wallet.trades.list_public()
+async def test_markets_trade_history(client_admin_wallet):
+    trades = await client_admin_wallet.markets.trade_history()
     assert isinstance(trades, list)
     assert all(isinstance(t, SettledTrade) for t in trades)
