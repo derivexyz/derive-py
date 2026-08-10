@@ -4,7 +4,20 @@ import pytest
 
 from derive_client.data_types.generated_models import (
     GetTransactionResult,
+    RateLimitResult,
 )
+
+
+@pytest.mark.asyncio
+async def test_system_get_rate_limits(client_admin_wallet):
+    rate_limits = await client_admin_wallet.system.get_rate_limits()
+    assert isinstance(rate_limits, RateLimitResult)
+
+
+@pytest.mark.asyncio
+async def test_system_get_time(client_admin_wallet):
+    unix_millis = await client_admin_wallet.system.get_time()
+    assert isinstance(unix_millis, int)
 
 
 @pytest.mark.asyncio

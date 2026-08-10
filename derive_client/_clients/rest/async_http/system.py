@@ -7,6 +7,7 @@ from derive_client.data_types import LoggerType
 from derive_client.data_types.generated_models import (
     GetTransactionParams,
     GetTransactionResult,
+    RateLimitResult,
 )
 
 
@@ -24,6 +25,18 @@ class SystemOperations:
 
         self._public_api = public_api
         self._logger = logger
+
+    async def get_rate_limits(self) -> RateLimitResult:
+        """Get the current rate limits."""
+
+        result = await self._public_api.rpc.getRateLimits(None)
+        return result
+
+    async def get_time(self) -> int:
+        """Get the current server time in milliseconds since the UNIX epoch."""
+
+        result = await self._public_api.rpc.get_time(None)
+        return result
 
     async def get_transaction(self, *, op_uuid: str) -> GetTransactionResult:
         """Get a transaction by its operation UUID."""
