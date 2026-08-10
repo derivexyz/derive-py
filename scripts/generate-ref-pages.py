@@ -107,12 +107,14 @@ def generate_operation_docs(nav: mkdocs_gen_files.Nav):
 
     operations = {
         "MarketOperations": "derive_client._clients.rest.http.markets",
+        "CollateralOperations": "derive_client._clients.rest.http.collateral",
+        "MMPOperations": "derive_client._clients.rest.http.mmp",
         "OrderOperations": "derive_client._clients.rest.http.orders",
         "PositionOperations": "derive_client._clients.rest.http.positions",
         "RFQOperations": "derive_client._clients.rest.http.rfq",
-        "MMPOperations": "derive_client._clients.rest.http.mmp",
+        "SystemOperations": "derive_client._clients.rest.http.system",
         "TradeOperations": "derive_client._clients.rest.http.trades",
-        "TransactionOperations": "derive_client._clients.rest.http.transactions",
+        "VaultOperations": "derive_client._clients.rest.http.vaults",
     }
 
     for display_name, module_path in operations.items():
