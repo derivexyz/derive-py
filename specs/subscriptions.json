@@ -930,7 +930,16 @@
             "type": "string"
           },
           "subaccount_balances": {
-            "type": "string"
+            "description": "Balance per asset name, as a decimal string.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "properties": {
+              "{key}": {
+                "type": "string"
+              }
+            }
           }
         }
       },
@@ -1119,7 +1128,7 @@
             "description": "Number of trades during last 24h",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0
+            "minimum": 0.0
           },
           "oi": {
             "description": "Current total open interest",
@@ -1561,7 +1570,7 @@
           "publish_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0
+            "minimum": 0.0
           },
           "timestamp": {
             "type": "integer",

@@ -964,7 +964,7 @@ class PrivateGetSubaccountsResponse(Struct):
 class PrivateLiquidateRequest(Struct):
     cash_transfer: Decimal
     last_seen_trade_id: int
-    liquidated_account_id: int
+    liquidate_subaccount_id: int
     merge_account: bool
     nonce: int
     percent_of_acc: Decimal
@@ -2239,6 +2239,7 @@ class Subaccount(Struct):
     maintenance_margin: str
     manager_id: int
     margin_type: str
+    mm_credits: str
     open_orders: list[Order]
     open_orders_margin: str
     positions: list[Position]
