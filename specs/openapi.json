@@ -9544,7 +9544,7 @@
         "required": [
           "cash_transfer",
           "last_seen_trade_id",
-          "liquidated_account_id",
+          "liquidate_subaccount_id",
           "merge_account",
           "nonce",
           "percent_of_acc",
@@ -9565,8 +9565,8 @@
             "format": "uint64",
             "minimum": 0.0
           },
-          "liquidated_account_id": {
-            "description": "Account being liquidated.",
+          "liquidate_subaccount_id": {
+            "description": "Subaccount being liquidated.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
@@ -9579,7 +9579,7 @@
             "format": "int64"
           },
           "percent_of_acc": {
-            "description": "Fraction of the account to liquidate (`\"1.0\"` = 100%), decimal string or JSON number.",
+            "description": "Fraction of the account to liquidate (`\"1.0\"` = 100%), decimal string or JSON number. Must be a whole percent, i.e. a multiple of `\"0.01\"`.",
             "type": "string",
             "format": "decimal"
           },
@@ -12763,6 +12763,7 @@
           "maintenance_margin",
           "manager_id",
           "margin_type",
+          "mm_credits",
           "open_orders",
           "open_orders_margin",
           "positions",
@@ -12819,6 +12820,10 @@
             "minimum": 0.0
           },
           "margin_type": {
+            "type": "string"
+          },
+          "mm_credits": {
+            "description": "MM credit from universe loss-socialization events: the socialized USDC debit lands on cash in full, and `debit × (1 − write_down)` is added back to maintenance margin while the 15-minute write-down runs. Events this subaccount has not yet realized contribute their expected credit, with the current subaccount value standing in for the MtM at realization. Zero while under auction — the credit is cleared when liquidation starts.",
             "type": "string"
           },
           "open_orders": {

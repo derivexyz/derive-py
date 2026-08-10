@@ -23,6 +23,10 @@ DeriveWebsocketChannelSchemas: TypeAlias = Any
 Address: TypeAlias = str
 
 
+class SubaccountBalances(Struct):
+    field_key_: str | UnsetType = field(name='{key}', default=UNSET)
+
+
 class AuctionDetails(Struct):
     estimated_bid_price: str
     estimated_discount_pnl: str
@@ -32,7 +36,7 @@ class AuctionDetails(Struct):
     margin_type: str
     min_cash_transfer: str
     min_price_limit: str
-    subaccount_balances: str
+    subaccount_balances: SubaccountBalances
     currency: str | None = None
 
 

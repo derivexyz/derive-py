@@ -20,8 +20,8 @@ from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.session import AsyncHTTPSession, _request_timeout_override
 from derive_client._clients.rest.async_http.subaccount import Subaccount
+from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
-from derive_client._clients.rest.async_http.transactions import TransactionOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits
@@ -69,7 +69,7 @@ class AsyncHTTPClient:
         self._private_api = AsyncPrivateAPI(session=self._session, config=config, auth=auth)
 
         self._markets = MarketOperations(public_api=self._public_api, logger=self._logger)
-        self._transactions = TransactionOperations(public_api=self._public_api, logger=self._logger)
+        self._system = SystemOperations(public_api=self._public_api, logger=self._logger)
 
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
@@ -136,7 +136,7 @@ class AsyncHTTPClient:
             config=self._config,
             logger=self._logger,
             markets=self._markets,
-            transactions=self._transactions,
+            system=self._system,
             deposits=self._deposits,
             public_api=self._public_api,
             private_api=self._private_api,
@@ -215,10 +215,10 @@ class AsyncHTTPClient:
         return self._markets
 
     @property
-    def transactions(self) -> TransactionOperations:
-        """Query transaction status and details."""
+    def system(self) -> SystemOperations:
+        """Access system operations."""
 
-        return self._transactions
+        return self._system
 
     @property
     def collateral(self) -> CollateralOperations:

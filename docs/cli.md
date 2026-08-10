@@ -38,8 +38,10 @@ Derive Client
 ├── position.......................... Inspect and transfer positions across subaccounts.
 │   ├── list.......................... List active positions of a subaccount.
 │   └── transfer...................... Transfers a positions from one subaccount to another, owned by the same wallet.
-├── transaction....................... Query transaction status and details.
-│   └── get........................... Used for getting a transaction by its operation UUID.
+├── system............................ Query system-level information.
+│   ├── rate-limits................... Get the caller's current rate limits.
+│   ├── time.......................... Get the current system time.
+│   └── transaction................... Get a transaction by its operation UUID.
 └── tree.............................. Print the command tree structure.
 ```
 

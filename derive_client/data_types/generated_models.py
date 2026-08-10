@@ -964,7 +964,7 @@ class PrivateGetSubaccountsResponse(Struct):
 class PrivateLiquidateRequest(Struct):
     cash_transfer: Decimal
     last_seen_trade_id: int
-    liquidated_account_id: int
+    liquidate_subaccount_id: int
     merge_account: bool
     nonce: int
     percent_of_acc: Decimal
@@ -2250,6 +2250,7 @@ class Subaccount(Struct):
     subaccount_id: int
     subaccount_value: str
     vault_deposit_holds: list[VaultDepositHold]
+    mm_credits: str | UnsetType = UNSET
 
 
 class TransferPositionsResponse(Struct):

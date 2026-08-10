@@ -14,7 +14,7 @@ ASYNC_OPERATION_MODULES = {
     "collateral",
     "orders",
     "positions",
-    "transactions",
+    "system",
     "rfq",
     "mmp",
     "vaults",

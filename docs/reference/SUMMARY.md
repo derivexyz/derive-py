@@ -6,12 +6,14 @@
     * [Subaccount](accounts/subaccount.md)
 * Operations
     * [MarketOperations](operations/marketoperations.md)
+    * [CollateralOperations](operations/collateraloperations.md)
+    * [MMPOperations](operations/mmpoperations.md)
     * [OrderOperations](operations/orderoperations.md)
     * [PositionOperations](operations/positionoperations.md)
     * [RFQOperations](operations/rfqoperations.md)
-    * [MMPOperations](operations/mmpoperations.md)
+    * [SystemOperations](operations/systemoperations.md)
     * [TradeOperations](operations/tradeoperations.md)
-    * [TransactionOperations](operations/transactionoperations.md)
+    * [VaultOperations](operations/vaultoperations.md)
 * Data Types
     * [Enums](data_types/enums.md)
         * [RiskUniverseID](data_types/enums/riskuniverseid.md)

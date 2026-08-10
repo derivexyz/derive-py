@@ -16,8 +16,8 @@ from derive_client._clients.rest.async_http.mmp import MMPOperations
 from derive_client._clients.rest.async_http.orders import OrderOperations
 from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
+from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.trades import TradeOperations
-from derive_client._clients.rest.async_http.transactions import TransactionOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext
 from derive_client._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
@@ -44,7 +44,7 @@ class Subaccount:
         config: EnvConfig,
         logger: LoggerType,
         markets: MarketOperations,
-        transactions: TransactionOperations,
+        system: SystemOperations,
         deposits: Deposits,
         public_api: AsyncPublicAPI,
         private_api: AsyncPrivateAPI,
@@ -58,7 +58,7 @@ class Subaccount:
             auth: Authentication context for signing operations
             config: Environment configuration
             markets: Market operations interface
-            transactions: Transaction operations interface
+            system: System operations interface
             public_api: Public API interface
             private_api: Private API interface for authenticated requests
             _state: Initial state (internal use only)
@@ -73,7 +73,7 @@ class Subaccount:
 
         self._markets = markets
         self._deposits = deposits
-        self._transactions = transactions
+        self._system = system
 
         self._collateral = CollateralOperations(subaccount=self)
         self._orders = OrderOperations(subaccount=self)
@@ -93,7 +93,7 @@ class Subaccount:
         config: EnvConfig,
         logger: LoggerType,
         markets: MarketOperations,
-        transactions: TransactionOperations,
+        system: SystemOperations,
         deposits: Deposits,
         public_api: AsyncPublicAPI,
         private_api: AsyncPrivateAPI,
@@ -109,7 +109,7 @@ class Subaccount:
             auth: Authentication context for signing operations
             config: Environment configuration
             markets: Market operations interface
-            transactions: Transaction operations interface
+            system: System operations interface
             deposits: Deposits interface for deposit operations
             public_api: Public API interface
             private_api: Private API interface for authenticated requests
@@ -132,7 +132,7 @@ class Subaccount:
             config=config,
             logger=logger,
             markets=markets,
-            transactions=transactions,
+            system=system,
             deposits=deposits,
             public_api=public_api,
             private_api=private_api,
@@ -195,10 +195,10 @@ class Subaccount:
         return self._markets
 
     @property
-    def transactions(self) -> TransactionOperations:
-        """Query transaction status and details."""
+    def system(self) -> SystemOperations:
+        """Access system operations."""
 
-        return self._transactions
+        return self._system
 
     @property
     def collateral(self) -> CollateralOperations:
