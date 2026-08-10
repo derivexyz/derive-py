@@ -24,6 +24,7 @@ from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.trades import TradeOperations
 from derive_client._clients.rest.async_http.transactions import TransactionOperations
+from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
@@ -317,6 +318,12 @@ class WebSocketClient:
         """Market maker protection settings."""
 
         return self.active_subaccount.mmp
+
+    @property
+    def vaults(self) -> VaultOperations:
+        """Vault operations."""
+
+        return self.active_subaccount.vaults
 
     @property
     def public_channels(self):

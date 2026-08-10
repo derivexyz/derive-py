@@ -1,6 +1,5 @@
 """Shared fixtures for CLI tests."""
 
-import time
 from pathlib import Path
 
 import pytest
@@ -15,13 +14,6 @@ DERIVE_WALLET={OWNER_TEST_WALLET}
 DERIVE_SUBACCOUNT_ID=75723
 DERIVE_ENV=TEST
 """
-
-
-@pytest.fixture(autouse=True)
-def slow_down_every_test():
-    """Rate limit API calls in CLI tests."""
-
-    time.sleep(1)
 
 
 @pytest.fixture(scope="session")

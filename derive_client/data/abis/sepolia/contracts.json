@@ -5,7 +5,7 @@
     },
     "VAPP": {
         "address": "0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393",
-        "implementation": "0x20a574eECae058f97BE3392803D53121fDAf7336"
+        "implementation": "0x6355Cd9EaeF6372d8561a7a72104cf544bEE1a66"
     },
     "WITHDRAWAL_OUTBOX": {
         "address": "0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988",
@@ -22,7 +22,7 @@
         "address": "0x24a3b09AACc5CD1739D591a64a999323C14a46B3"
     },
     "VAPP_IMPLEMENTATION": {
-        "address": "0x20a574eECae058f97BE3392803D53121fDAf7336"
+        "address": "0x6355Cd9EaeF6372d8561a7a72104cf544bEE1a66"
     },
     "ACTION_MANAGER_IMPLEMENTATION": {
         "address": "0xC4e837b37132c85E2D17e85653e974aDb4d31630"

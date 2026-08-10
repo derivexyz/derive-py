@@ -54,9 +54,10 @@ clean-test:
 	find . -name 'log.txt' -exec rm -fr {} +
 	find . -name 'log.*.txt' -exec rm -fr {} +
 
+# plow through requests when TOO MANY REQUESTS error is returned the brutal way (not bucket)
 .PHONY: tests
 tests:
-	poetry run pytest tests -vv --reruns 4 --reruns-delay 15
+	poetry run pytest tests -vv --reruns 2 --reruns-delay 10
 
 .PHONY: fmt
 fmt:
@@ -117,6 +118,11 @@ sync-ws-tests:
 		tests/test_clients/test_websocket/
 	@echo "Done."
 
+.PHONY: download-abis
+download-abis:
+	@echo "Downloading ABIs..."
+	poetry run python scripts/download-abis.py
+
 codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
 typecheck:
@@ -128,4 +134,4 @@ check_diff:
 demo:
 	poetry run bash scripts/demos/all.sh
 
-all: codegen-all fmt lint typecheck tests docs
+all: download-abis codegen-all fmt lint typecheck tests docs

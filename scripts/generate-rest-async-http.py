@@ -17,6 +17,7 @@ ASYNC_OPERATION_MODULES = {
     "transactions",
     "rfq",
     "mmp",
+    "vaults",
     "trades",
     "rpc",
 }
@@ -26,6 +27,10 @@ SYNC_METHODS = {
     "_get_cache_for_type",
     "_get_cached_instrument",
     "sign_action",
+    "_resolve_vault_id",
+    "_sign_vault_action",
+    "_sign_intent",
+    "_sign_settle",
 }
 
 # Identifiers renamed at every use site (constructor calls, imports, type

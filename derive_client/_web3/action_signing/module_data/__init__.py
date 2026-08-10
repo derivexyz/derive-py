@@ -9,6 +9,15 @@ from .transfer_positions import (
 )
 from .transfer_spot import TransferSpotModuleData
 from .transfer_spot_external import TransferSpotExternalModuleData
+from .vault import (
+    VaultAction,
+    VaultBurnSharesModuleData,
+    VaultCancelModuleData,
+    VaultCreateModuleData,
+    VaultDepositModuleData,
+    VaultMintSharesModuleData,
+    VaultWithdrawModuleData,
+)
 from .whitelisted_recipients import WhitelistedRecipientModuleData
 from .withdraw import WithdrawModuleData
 
@@ -24,6 +33,13 @@ __all__ = [
     "TransferPositionsDetails",
     "TransferSpotModuleData",
     "TransferSpotExternalModuleData",
+    "VaultAction",
+    "VaultBurnSharesModuleData",
+    "VaultCancelModuleData",
+    "VaultCreateModuleData",
+    "VaultDepositModuleData",
+    "VaultMintSharesModuleData",
+    "VaultWithdrawModuleData",
     "WhitelistedRecipientModuleData",
     "WithdrawModuleData",
 ]
