@@ -2,7 +2,7 @@
 
 from derive_client._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
 from derive_client._clients.rest.http.session import HTTPSession
-from derive_client._clients.utils import AuthContext, decode_envelope, decode_result, encode_json_exclude_none
+from derive_client._clients.utils import AuthContext, decode_envelope, decode_result, encode_request
 from derive_client.config import PUBLIC_HEADERS
 from derive_client.data_types import EnvConfig
 from derive_client.data_types.generated_models import (
@@ -223,7 +223,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_wallets_from_session_key
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PublicGetWalletsFromSessionKeyResponse)
@@ -243,7 +243,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.order_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OrderQuoteResponse)
@@ -263,7 +263,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.execute_quote_debug
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteExecuteDebugResult)
@@ -283,7 +283,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.send_quote_debug
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteSendDebugResult)
@@ -300,7 +300,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_vault
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Vault)
@@ -321,7 +321,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_vault_action_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PaginatedVaultActionHistory)
@@ -342,7 +342,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_vault_performance_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultPerformanceHistoryResult)
@@ -359,7 +359,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_vaults
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultsResponse)
@@ -379,7 +379,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.withdraw_debug
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, dict)
@@ -422,7 +422,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_onchain_action_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetOnchainActionHistoryResponse)
@@ -442,7 +442,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_pending_deposits
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetPendingDepositsResult)
@@ -463,7 +463,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.register_deposit_address
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RegisterDepositAddressResult)
@@ -482,7 +482,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.getRateLimits
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RateLimitResult)
@@ -500,7 +500,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_time
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, int)
@@ -519,7 +519,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_transaction
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetTransactionResult)
@@ -540,7 +540,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_all_currencies
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[Currency])
@@ -559,7 +559,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_all_instruments
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetAllInstrumentsResponse)
@@ -577,7 +577,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_all_live_instruments
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[str])
@@ -598,7 +598,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_assets
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[Asset])
@@ -618,7 +618,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_currency
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Currency)
@@ -638,7 +638,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_funding_rate_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, FundingRateHistoryResult)
@@ -658,7 +658,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_index_chart_data
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[IndexCandle])
@@ -678,7 +678,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_instrument
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Instrument)
@@ -698,7 +698,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_interest_rate_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, InterestRateHistoryResult)
@@ -718,7 +718,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_latest_signed_feeds
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetLatestSignedFeedsResponse)
@@ -737,7 +737,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_option_settlement_prices
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OptionSettlementPricesResult)
@@ -763,7 +763,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_risk_universes
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[RiskUniverse])
@@ -783,7 +783,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_ticker
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, TickerSlimSnapshot)
@@ -802,7 +802,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_tickers
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetTickersResponse)
@@ -823,7 +823,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_trade_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PublicTradesResult)
@@ -843,7 +843,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_tradingview_chart_data
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[TradingviewCandle])
@@ -861,7 +861,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_all_referral_codes
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[Referrer])
@@ -882,7 +882,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.get_referral_performance
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetReferralPerformanceResult)
@@ -898,7 +898,7 @@ class PublicRPC:
         """
 
         url = self._endpoints.start_auction
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PublicStartAuctionResponse)
@@ -932,7 +932,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.change_subaccount_label
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateChangeSubaccountLabelResponse)
@@ -952,7 +952,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_all_portfolios
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[Subaccount])
@@ -970,7 +970,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_collaterals
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetCollateralsResponse)
@@ -989,7 +989,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_positions
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetPositionsResponse)
@@ -1010,7 +1010,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_subaccount
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Subaccount)
@@ -1027,7 +1027,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_subaccounts
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetSubaccountsResponse)
@@ -1047,7 +1047,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.edit_session_key
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, SessionKey)
@@ -1065,7 +1065,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.session_keys
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateSessionKeysResponse)
@@ -1086,7 +1086,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_account
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetAccountResponse)
@@ -1104,7 +1104,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Order)
@@ -1122,7 +1122,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_algo_order
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Order)
@@ -1140,7 +1140,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_all
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
@@ -1157,7 +1157,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_all_algo_orders
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
@@ -1174,7 +1174,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_all_trigger_orders
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
@@ -1191,7 +1191,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_by_instrument
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, CancelByInstrumentResponse)
@@ -1211,7 +1211,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_by_label
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, CancelByLabelResponse)
@@ -1229,7 +1229,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_by_nonce
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, CancelByNonceResponse)
@@ -1246,7 +1246,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_trigger_order
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Order)
@@ -1263,7 +1263,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_algo_orders
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[Order])
@@ -1285,7 +1285,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_open_orders
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, AggregatedOrdersResult)
@@ -1303,7 +1303,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_order
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Order)
@@ -1320,7 +1320,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_trigger_orders
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, AggregatedTriggerOrdersResult)
@@ -1342,7 +1342,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.order
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OrderCreatedResponse)
@@ -1363,7 +1363,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.order_debug
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OrderDebugResponse)
@@ -1383,7 +1383,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.order_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OrderQuoteResponse)
@@ -1403,7 +1403,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.replace
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, ReplaceOrderResponse)
@@ -1423,7 +1423,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_batch_quotes
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, CancelBatchResult)
@@ -1442,7 +1442,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_batch_rfqs
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, CancelBatchRfqsResponse)
@@ -1461,7 +1461,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Quote)
@@ -1479,7 +1479,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_rfq
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
@@ -1500,7 +1500,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.execute_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteExecuteResponse)
@@ -1520,7 +1520,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_quotes
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteGetResponse)
@@ -1540,7 +1540,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_rfqs
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RFQGetResponse)
@@ -1559,7 +1559,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.poll_quotes
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuotePollResponse)
@@ -1579,7 +1579,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.poll_rfqs
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RFQPollResponse)
@@ -1599,7 +1599,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.replace_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteReplaceResponse)
@@ -1618,7 +1618,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.rfq_get_best_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RfqGetBestQuoteResponse)
@@ -1639,7 +1639,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.send_quote
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Quote)
@@ -1660,7 +1660,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.send_rfq
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, Rfq)
@@ -1679,7 +1679,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.cancel_all_vault_requests
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultCancelResponse)
@@ -1698,7 +1698,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_live_vault_requests
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, MultipleVaultRequestsResponse)
@@ -1715,7 +1715,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_shareholder_vaults
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultIdsResponse)
@@ -1735,7 +1735,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_vault_request_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PaginatedVaultRequestHistory)
@@ -1753,7 +1753,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_vault_shares
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultSharesResponse)
@@ -1773,7 +1773,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.request_vault_deposit
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultRequestAckResponse)
@@ -1792,7 +1792,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.request_vault_withdraw
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultRequestAckResponse)
@@ -1811,7 +1811,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.burn_vault_shares
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultSettleResponse)
@@ -1832,7 +1832,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.create_vault
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultCreateResponse)
@@ -1851,7 +1851,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.force_burn
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultForceBurnResponse)
@@ -1868,7 +1868,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_curated_vaults
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultIdsResponse)
@@ -1886,7 +1886,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_live_burn_requests
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, MultipleVaultRequestsResponse)
@@ -1904,7 +1904,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_live_mint_requests
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, MultipleVaultRequestsResponse)
@@ -1923,7 +1923,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.mint_vault_shares
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultSettleResponse)
@@ -1942,7 +1942,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.reject_deposit_request
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, VaultRequestAckResponse)
@@ -1961,7 +1961,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.update_vault_info
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OffchainAckResponse)
@@ -1981,7 +1981,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_deposit_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, DepositHistoryResult)
@@ -2001,7 +2001,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_erc20_transfer_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, TransferHistoryResult)
@@ -2021,7 +2021,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_funding_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PerpSettlementHistoryResponse)
@@ -2040,7 +2040,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_interest_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, InterestHistoryResult)
@@ -2058,7 +2058,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_option_settlement_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OptionSettlementHistoryResponse)
@@ -2081,7 +2081,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_order_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PaginatedOrdersResult)
@@ -2100,7 +2100,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_trade_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PaginatedTradesResult)
@@ -2120,7 +2120,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_withdrawal_history
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, WithdrawalHistoryResult)
@@ -2140,7 +2140,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.get_mmp_config
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[MmpConfigResult])
@@ -2159,7 +2159,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.reset_mmp
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, str)
@@ -2179,7 +2179,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.set_mmp_config
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, SetMmpConfigResponse)
@@ -2200,7 +2200,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.transfer_positions
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, TransferPositionsResponse)
@@ -2221,7 +2221,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.transfer_spot
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateTransferSpotResponse)
@@ -2243,7 +2243,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.transfer_spot_external
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateTransferSpotExternalResponse)
@@ -2263,7 +2263,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.update_whitelisted_recipients
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, UpdateWhitelistedRecipientsResponse)
@@ -2284,7 +2284,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.withdraw
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateWithdrawResponse)
@@ -2300,7 +2300,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.liquidate
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateLiquidateResponse)
@@ -2316,7 +2316,7 @@ class PrivateRPC:
         """
 
         url = self._endpoints.set_session_key
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateSetSessionKeyResponse)

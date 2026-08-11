@@ -9,11 +9,11 @@ import msgspec
 from derive_client._clients.rest{% if is_async %}.async_http{% else %}.http{% endif %}.session import {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}
 from derive_client.config import PUBLIC_HEADERS
 from derive_client.data_types import EnvConfig
-from derive_client._clients.utils import decode_envelope, decode_result, AuthContext, encode_json_exclude_none
+from derive_client._clients.utils import decode_envelope, decode_result, AuthContext, encode_request
 from derive_client._clients.rest.endpoints import PublicEndpoints, PrivateEndpoints
 {% else %}
 from derive_client._clients.websockets.session import WebSocketSession
-from derive_client._clients.utils import decode_envelope, decode_result, encode_json_exclude_none
+from derive_client._clients.utils import decode_envelope, decode_result, encode_request
 {% endif %}
 from derive_client.data_types.generated_models import (
 {% for schema in rpc_schema_imports -%}
@@ -70,7 +70,7 @@ class {{ api_prefix }}PublicRPC:
         {% endif %}
 {% if client_type == 'http' %}
         url = self._endpoints.{{ method.name }}
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = {% if is_async %}await {% endif %}self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
 {%- else %}
@@ -107,7 +107,7 @@ class {{ api_prefix }}PrivateRPC:
         {% endif %}
 {% if client_type == 'http' %}
         url = self._endpoints.{{ method.name }}
-        data = encode_json_exclude_none(params)
+        data = encode_request(params)
         message = {% if is_async %}await {% endif %}self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
 {%- else %}

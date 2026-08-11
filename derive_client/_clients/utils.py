@@ -63,6 +63,8 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
 
+ENCODER = msgspec.json.Encoder()
+
 
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
     """Derive API mandate: 'Legs must be sorted by instrument name'."""
@@ -248,20 +250,15 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
     return msgspec.json.decode(envelope.result, type=result_schema)
 
 
-def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
-    """
-    Encode msgspec Struct omitting None and UNSET values.
+def encode_request(obj: msgspec.Struct | None) -> bytes:
+    """Encode a request struct. UNSET fields are omitted by msgspec, recursively.
 
-    The Derive API requires optional fields to be omitted entirely
-    rather than sent as null. Methods with no request parameters pass
-    None (EmptyRequest); encode as an empty JSON object.
+    Methods with no parameters pass None (EmptyRequest) and encode as `{}`.
+    No filtering happens here: request models carry no nullable fields, so
+    there is nothing to strip, and the previous asdict-and-filter pass only
+    ever reached the top level anyway.
     """
-    if obj is None:
-        return b"{}"
-
-    data = msgspec.structs.asdict(obj)
-    filtered = {k: v for k, v in data.items() if v is not None and v is not msgspec.UNSET}
-    return msgspec.json.encode(filtered)
+    return ENCODER.encode(obj) if obj is not None else b"{}"
 
 
 def unset_if_none(value: T | None) -> T | msgspec.UnsetType:
