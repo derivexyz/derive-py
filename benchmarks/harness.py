@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import math
 import platform
+import re
 import statistics
 import subprocess
 import sys
@@ -221,6 +222,19 @@ def environment() -> dict:
     }
 
 
+def _series(name: str) -> str:
+    """Reduce a series name to one safe path component.
+
+    Branch names carry slashes, and '@' is the separator between series and
+    timestamp, so both have to go. Applied on save and on load alike, or a
+    lookup would miss the file it just wrote.
+    """
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-.")
+    if not slug:
+        raise ValueError(f"series name {name!r} has no usable characters")
+    return slug
+
+
 def _stamp() -> str:
     """UTC, lexicographically sortable, milliseconds to survive two runs a second apart."""
     now = datetime.now(timezone.utc)
@@ -229,14 +243,14 @@ def _stamp() -> str:
 
 def _latest(name: str) -> Path | None:
     """Newest recording in a series. Sortable stamps make this a max(), not a stat() loop."""
-    recordings = sorted(BASELINE_DIR.glob(f"{name}@*.json"))
+    recordings = sorted(BASELINE_DIR.glob(f"{_series(name)}@*.json"))
     return recordings[-1] if recordings else None
 
 
 def save_baseline(name: str, results: Sequence[Result]) -> Path:
     """Write a new recording. Never overwrites: every run is kept."""
     BASELINE_DIR.mkdir(parents=True, exist_ok=True)
-    path = BASELINE_DIR / f"{name}@{_stamp()}.json"
+    path = BASELINE_DIR / f"{_series(name)}@{_stamp()}.json"
     payload = {"environment": environment(), "results": [asdict(r) for r in results]}
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
