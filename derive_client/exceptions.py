@@ -52,8 +52,8 @@ class DeriveJSONRPCException(Exception):
         return f"{base}  [data={self.data!r}]" if self.data is not None else base
 
 
-class NoAvailableRPC(Exception):
-    """Raised when all configured RPC endpoints are temporarily unavailable due to backoff or failures."""
+class RequestAbandoned(RuntimeError):
+    """An in-flight RPC was given up on because the connection went away."""
 
 
 class InsufficientNativeBalance(Exception):

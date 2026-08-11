@@ -19,6 +19,7 @@ from websockets.exceptions import ConnectionClosed
 
 from derive_client._clients.utils import JSONRPCEnvelope, decode_envelope
 from derive_client.data_types import LoggerType
+from derive_client.exceptions import RequestAbandoned
 from derive_client.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -157,17 +158,8 @@ class WebSocketSession:
         self._receiver_task = None
         self._reconnect_task = None
 
-        # Clear state
         await self._state.set_disconnected()
-
-        # Cancel pending requests
-        async with self._requests_lock:
-            for rid, queue in self._pending_requests.items():
-                try:
-                    queue.put_nowait({"error": "Connection closed"})
-                except asyncio.QueueFull:
-                    self._logger.warning("Failed to queue Connection closed")
-            self._pending_requests.clear()
+        await self._fail_pending_requests("session closed")
 
         self._logger.info("WebSocket session closed")
 
@@ -412,6 +404,8 @@ class WebSocketSession:
 
             try:
                 envelope = await asyncio.wait_for(response_queue.get(), timeout=self._request_timeout)
+                if isinstance(envelope, Exception):
+                    raise envelope
                 return envelope
             except asyncio.TimeoutError:
                 self._logger.error(f"RPC timeout for {method} after {self._request_timeout}s")
@@ -420,6 +414,17 @@ class WebSocketSession:
         finally:
             async with self._requests_lock:
                 self._pending_requests.pop(request_id, None)
+
+    async def _fail_pending_requests(self, reason: str) -> None:
+        """Hand every in-flight RPC an exception rather than letting it time out."""
+        async with self._requests_lock:
+            pending, self._pending_requests = self._pending_requests, {}
+
+        for request_id in pending:
+            try:
+                pending[request_id].put_nowait(RequestAbandoned(reason))
+            except asyncio.QueueFull:
+                self._logger.warning(f"Could not notify pending request {request_id}: {reason}")
 
     async def _receive_loop(self) -> None:
         """Background task: continuously receive and dispatch messages."""
