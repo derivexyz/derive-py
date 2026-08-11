@@ -61,8 +61,8 @@ class CancelAllAlgoOrdersResponse(StrEnum):
 
 class CancelAllRequest(Struct):
     subaccount_id: int
-    cancel_algo_orders: bool | None | UnsetType = UNSET
-    cancel_trigger_orders: bool | None | UnsetType = UNSET
+    cancel_algo_orders: bool | UnsetType = UNSET
+    cancel_trigger_orders: bool | UnsetType = UNSET
 
 
 class CancelAllTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
@@ -71,10 +71,10 @@ class CancelAllTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
 
 class CancelBatchQuotesRequest(Struct):
     subaccount_id: int
-    label: str | None | UnsetType = UNSET
-    nonce: int | None | UnsetType = UNSET
-    quote_id: str | None | UnsetType = UNSET
-    rfq_id: str | None | UnsetType = UNSET
+    label: str | UnsetType = UNSET
+    nonce: int | UnsetType = UNSET
+    quote_id: str | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
 
 
 class CancelBatchResult(Struct):
@@ -83,9 +83,9 @@ class CancelBatchResult(Struct):
 
 class CancelBatchRfqsRequest(Struct):
     subaccount_id: int
-    label: str | None | UnsetType = UNSET
-    nonce: int | None | UnsetType = UNSET
-    rfq_id: str | None | UnsetType = UNSET
+    label: str | UnsetType = UNSET
+    nonce: int | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
 
 
 class CancelBatchRfqsResponse(CancelBatchResult):
@@ -104,7 +104,7 @@ class CancelByInstrumentResponse(Struct):
 class CancelByLabelRequest(Struct):
     label: str
     subaccount_id: int
-    instrument_name: str | None | UnsetType = UNSET
+    instrument_name: str | UnsetType = UNSET
 
 
 class CancelByLabelResponse(CancelByInstrumentResponse):
@@ -130,9 +130,9 @@ class CancelOrderRequest(Struct):
 class CancelQuoteRequest(Struct):
     quote_id: str
     subaccount_id: int
-    label: str | None | UnsetType = UNSET
-    nonce: int | None | UnsetType = UNSET
-    rfq_id: str | None | UnsetType = UNSET
+    label: str | UnsetType = UNSET
+    nonce: int | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
 
 
 class CancelReason(StrEnum):
@@ -214,7 +214,7 @@ class CreateVaultRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
-    benchmark_asset: Address | None | UnsetType = UNSET
+    benchmark_asset: Address | UnsetType = UNSET
 
 
 class DailyTradingStatistics(
@@ -274,7 +274,7 @@ class EditSessionKeyRequest(Struct):
     public_session_key: str
     wallet: str
     ip_whitelist: list[str] | UnsetType = UNSET
-    label: str | None | UnsetType = UNSET
+    label: str | UnsetType = UNSET
     offchain_scopes: list[str] | UnsetType = UNSET
 
 
@@ -323,10 +323,10 @@ class GetAlgoOrdersRequest(CancelAllAlgoOrdersRequest):
 class GetAllInstrumentsRequest(Struct):
     expired: bool
     instrument_type: AssetType
-    currency: str | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    risk_universe_id: int | None | UnsetType = UNSET
+    currency: str | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    risk_universe_id: int | UnsetType = UNSET
 
 
 class GetAllPortfoliosRequest(GetAccountRequest):
@@ -356,10 +356,10 @@ class GetCurrencyRequest(Struct):
 
 
 class GetDepositHistoryRequest(Struct):
-    end_timestamp: int | None | UnsetType = UNSET
-    start_timestamp: int | None | UnsetType = UNSET
-    subaccount_id: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    end_timestamp: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetErc20TransferHistoryRequest(GetDepositHistoryRequest):
@@ -367,20 +367,20 @@ class GetErc20TransferHistoryRequest(GetDepositHistoryRequest):
 
 
 class GetFundingHistoryRequest(Struct):
-    end_timestamp: int | None | UnsetType = UNSET
-    instrument_name: str | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    start_timestamp: int | None | UnsetType = UNSET
-    subaccount_id: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    end_timestamp: int | UnsetType = UNSET
+    instrument_name: str | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetFundingRateHistoryRequest(Struct):
     instrument_name: str
-    end_timestamp: int | None | UnsetType = UNSET
-    period: int | None | UnsetType = UNSET
-    start_timestamp: int | None | UnsetType = UNSET
+    end_timestamp: int | UnsetType = UNSET
+    period: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
 
 
 class GetIndexChartDataRequest(Struct):
@@ -400,15 +400,15 @@ class GetInterestHistoryRequest(GetDepositHistoryRequest):
 
 class GetInterestRateHistoryRequest(Struct):
     currency: str
-    end_timestamp: int | None | UnsetType = UNSET
-    period: int | None | UnsetType = UNSET
-    risk_universe_id: int | None | UnsetType = UNSET
-    start_timestamp: int | None | UnsetType = UNSET
+    end_timestamp: int | UnsetType = UNSET
+    period: int | UnsetType = UNSET
+    risk_universe_id: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
 
 
 class GetLatestSignedFeedsRequest(Struct):
-    currency: str | None | UnsetType = UNSET
-    expiry: int | None | UnsetType = UNSET
+    currency: str | UnsetType = UNSET
+    expiry: int | UnsetType = UNSET
 
 
 class GetLiveBurnRequestsRequest(Struct):
@@ -425,12 +425,12 @@ class GetLiveVaultRequestsRequest(GetCuratedVaultsRequest):
 
 
 class GetOnchainActionHistoryParams(Struct):
-    action_type: int | None | UnsetType = UNSET
-    end_timestamp: int | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    start_timestamp: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    action_type: int | UnsetType = UNSET
+    end_timestamp: int | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetOpenOrdersRequest(CancelAllAlgoOrdersRequest):
@@ -438,8 +438,8 @@ class GetOpenOrdersRequest(CancelAllAlgoOrdersRequest):
 
 
 class GetOptionSettlementHistoryParams(Struct):
-    subaccount_id: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetOptionSettlementPricesRequest(GetCurrencyRequest):
@@ -447,12 +447,12 @@ class GetOptionSettlementPricesRequest(GetCurrencyRequest):
 
 
 class GetOrderHistoryRequest(Struct):
-    from_timestamp: int | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    subaccount_id: int | None | UnsetType = UNSET
-    to_timestamp: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    from_timestamp: int | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    to_timestamp: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetOrderRequest(CancelAlgoOrderRequest):
@@ -468,16 +468,16 @@ class GetPositionsRequest(CancelAllAlgoOrdersRequest):
 
 
 class GetPublicTradeHistoryRequest(Struct):
-    batch_status: BatchStatus | None | UnsetType = UNSET
-    currency: str | None | UnsetType = UNSET
-    from_timestamp: int | None | UnsetType = UNSET
-    instrument_name: str | None | UnsetType = UNSET
-    instrument_type: AssetType | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    subaccount_id: int | None | UnsetType = UNSET
-    to_timestamp: int | None | UnsetType = UNSET
-    trade_id: str | None | UnsetType = UNSET
+    batch_status: BatchStatus | UnsetType = UNSET
+    currency: str | UnsetType = UNSET
+    from_timestamp: int | UnsetType = UNSET
+    instrument_name: str | UnsetType = UNSET
+    instrument_type: AssetType | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    to_timestamp: int | UnsetType = UNSET
+    trade_id: str | UnsetType = UNSET
 
 
 class GetQuotesRequest(Struct):
@@ -485,17 +485,17 @@ class GetQuotesRequest(Struct):
     from_timestamp: int | UnsetType = 0
     page: int | UnsetType = 1
     page_size: int | UnsetType = 20
-    quote_id: str | None | UnsetType = UNSET
-    rfq_id: str | None | UnsetType = UNSET
-    status: str | None | UnsetType = UNSET
+    quote_id: str | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
+    status: str | UnsetType = UNSET
     to_timestamp: int | UnsetType = 9223372036854775807
 
 
 class GetReferralPerformanceParams(Struct):
     end_ms: int
     start_ms: int
-    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    wallet: str | None | UnsetType = UNSET
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    wallet: str | UnsetType = UNSET
 
 
 class GetRfqsRequest(Struct):
@@ -503,8 +503,8 @@ class GetRfqsRequest(Struct):
     from_timestamp: int | UnsetType = 0
     page: int | UnsetType = 1
     page_size: int | UnsetType = 20
-    rfq_id: str | None | UnsetType = UNSET
-    status: str | None | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
+    status: str | UnsetType = UNSET
     to_timestamp: int | UnsetType = 9223372036854775807
 
 
@@ -526,20 +526,20 @@ class GetTickerRequest(GetInstrumentRequest):
 
 class GetTickersRequest(Struct):
     instrument_type: AssetType
-    currency: str | None | UnsetType = UNSET
-    expiry_date: int | None | UnsetType = UNSET
+    currency: str | UnsetType = UNSET
+    expiry_date: int | UnsetType = UNSET
 
 
 class GetTradeHistoryRequest(Struct):
-    from_timestamp: int | None | UnsetType = UNSET
-    instrument_name: str | None | UnsetType = UNSET
-    order_id: str | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
-    quote_id: str | None | UnsetType = UNSET
-    subaccount_id: int | None | UnsetType = UNSET
-    to_timestamp: int | None | UnsetType = UNSET
-    wallet: str | None | UnsetType = UNSET
+    from_timestamp: int | UnsetType = UNSET
+    instrument_name: str | UnsetType = UNSET
+    order_id: str | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    quote_id: str | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    to_timestamp: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetTradingviewChartDataRequest(Struct):
@@ -566,9 +566,9 @@ class GetTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
 
 class GetVaultActionHistoryRequest(Struct):
     subaccount_id: int
-    event_type: str | None | UnsetType = UNSET
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
+    event_type: str | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
 
 
 class GetVaultRequest(CancelAllAlgoOrdersRequest):
@@ -577,8 +577,8 @@ class GetVaultRequest(CancelAllAlgoOrdersRequest):
 
 class GetVaultRequestHistoryRequest(Struct):
     wallet: str
-    page: int | None | UnsetType = UNSET
-    page_size: int | None | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
 
 
 class GetVaultSharesRequest(GetCuratedVaultsRequest):
@@ -663,7 +663,7 @@ class MmpConfigResult(Struct):
 
 class MmpScopeRequest(Struct):
     subaccount_id: int
-    currency: str | None | UnsetType = UNSET
+    currency: str | UnsetType = UNSET
 
 
 class OffchainAckResponse(Struct):
@@ -882,9 +882,9 @@ class PollRfqsRequest(Struct):
     from_timestamp: int | UnsetType = 0
     page: int | UnsetType = 1
     page_size: int | UnsetType = 20
-    rfq_id: str | None | UnsetType = UNSET
-    rfq_subaccount_id: int | None | UnsetType = UNSET
-    status: str | None | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
+    rfq_subaccount_id: int | UnsetType = UNSET
+    status: str | UnsetType = UNSET
     to_timestamp: int | UnsetType = 9223372036854775807
 
 
@@ -1037,7 +1037,7 @@ class PrivateWithdrawRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    recipient: str | None | UnsetType = UNSET
+    recipient: str | UnsetType = UNSET
 
 
 class PrivateWithdrawResponse(PrivateLiquidateResponse):
@@ -1109,7 +1109,7 @@ class PublicWithdrawDebugRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    recipient: str | None | UnsetType = UNSET
+    recipient: str | UnsetType = UNSET
 
 
 class QuoteExecuteDebugResult(Struct):
@@ -1196,7 +1196,7 @@ class Referrer(Struct):
 class RegisterDepositAddressParams(Struct):
     deposit_type: DepositType
     wallet: str
-    manager_id: int | None | UnsetType = UNSET
+    manager_id: int | UnsetType = UNSET
     subaccount_id: int | UnsetType = 0
 
 
@@ -1222,8 +1222,8 @@ class ReplaceQuoteRequest(Struct):
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
-    nonce_to_cancel: int | None | UnsetType = UNSET
-    quote_id_to_cancel: str | None | UnsetType = UNSET
+    nonce_to_cancel: int | UnsetType = UNSET
+    quote_id_to_cancel: str | UnsetType = UNSET
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
 
@@ -1277,7 +1277,7 @@ class RfqGetBestQuoteRequest(Struct):
     direction: Direction | UnsetType = Direction('buy')
     extra_fee: Decimal | UnsetType = Decimal('0')
     legs: list[LegUnpricedParams] | UnsetType = field(default_factory=list)
-    rfq_id: str | None | UnsetType = UNSET
+    rfq_id: str | UnsetType = UNSET
 
 
 class RiskUniverseManager(Struct):
@@ -1317,8 +1317,8 @@ class SendRfqRequest(Struct):
     counterparties: list[str] | UnsetType = UNSET
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
-    max_total_cost: Decimal | None | UnsetType = UNSET
-    min_total_cost: Decimal | None | UnsetType = UNSET
+    max_total_cost: Decimal | UnsetType = UNSET
+    min_total_cost: Decimal | UnsetType = UNSET
     partial_fill_step: Decimal | UnsetType = Decimal('1')
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
@@ -1367,7 +1367,7 @@ class SetSessionKeyRequest(Struct):
     signer: str
     wallet: str
     ip_whitelist: list[str] | UnsetType = UNSET
-    label: str | None | UnsetType = UNSET
+    label: str | UnsetType = UNSET
     subaccount_ids: list[int] | UnsetType = UNSET
 
 
@@ -1576,10 +1576,10 @@ class UniverseManagers(Struct):
 
 class UpdateVaultInfoRequest(Struct):
     subaccount_id: int
-    description: str | None | UnsetType = UNSET
-    mtm_cap: Decimal | None | UnsetType = UNSET
-    name: str | None | UnsetType = UNSET
-    whitelist_only: bool | None | UnsetType = UNSET
+    description: str | UnsetType = UNSET
+    mtm_cap: Decimal | UnsetType = UNSET
+    name: str | UnsetType = UNSET
+    whitelist_only: bool | UnsetType = UNSET
 
 
 class UpdateWhitelistedRecipientsRequest(Struct):
@@ -1750,23 +1750,23 @@ class CreateOrderRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    algo_duration_sec: int | None | UnsetType = UNSET
-    algo_num_slices: int | None | UnsetType = UNSET
-    algo_type: AlgoType | None | UnsetType = UNSET
-    client: str | None | UnsetType = '8baller-python-sdk'
-    extra_fee: Decimal | None | UnsetType = UNSET
-    is_atomic_signing: bool | None | UnsetType = UNSET
-    label: str | None | UnsetType = UNSET
-    mmp: bool | None | UnsetType = UNSET
+    algo_duration_sec: int | UnsetType = UNSET
+    algo_num_slices: int | UnsetType = UNSET
+    algo_type: AlgoType | UnsetType = UNSET
+    client: str | UnsetType = '8baller-python-sdk'
+    extra_fee: Decimal | UnsetType = UNSET
+    is_atomic_signing: bool | UnsetType = UNSET
+    label: str | UnsetType = UNSET
+    mmp: bool | UnsetType = UNSET
     order_type: OrderType | UnsetType = OrderType('limit')
-    reduce_only: bool | None | UnsetType = UNSET
-    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    reject_post_only: bool | None | UnsetType = UNSET
-    reject_timestamp: int | None | UnsetType = UNSET
+    reduce_only: bool | UnsetType = UNSET
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    reject_post_only: bool | UnsetType = UNSET
+    reject_timestamp: int | UnsetType = UNSET
     time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
-    trigger_price: Decimal | None | UnsetType = UNSET
-    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
-    trigger_type: TriggerType | None | UnsetType = UNSET
+    trigger_price: Decimal | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | UnsetType = UNSET
+    trigger_type: TriggerType | UnsetType = UNSET
 
 
 class ExecuteQuoteRequest(Struct):
@@ -1835,14 +1835,14 @@ class GetTickersResponse(Struct):
 class GetVaultPerformanceHistoryRequest(Struct):
     resolution: PerformanceResolution
     subaccount_id: int
-    from_: int | None | UnsetType = field(name='from', default=UNSET)
-    limit: int | None | UnsetType = UNSET
-    to: int | None | UnsetType = UNSET
+    from_: int | UnsetType = field(name='from', default=UNSET)
+    limit: int | UnsetType = UNSET
+    to: int | UnsetType = UNSET
 
 
 class GetWalletsFromSessionKeyRequest(Struct):
     public_session_key: str
-    scope: OffchainKeyScope | None | UnsetType = UNSET
+    scope: OffchainKeyScope | UnsetType = UNSET
 
 
 class Instrument(Struct):
@@ -1958,7 +1958,7 @@ class OrderQuoteRequest(Struct):
     signer: str
     subaccount_id: int
     client: str | UnsetType = '8baller-python-sdk'
-    extra_fee: Decimal | None | UnsetType = UNSET
+    extra_fee: Decimal | UnsetType = UNSET
     is_atomic_signing: bool | UnsetType = False
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
@@ -1968,9 +1968,9 @@ class OrderQuoteRequest(Struct):
     reject_post_only: bool | UnsetType = True
     reject_timestamp: int | UnsetType = 9223372036854775807
     time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
-    trigger_price: Decimal | None | UnsetType = UNSET
-    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
-    trigger_type: TriggerType | None | UnsetType = UNSET
+    trigger_price: Decimal | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | UnsetType = UNSET
+    trigger_type: TriggerType | UnsetType = UNSET
 
 
 class OrderQuoteResponse(Struct):
@@ -2143,7 +2143,7 @@ class RFQPollResponse(Struct):
 
 class RejectDepositRequestRequest(Struct):
     request_id: VaultRequestId
-    reason: str | None | UnsetType = UNSET
+    reason: str | UnsetType = UNSET
 
 
 class ReplaceOrderRequest(Struct):
@@ -2157,26 +2157,26 @@ class ReplaceOrderRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    algo_duration_sec: int | None | UnsetType = UNSET
-    algo_num_slices: int | None | UnsetType = UNSET
-    algo_type: AlgoType | None | UnsetType = UNSET
-    client: str | None | UnsetType = '8baller-python-sdk'
-    expected_filled_amount: Decimal | None | UnsetType = UNSET
-    extra_fee: Decimal | None | UnsetType = UNSET
-    is_atomic_signing: bool | None | UnsetType = UNSET
-    label: str | None | UnsetType = UNSET
-    mmp: bool | None | UnsetType = UNSET
-    nonce_to_cancel: int | None | UnsetType = UNSET
-    order_id_to_cancel: str | None | UnsetType = UNSET
+    algo_duration_sec: int | UnsetType = UNSET
+    algo_num_slices: int | UnsetType = UNSET
+    algo_type: AlgoType | UnsetType = UNSET
+    client: str | UnsetType = '8baller-python-sdk'
+    expected_filled_amount: Decimal | UnsetType = UNSET
+    extra_fee: Decimal | UnsetType = UNSET
+    is_atomic_signing: bool | UnsetType = UNSET
+    label: str | UnsetType = UNSET
+    mmp: bool | UnsetType = UNSET
+    nonce_to_cancel: int | UnsetType = UNSET
+    order_id_to_cancel: str | UnsetType = UNSET
     order_type: OrderType | UnsetType = OrderType('limit')
-    reduce_only: bool | None | UnsetType = UNSET
-    referral_code: str | None | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
-    reject_post_only: bool | None | UnsetType = UNSET
-    reject_timestamp: int | None | UnsetType = UNSET
+    reduce_only: bool | UnsetType = UNSET
+    referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
+    reject_post_only: bool | UnsetType = UNSET
+    reject_timestamp: int | UnsetType = UNSET
     time_in_force: TimeInForce | UnsetType = TimeInForce('gtc')
-    trigger_price: Decimal | None | UnsetType = UNSET
-    trigger_price_type: TriggerPriceType | None | UnsetType = UNSET
-    trigger_type: TriggerType | None | UnsetType = UNSET
+    trigger_price: Decimal | UnsetType = UNSET
+    trigger_price_type: TriggerPriceType | UnsetType = UNSET
+    trigger_type: TriggerType | UnsetType = UNSET
 
 
 class ReplaceOrderResponse(Struct):

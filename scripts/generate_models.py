@@ -11,6 +11,8 @@ from libcst import matchers as m
 TIMEOUT = 10
 CUSTOM_HEADER = "# ruff: noqa: E741,E501"
 
+REQUEST_STRUCT_SUFFIXES = ("Request", "Params")
+
 # class_name -> {readable_python_name: original_wire_key}
 FIELD_RENAMES: dict[str, dict[str, str]] = {
     "TickerSlimSnapshot": {
@@ -209,6 +211,52 @@ def _apply_field_renames(node: ast.ClassDef) -> None:
     node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
 
 
+def _union_members(annotation: ast.expr) -> list[ast.expr]:
+    if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+        return _union_members(annotation.left) + _union_members(annotation.right)
+    return [annotation]
+
+
+def _is_none(node: ast.expr) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def _rebuild_union(members: list[ast.expr]) -> ast.expr:
+    out = members[0]
+    for member in members[1:]:
+        out = ast.BinOp(left=out, op=ast.BitOr(), right=member)
+    return out
+
+
+def _drop_none_from_requests(node: ast.ClassDef) -> None:
+    """Rewrite `T | None | UnsetType` to `T | UnsetType` on request structs.
+
+    A field left at `T | None = None` (the asyncapi path emits these) gains
+    UnsetType and defaults to UNSET instead, since `T = None` would not
+    typecheck and null is not what the API wants on the wire either.
+    """
+    if not node.name.endswith(REQUEST_STRUCT_SUFFIXES):
+        return
+
+    for stmt in node.body:
+        if not isinstance(stmt, ast.AnnAssign):
+            continue
+        members = _union_members(stmt.annotation)
+        kept = [m for m in members if not _is_none(m)]
+        if len(kept) == len(members):
+            continue
+        if not kept:
+            raise ValueError(f"{node.name}.{ast.unparse(stmt.target)} is None-only")
+
+        had_unset = any(isinstance(m, ast.Name) and m.id == "UnsetType" for m in kept)
+        if not had_unset:
+            kept.append(ast.Name(id="UnsetType", ctx=ast.Load()))
+        stmt.annotation = _rebuild_union(kept)
+
+        if stmt.value is not None and _is_none(stmt.value):
+            stmt.value = ast.Name(id="UNSET", ctx=ast.Load())
+
+
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -225,6 +273,7 @@ class OptionalRewriter(ast.NodeTransformer):
             return node
 
         _apply_field_renames(node)
+        _drop_none_from_requests(node)
         node.body = reorder_fields(node.body)
         return node
 
