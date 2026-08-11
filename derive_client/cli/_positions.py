@@ -9,7 +9,7 @@ import rich_click as click
 from derive_client.data_types import PositionTransfer
 from derive_client.data_types.generated_models import Direction, RFQStatus
 
-from ._columns import OPEN_POSITION_COLUMNS, QUOTE_COLUMNS
+from ._columns import OPEN_POSITION_COLUMNS
 from ._utils import console, print_table, structs_to_dataframe
 
 
@@ -27,52 +27,47 @@ def list(ctx):
     client = ctx.obj["client"]
     subaccount = client.active_subaccount
     positions = subaccount.positions.list()
-    df = structs_to_dataframe(positions)
 
-    print(f"\n=== Active Positions of subaccount {subaccount.id} ===")
-    if not df.empty:
-        print(df[OPEN_POSITION_COLUMNS])
-    else:
-        print("No open positions")
+    print_table(
+        structs_to_dataframe(positions),
+        title=f"Active Positions (subaccount {subaccount.id})",
+        columns=OPEN_POSITION_COLUMNS,
+    )
 
 
 @position.command("transfer")
-@click.argument(
-    "instrument_name",
-    required=True,
-)
-@click.argument(
-    "amount",
-    required=True,
-    type=Decimal,
-)
-@click.argument(
-    "to_subaccount",
-    required=True,
-    type=int,
-)
+@click.argument("instrument_name")
+@click.argument("amount", type=Decimal)
+@click.argument("to_subaccount", type=int)
 @click.pass_context
 def transfer(ctx, instrument_name: str, amount: Decimal, to_subaccount: int):
-    """Transfers a positions from one subaccount to another, owned by the same wallet.
+    """Transfer part of a position to another subaccount of the same wallet.
+
+    The amount is a magnitude; its sign is taken from the position you hold.
 
     Examples:
-        drv position transfer BTC-PERP 0.1 123456
-        drv position transfer -- ETH-PERP -0.1 123456
+        drv position transfer ETH-PERP 0.01 75726
     """
 
     client = ctx.obj["client"]
     subaccount = client.active_subaccount
-    transfer = subaccount.positions.transfer(
-        positions=[PositionTransfer(instrument_name, amount)],
+
+    held = next((p for p in subaccount.positions.list() if p.instrument_name == instrument_name), None)
+    if held is None:
+        raise click.ClickException(f"No {instrument_name} position on subaccount {subaccount.id}")
+
+    magnitude = abs(amount)
+    if magnitude > abs(Decimal(held.amount)):
+        raise click.ClickException(f"Error: Position is {held.amount}, cannot transfer {magnitude}")
+
+    signed = -magnitude if Decimal(held.amount) < 0 else magnitude
+
+    result = subaccount.positions.transfer(
+        positions=[PositionTransfer(instrument_name, signed)],
         direction=Direction.buy,
         to_subaccount=to_subaccount,
     )
 
-    print_table(
-        structs_to_dataframe([transfer.maker_quote, transfer.taker_quote]),
-        title=f"Transfer from subaccount {subaccount.id} to {to_subaccount}",
-        columns=QUOTE_COLUMNS,
-    )
-
-    if RFQStatus.filled not in (transfer.maker_quote.status, transfer.taker_quote.status):
-        console.print(f"[bold red]Transfer did not fill: {transfer.maker_quote.status}[/bold red]")
+    filled = RFQStatus.filled == result.maker_quote.status == result.taker_quote.status
+    outcome = "filled" if filled else f"[bold red]{result.maker_quote.status}[/bold red]"
+    console.print(f"Transferred {signed} {instrument_name}: subaccount {subaccount.id} → {to_subaccount} ({outcome})")
