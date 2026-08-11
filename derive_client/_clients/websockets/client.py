@@ -358,9 +358,9 @@ class WebSocketClient:
         finally:
             self._session._request_timeout = prev
 
-    async def __enter__(self):
+    async def __aenter__(self) -> WebSocketClient:
         await self.connect()
         return self
 
-    async def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.disconnect()
