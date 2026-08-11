@@ -16,5 +16,5 @@ def test_position_list(runner):
 def test_position_transfer(runner):
     """Test: `drv position transfer`"""
 
-    result = runner.invoke(drv, ["position", "transfer", "ETH-PERP", "0.01", "137627"])
+    result = runner.invoke(drv, ["position", "transfer", "ETH-PERP", "0.01", "75723"])
     assert result.exit_code == 0, f"Command failed with output:\n{result.output}"

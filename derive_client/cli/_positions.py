@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pandas as pd
 import rich_click as click
 
-from ._columns import OPEN_POSITION_COLUMNS, TRADE_COLUMNS
-from ._utils import struct_to_series, structs_to_dataframe
+from derive_client.data_types import PositionTransfer
+from derive_client.data_types.generated_models import Direction, RFQStatus
+
+from ._columns import OPEN_POSITION_COLUMNS, QUOTE_COLUMNS
+from ._utils import console, print_table, structs_to_dataframe
 
 
 @click.group("position")
@@ -61,12 +63,16 @@ def transfer(ctx, instrument_name: str, amount: Decimal, to_subaccount: int):
     client = ctx.obj["client"]
     subaccount = client.active_subaccount
     transfer = subaccount.positions.transfer(
-        instrument_name=instrument_name,
-        amount=amount,
+        positions=[PositionTransfer(instrument_name, amount)],
+        direction=Direction.buy,
         to_subaccount=to_subaccount,
     )
-    series = struct_to_series(transfer)
-    trades = pd.DataFrame([struct_to_series(series.maker_trade), struct_to_series(series.taker_trade)])
 
-    print(f"\n=== Transfer Position from subaccount {subaccount.id} to {to_subaccount} ===")
-    print(trades[TRADE_COLUMNS])
+    print_table(
+        structs_to_dataframe([transfer.maker_quote, transfer.taker_quote]),
+        title=f"Transfer from subaccount {subaccount.id} to {to_subaccount}",
+        columns=QUOTE_COLUMNS,
+    )
+
+    if RFQStatus.filled not in (transfer.maker_quote.status, transfer.taker_quote.status):
+        console.print(f"[bold red]Transfer did not fill: {transfer.maker_quote.status}[/bold red]")
