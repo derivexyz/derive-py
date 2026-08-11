@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-import msgspec
-
 from derive_client._clients.rest.async_http.api import AsyncPublicAPI
-from derive_client._clients.utils import async_fetch_all_pages_of_instrument_type, infer_instrument_type
+from derive_client._clients.utils import async_fetch_all_pages_of_instrument_type, infer_instrument_type, unset_if_none
 from derive_client.config import INT64_MAX
 from derive_client.data_types import LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
@@ -277,7 +275,7 @@ class MarketOperations:
         params = GetTickersRequest(
             currency=currency,
             instrument_type=instrument_type,
-            expiry_date=expiry_date or msgspec.UNSET,
+            expiry_date=unset_if_none(expiry_date),
         )
         result = await self._public_api.rpc.get_tickers(params)
         return result.tickers

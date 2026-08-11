@@ -8,7 +8,7 @@ import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.history import HistoryOperations
-from derive_client._clients.utils import AuthContext
+from derive_client._clients.utils import AuthContext, unset_if_none
 from derive_client._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
@@ -184,9 +184,9 @@ class LightAccount:
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
             wallet=wallet,
-            ip_whitelist=ip_whitelist or msgspec.UNSET,
-            label=label or msgspec.UNSET,
-            subaccount_ids=subaccount_ids or msgspec.UNSET,
+            ip_whitelist=unset_if_none(ip_whitelist),
+            label=unset_if_none(label),
+            subaccount_ids=unset_if_none(subaccount_ids),
         )
 
         result = self._private_api.rpc.set_session_key(params)
@@ -205,9 +205,9 @@ class LightAccount:
         params = EditSessionKeyRequest(
             wallet=self.address,
             public_session_key=public_session_key,
-            ip_whitelist=ip_whitelist or msgspec.UNSET,
-            label=label,
-            offchain_scopes=list(map(str, offchain_scopes)) if offchain_scopes else msgspec.UNSET,
+            ip_whitelist=unset_if_none(ip_whitelist),
+            label=unset_if_none(label),
+            offchain_scopes=list(map(str, offchain_scopes)) if offchain_scopes is not None else msgspec.UNSET,
         )
         result = self._private_api.rpc.edit_session_key(params)
         return result

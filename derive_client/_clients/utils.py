@@ -264,6 +264,11 @@ def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
     return msgspec.json.encode(filtered)
 
 
+def unset_if_none(value: T | None) -> T | msgspec.UnsetType:
+    """Map None to UNSET, leaving every other value alone."""
+    return msgspec.UNSET if value is None else value
+
+
 async def async_fetch_all_pages_of_instrument_type(
     markets: AsyncMarketOperations,
     instrument_type: AssetType,

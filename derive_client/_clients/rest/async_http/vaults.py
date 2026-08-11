@@ -34,8 +34,6 @@ import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-import msgspec
-
 from derive_client._web3.action_signing import (
     SignedAction,
     VaultBurnSharesModuleData,
@@ -136,7 +134,7 @@ class VaultOperations:
         """Get every vault on the exchange, paginated. This is how shareholders
         discover a vault."""
 
-        params = GetVaultsRequest(page=page, page_size=page_size or msgspec.UNSET)
+        params = GetVaultsRequest(page=page, page_size=page_size)
         result = await self._subaccount._public_api.rpc.get_vaults(params)
         return result
 
