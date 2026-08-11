@@ -279,6 +279,7 @@ class WebSocketSession:
             return
 
         await self._state.set_disconnected()
+        await self._fail_pending_requests("connection lost")
         self._logger.warning("WebSocket disconnected")
 
         # Notify user callback
