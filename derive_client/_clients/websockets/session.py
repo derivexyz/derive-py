@@ -437,7 +437,7 @@ class WebSocketSession:
         try:
             while not self._stop_event.is_set() and self._ws:
                 try:
-                    message = await self._ws.recv()
+                    message = await self._ws.recv(decode=False)
                     try:
                         await self._dispatch_message(message)
                     except Exception:
