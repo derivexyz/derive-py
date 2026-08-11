@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional, TypeVar
 
 import msgspec
 from dotenv import load_dotenv
@@ -23,10 +23,18 @@ from derive_client._web3.action_signing import (
     sign_rest_auth_header,
     sign_ws_login,
 )
-from derive_client.data_types import ChecksumAddress, ClientConfig, EnvConfig, Environment, PositionTransfer
+from derive_client.data_types import (
+    ChecksumAddress,
+    ClientConfig,
+    EnvConfig,
+    Environment,
+    PositionTransfer,
+    RiskUniverseID,
+)
 from derive_client.data_types.generated_models import (
     AssetType,
     BatchStatus,
+    GetAllInstrumentsResponse,
     GetTransactionResult,
     Instrument,
     LegUnpricedParams,
@@ -36,7 +44,13 @@ from derive_client.data_types.generated_models import (
     VaultActionResponse,
     VaultRequestId,
 )
-from derive_client.exceptions import SettlementFailed, SettlementTimeout, VaultRequestFailed, VaultRequestTimeout
+from derive_client.exceptions import (
+    DeriveJSONRPCError,
+    SettlementFailed,
+    SettlementTimeout,
+    VaultRequestFailed,
+    VaultRequestTimeout,
+)
 
 if TYPE_CHECKING:
     from websockets import Data
@@ -122,19 +136,6 @@ class AuthContext:
         )
         action.sign(HexBytes(self.account.key).to_0x_hex())
         return action
-
-
-class DeriveJSONRPCError(Exception):
-    """Raised when a Derive JSON-RPC error payload is returned."""
-
-    def __init__(self, message_id: str | int, rpc_error: RPCError):
-        super().__init__(f"{rpc_error.code}: {rpc_error.message} (message_id={message_id})")
-        self.message_id = message_id
-        self.rpc_error = rpc_error
-
-    def __str__(self):
-        base = f"Derive RPC {self.rpc_error.code}: {self.rpc_error.message}"
-        return f"{base}  [data={self.rpc_error.data!r}]" if self.rpc_error.data is not None else base
 
 
 def try_cast_response(response: bytes, response_schema: type[T]) -> T:
@@ -261,32 +262,6 @@ def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
     data = msgspec.structs.asdict(obj)
     filtered = {k: v for k, v in data.items() if v is not None and v is not msgspec.UNSET}
     return msgspec.json.encode(filtered)
-
-
-def fetch_all_pages_of_instrument_type(
-    markets: MarketOperations,
-    instrument_type: AssetType,
-    expired: bool,
-) -> list[Instrument]:
-    """Fetch all instruments of a type, handling pagination."""
-
-    page = 1
-    page_size = 1000
-    instruments = []
-
-    while True:
-        result = markets.get_all_instruments(
-            expired=expired,
-            instrument_type=instrument_type,
-            page=page,
-            page_size=page_size,
-        )
-        instruments.extend(result.instruments)
-        if not result.pagination or page >= result.pagination.num_pages:
-            break
-        page += 1
-
-    return instruments
 
 
 async def async_fetch_all_pages_of_instrument_type(
@@ -565,3 +540,50 @@ def wait_for_new_curated_vault(
         if time.monotonic() - start > timeout:
             raise SettlementTimeout(f"No new curated vault appeared within {timeout}s", None)
         time.sleep(poll_interval)
+
+
+def iter_instrument_pages(
+    *,
+    markets: MarketOperations,
+    instrument_type: AssetType,
+    expired: bool = False,
+    currency: Optional[str] = None,
+    risk_universe_id: Optional[RiskUniverseID] | None = None,
+    page_size: int = 1000,
+) -> Iterator[GetAllInstrumentsResponse]:
+    """Lazily yield pages of instruments.
+
+    No request is issued until a page is pulled, so a caller that stops early
+    pays for only the pages it consumed. Pages are yielded whole to keep
+    `pagination.count` reachable.
+    """
+
+    page = 1
+    while True:
+        result = markets.get_all_instruments(
+            expired=expired,
+            instrument_type=instrument_type,
+            currency=currency,
+            page=page,
+            page_size=page_size,
+            risk_universe_id=risk_universe_id,
+        )
+        yield result
+
+        if not result.instruments or page >= result.pagination.num_pages:
+            return
+        page += 1
+
+
+def fetch_all_pages_of_instrument_type(
+    markets: MarketOperations,
+    instrument_type: AssetType,
+    expired: bool,
+) -> list[Instrument]:
+    """Fetch all instruments of a type, handling pagination."""
+
+    return [
+        instrument
+        for page in iter_instrument_pages(markets=markets, instrument_type=instrument_type, expired=expired)
+        for instrument in page.instruments
+    ]
