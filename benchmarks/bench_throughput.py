@@ -41,7 +41,7 @@ from websockets.asyncio.client import connect
 
 from benchmarks.corpus import ENCODER, Channel, RPCCase, build_channels, build_rpc_cases
 from benchmarks.feeder import feeder_main
-from benchmarks.harness import Result
+from benchmarks.harness import Result, _git_rev
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
 
@@ -250,6 +250,7 @@ def _result(name: str, bursts: list[Burst], bytes_per_op: int, meta: dict) -> Re
         samples=len(bursts),
         iters_per_sample=bursts[0].messages,
         bytes_per_op=bytes_per_op,
+        git=_git_rev(),
         meta={**meta, "peak_rss_mib": round(max(b.peak_rss_kib for b in bursts) / 1024, 1)},
     )
 

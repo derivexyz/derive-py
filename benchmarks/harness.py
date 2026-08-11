@@ -12,6 +12,7 @@ spawns a server process, which does not sit well inside a test session.
 
 from __future__ import annotations
 
+import functools
 import json
 import math
 import platform
@@ -50,6 +51,10 @@ class Result:
     #: Bytes moved per operation, when the benchmark knows. Drives the MiB/s
     #: column; zero means the column is omitted.
     bytes_per_op: int = 0
+    #: Commit this result was measured at, stamped here rather than taken from
+    #: the file's environment block: merge_into_baseline carries untouched
+    #: entries forward, so one recording can hold results from several commits.
+    git: str = ""
     #: Free-form extras a benchmark wants to carry into the report.
     meta: dict = field(default_factory=dict)
 
@@ -173,6 +178,7 @@ def run_bench(bench: Bench, *, samples: int = 20, min_time_ms: float = 50.0) -> 
         samples=samples,
         iters_per_sample=iters,
         bytes_per_op=bench.bytes_per_op,
+        git=_git_rev(),
         meta=dict(bench.meta),
     )
 
@@ -192,6 +198,7 @@ def run_all(benches: Iterable[Bench], *, samples: int, min_time_ms: float, echo:
 # -- baselines ------------------------------------------------------------
 
 
+@functools.cache
 def _git_rev() -> str:
     try:
         out = subprocess.run(
@@ -262,11 +269,16 @@ def load_baseline(name: str) -> tuple[dict, dict[str, Result]]:
     if path is None:
         return {}, {}
     payload = json.loads(path.read_text())
+    environment = payload.get("environment", {})
     results = {}
     for raw in payload.get("results", []):
         raw.setdefault("meta", {})
+        # Recordings written before results carried their own commit: fall back
+        # to the file's. Correct wherever a recording holds one commit's work,
+        # which is every existing file.
+        raw.setdefault("git", environment.get("git", ""))
         results[raw["name"]] = Result(**raw)
-    return payload.get("environment", {}), results
+    return environment, results
 
 
 def merge_into_baseline(name: str, results: Sequence[Result]) -> Path:
