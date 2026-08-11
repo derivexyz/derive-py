@@ -79,7 +79,6 @@ class WebSocketSession:
         on_disconnect: LifecycleCallback | None = None,
         on_reconnect: LifecycleCallback | None = None,
         on_before_resubscribe: LifecycleCallback | None = None,
-        max_handler_tasks: int = 100,  # Limit concurrent handler tasks
     ):
         """
         Args:
@@ -92,7 +91,6 @@ class WebSocketSession:
             on_disconnect: Callback when disconnection is detected
             on_reconnect: Callback after successful reconnection (before resubscribe)
             on_before_resubscribe: Callback before resubscribing channels (for re-auth)
-            max_handler_tasks: Maximum number of concurrent handler tasks
         """
         self._url = url
         self._request_timeout = request_timeout
@@ -127,11 +125,6 @@ class WebSocketSession:
         self._reconnect_task: asyncio.Task | None = None
         self._stop_event = asyncio.Event()
 
-        # Handler task management
-        self._handler_tasks: set[asyncio.Task] = set()
-        self._max_handler_tasks = max_handler_tasks
-        self._handler_semaphore = asyncio.Semaphore(max_handler_tasks)
-
         # Cleanup
         self._finalizer = weakref.finalize(self, self._finalize, logger=self._logger)
 
@@ -163,18 +156,6 @@ class WebSocketSession:
 
         self._receiver_task = None
         self._reconnect_task = None
-
-        # Wait for handler tasks to complete (with timeout)
-        if self._handler_tasks:
-            self._logger.info(f"Waiting for {len(self._handler_tasks)} handler tasks to complete")
-            try:
-                await asyncio.wait_for(asyncio.gather(*self._handler_tasks, return_exceptions=True), timeout=5.0)
-            except asyncio.TimeoutError:
-                self._logger.warning("Handler tasks did not complete in time, cancelling")
-                for task in self._handler_tasks:
-                    task.cancel()
-
-        self._handler_tasks.clear()
 
         # Clear state
         await self._state.set_disconnected()
@@ -448,8 +429,10 @@ class WebSocketSession:
             while not self._stop_event.is_set() and self._ws:
                 try:
                     message = await self._ws.recv()
-                    # Dispatch as a task so we don't block receiving
-                    asyncio.create_task(self._dispatch_message(message))
+                    try:
+                        await self._dispatch_message(message)
+                    except Exception:
+                        self._logger.exception("Dispatch failed; message dropped")
 
                 except TimeoutError:
                     continue
@@ -522,28 +505,25 @@ class WebSocketSession:
                 return
 
             # Invoke handler as task
-            await self._invoke_handler(channel, handler, notification)
+            await self._run_handler(channel, handler, notification)
             return
 
         # Other notification
         self._logger.debug(f"Unhandled notification: {envelope.method}")
 
-    async def _invoke_handler(self, channel: str, handler: Handler, notification: Any) -> None:
-        """Invoke handler as a background task with concurrency control."""
-        async with self._handler_semaphore:
-            task = asyncio.create_task(self._run_handler(channel, handler, notification), name=f"handler-{channel}")
-            self._handler_tasks.add(task)
-            task.add_done_callback(self._handler_tasks.discard)
-
     async def _run_handler(self, channel: str, handler: Handler, notification: Any) -> None:
-        """Run handler (sync or async) and catch exceptions."""
+        """Run handler (sync or async) in arrival order and catch exceptions.
+
+        Handlers run on the receive loop, so a slow handler applies backpressure
+        to the socket rather than racing the next message. That is the trade:
+        per-channel ordering, which an orderbook feed requires, in exchange for
+        a handler that must not block. Awaiting the returned value rather than
+        testing iscoroutinefunction also handles partials and callable objects.
+        """
         try:
-            if asyncio.iscoroutinefunction(handler):
-                await handler(notification)
-            else:
-                # Run sync handler in executor to avoid blocking
-                loop = asyncio.get_event_loop()
-                await loop.run_in_executor(None, handler, notification)
+            result = handler(notification)
+            if inspect.isawaitable(result):
+                await result
         except Exception as e:
             self._logger.error(f"Handler error for {channel}: {e}", exc_info=True)
 
