@@ -67,6 +67,11 @@ ParamsT = TypeVar("ParamsT", bound=RequestParams)
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
 
 
+class SubscriptionParams(msgspec.Struct):
+    channel: str
+    data: msgspec.Raw
+
+
 class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
     """
     Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
@@ -83,7 +88,7 @@ class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
 
     # Server->client notifications/subscriptions
     method: str | msgspec.UnsetType = msgspec.UNSET
-    params: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+    params: SubscriptionParams | msgspec.UnsetType = msgspec.UNSET
 
     # RPC response fields (mutually exclusive)
     result: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET

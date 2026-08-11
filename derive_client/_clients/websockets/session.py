@@ -9,6 +9,7 @@ import contextlib
 import inspect
 import uuid
 import weakref
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type, cast
 
 import msgspec
@@ -17,7 +18,14 @@ from websockets import Data
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 
-from derive_client._clients.utils import JSONRPCEnvelope, RequestParams, decode_envelope, encode_rpc_frame
+from derive_client._clients.utils import (
+    JSONRPCEnvelope,
+    RequestParams,
+    SubscriptionParams,
+    decode_envelope,
+    decoder_for,
+    encode_rpc_frame,
+)
 from derive_client.data_types import LoggerType
 from derive_client.exceptions import RequestAbandoned
 from derive_client.utils.logger import get_logger
@@ -30,6 +38,20 @@ LifecycleCallback = Callable[[], None] | Callable[[], Awaitable[None]]
 
 class Subscribe(msgspec.Struct):
     channels: list[str]
+
+
+@dataclass(slots=True)
+class Subscription:
+    """A channel's handler and the decoder for its payload type.
+
+    One record rather than two parallel dicts: both are written together at
+    subscribe and read together on every message, so nothing can put them out
+    of step. The decoder is built once here instead of resolving the payload
+    type on every notification.
+    """
+
+    handler: Handler
+    decoder: msgspec.json.Decoder
 
 
 class ConnectionState:
@@ -105,20 +127,18 @@ class WebSocketSession:
         self._on_reconnect = on_reconnect
         self._on_before_resubscribe = on_before_resubscribe
 
-        # Channel type registry
-        self._channel_types: dict[str, Type] = {}
-        self._channel_types_lock = asyncio.Lock()
-
         # Connection state
         self._ws: ClientConnection | None = None
         self._state = ConnectionState()
 
-        # Message routing - ONE handler per channel
-        self._handlers: dict[str, Handler] = {}
-        self._handlers_lock = asyncio.Lock()
+        # Message routing - ONE subscription per channel.
+        # No lock on this or on _pending_requests: every mutation of either is
+        # await-free, so the event loop already serialises them. asyncio.Lock
+        # would not help across threads anyway, and cost 1.26 us per message
+        # for a race that cannot occur.
+        self._subscriptions: dict[str, Subscription] = {}
 
-        # RPC tracking. No lock: every mutation is await-free, so the event loop
-        # already serialises it. asyncio.Lock would not help across threads anyway
+        # RPC tracking
         self._pending_requests: dict[str | int, asyncio.Queue] = {}
 
         # Background tasks
@@ -178,7 +198,8 @@ class WebSocketSession:
         Args:
             channel: Channel name (e.g., "BTC-PERP.trades")
             handler: Callback function(data) or async function to handle messages
-            notification_type: Type to decode notifications into
+            notification_type: Type to decode notifications into. Omitting it
+                yields plain Python objects rather than a typed payload.
 
         Returns:
             JSONRPCEnvelope with subscription confirmation
@@ -186,17 +207,16 @@ class WebSocketSession:
         if not await self._state.is_connected():
             raise RuntimeError("WebSocket not connected. Call open() first.")
 
-        async with self._handlers_lock:
-            if channel in self._handlers:
-                self._logger.warning(
-                    f"Channel {channel} already has a handler - replacing it. "
-                    "Consider using unsubscribe() first for explicit control."
-                )
+        if channel in self._subscriptions:
+            self._logger.warning(
+                f"Channel {channel} already has a handler - replacing it. "
+                "Consider using unsubscribe() first for explicit control."
+            )
 
-            self._handlers[channel] = handler
-            if notification_type:
-                async with self._channel_types_lock:
-                    self._channel_types[channel] = notification_type
+        # decoder_for is cached, so channels sharing a payload type share a
+        # decoder and parameterised generics resolve only once per process.
+        decoder = decoder_for(notification_type if notification_type is not None else Any)
+        self._subscriptions[channel] = Subscription(handler=handler, decoder=decoder)
 
         params = Subscribe(channels=[channel])
 
@@ -206,9 +226,8 @@ class WebSocketSession:
             self._logger.debug(f"Subscribe RPC response for {channel}: {envelope}")
             return envelope
         except Exception:
-            # Rollback handler registration on failure
-            async with self._handlers_lock:
-                self._handlers.pop(channel, None)
+            # Rollback registration on failure
+            self._subscriptions.pop(channel, None)
             self._logger.exception(f"Subscribe RPC failed for {channel}")
             raise
 
@@ -222,12 +241,11 @@ class WebSocketSession:
         Returns:
             JSONRPCEnvelope with unsubscribe confirmation
         """
-        async with self._handlers_lock:
-            if channel not in self._handlers:
-                self._logger.warning(f"Not subscribed to channel: {channel}")
-                return None
+        if channel not in self._subscriptions:
+            self._logger.warning(f"Not subscribed to channel: {channel}")
+            return None
 
-            del self._handlers[channel]
+        del self._subscriptions[channel]
 
         self._logger.info(f"Unsubscribing from channel: {channel}")
         try:
@@ -354,8 +372,7 @@ class WebSocketSession:
 
     async def _resubscribe_all(self) -> None:
         """Resubscribe to all channels after reconnection."""
-        async with self._handlers_lock:
-            channels = list(self._handlers.keys())
+        channels = list(self._subscriptions)
 
         if not channels:
             self._logger.debug("No channels to resubscribe")
@@ -374,8 +391,9 @@ class WebSocketSession:
 
     async def _send_request(self, method: str, params: RequestParams) -> JSONRPCEnvelope:
         """Send RPC request and return decoded envelope."""
-
-        # Bound once: the reconnect loop can replace self._ws while this coroutine is suspended in send()
+        # Bound once: the reconnect loop can replace self._ws while this
+        # coroutine is suspended in send(), and the frame belongs to the socket
+        # that was checked, not to whichever one exists on resumption.
         ws = self._ws
         if ws is None:
             raise RuntimeError("WebSocket not connected")
@@ -386,6 +404,8 @@ class WebSocketSession:
         self._pending_requests[request_id] = response_queue
 
         try:
+            # text=True sends the already-UTF-8 bytes in a Text frame, which is
+            # what Derive accepts; it rejects Binary frames.
             await ws.send(data, text=True)
 
             try:
@@ -441,9 +461,18 @@ class WebSocketSession:
             self._logger.info("Receiver task stopped")
 
     async def _dispatch_message(self, data: Data) -> None:
-        """Dispatch message to appropriate handler."""
+        """Decode one frame and route it to a waiter or a handler."""
         try:
             envelope = decode_envelope(data)
+        except ValidationError as e:
+            # Only reachable for a notification whose params are not
+            # {channel, data}. Typing params that way is what lets the channel
+            # and the payload come out of one scan instead of three; the cost
+            # is that any other params-bearing notification lands here rather
+            # than in the debug branch below. If Derive adds one, give it a
+            # branch of its own rather than loosening the envelope.
+            self._logger.warning(f"Unexpected envelope shape ({e}): {data[:200]!r}")
+            return
         except Exception as e:
             self._logger.error(f"Failed to decode envelope: {e}")
             return
@@ -463,37 +492,29 @@ class WebSocketSession:
 
         # Subscription notification
         if envelope.method == "subscription":
-            if envelope.params is msgspec.UNSET:
+            params = envelope.params
+            # isinstance rather than `is not msgspec.UNSET`: pyright does not
+            # narrow on identity against UnsetType, and 50 ns is nothing beside
+            # the decode below.
+            if not isinstance(params, SubscriptionParams):
                 self._logger.warning("Subscription message missing params")
                 return
 
-            params_dict = msgspec.json.decode(envelope.params)
-            channel = params_dict.get("channel")
-
-            if not channel:
-                self._logger.warning("Subscription params missing channel")
+            subscription = self._subscriptions.get(params.channel)
+            if subscription is None:
+                self._logger.debug(f"No handler for channel: {params.channel}")
                 return
 
-            async with self._handlers_lock:
-                handler = self._handlers.get(channel)
-
-            async with self._channel_types_lock:
-                notification_type = self._channel_types.get(channel)
-
-            if not handler:
-                self._logger.debug(f"No handler for channel: {channel}")
-                return
-
-            # Decode notification
-            data_raw = params_dict.get("data")
             try:
-                notification = msgspec.convert(data_raw, type=notification_type)
+                notification = subscription.decoder.decode(params.data)
             except ValidationError as e:
-                self._logger.error(f"Notification decode error for {channel}: {e} data: {data_raw}", exc_info=True)
+                self._logger.error(
+                    f"Notification decode error for {params.channel}: {e} data: {bytes(params.data)!r}",
+                    exc_info=True,
+                )
                 return
 
-            # Invoke handler as task
-            await self._run_handler(channel, handler, notification)
+            await self._run_handler(params.channel, subscription.handler, notification)
             return
 
         # Other notification
