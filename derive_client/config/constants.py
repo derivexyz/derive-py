@@ -27,8 +27,6 @@ GAS_FEE_BUFFER = 1.1  # buffer multiplier to pad maxFeePerGas
 GAS_LIMIT_BUFFER = 1.1  # buffer multiplier to pad gas limit
 MIN_PRIORITY_FEE = 10_000
 
-DEFAULT_RPC_ENDPOINTS = DATA_DIR / "rpc_endpoints.yaml"
-
 ETHEREUM_MAINNET_CHAIN_ID = 1
 SEPOLIA_CHAIN_ID = 11155111
 

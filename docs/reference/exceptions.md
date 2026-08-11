@@ -10,9 +10,9 @@
       show_source: true
       members: false
 
-## ApiException
+## DeriveJSONRPCError
 
-::: derive_client.exceptions.ApiException
+::: derive_client.exceptions.DeriveJSONRPCError
     options:
       show_root_heading: false
       heading_level: 3

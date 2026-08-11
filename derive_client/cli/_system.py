@@ -6,6 +6,10 @@ from datetime import datetime, timezone
 
 import rich_click as click
 
+from derive_client.data_types.generated_models import RateLimitInfo
+
+from ._utils import console, print_series, struct_to_series
+
 
 @click.group("system")
 @click.pass_context
@@ -21,8 +25,10 @@ def rate_limits(ctx):
     client = ctx.obj["client"]
     rate_limits = client.system.get_rate_limits()
 
-    print("\n=== Rate Limits ===")
-    print(f"{rate_limits}")
+    for label in ("remaining_matching", "remaining_non_matching", "remaining_connections"):
+        info = getattr(rate_limits, label)
+        if isinstance(info, RateLimitInfo):
+            print_series(struct_to_series(info), title=label.replace("remaining_", "").replace("_", " ").title())
 
 
 @system.command("time")
@@ -34,8 +40,7 @@ def time(ctx):
     unix_millis = client.system.get_time()
     dt = datetime.fromtimestamp(unix_millis / 1000, tz=timezone.utc)
 
-    print("\n=== Current System Time ===")
-    print(f"{unix_millis} ({dt.isoformat(timespec='milliseconds')})")
+    console.print(f"System time: {unix_millis} ({dt.isoformat(timespec='milliseconds')})")
 
 
 @system.command("transaction")
@@ -50,8 +55,4 @@ def transaction(ctx, op_uuid: str):
     client = ctx.obj["client"]
     transaction = client.system.get_transaction(op_uuid=op_uuid)
 
-    print("\n=== Transaction ===")
-    print(f"Status: {transaction.status}")
-    print(f"Tx Hash: {transaction.transaction_hash}")
-    if transaction.error_log:
-        print(f"\nError: {transaction.error_log}")
+    print_series(struct_to_series(transaction), title="Transaction")

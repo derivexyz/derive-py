@@ -207,6 +207,18 @@ class WebSocketClient:
         return self._logger
 
     @property
+    def public_api(self) -> PublicAPI:
+        """Direct access to the public API for requests."""
+
+        return self._public_api
+
+    @property
+    def private_api(self) -> PrivateAPI:
+        """Direct access to the private API for requests."""
+
+        return self._private_api
+
+    @property
     def account(self) -> LightAccount:
         """Get the LightAccount instance."""
 

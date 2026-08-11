@@ -9,7 +9,7 @@ import msgspec
 from derive_client._clients.rest.http.api import PublicAPI
 from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type
 from derive_client.config import INT64_MAX
-from derive_client.data_types import LoggerType
+from derive_client.data_types import LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
     Asset,
     AssetType,
@@ -187,7 +187,7 @@ class MarketOperations:
         currency: Optional[str] = None,
         page: int = 1,
         page_size: int = 100,
-        risk_universe_id: Optional[int] = None,
+        risk_universe_id: Optional[RiskUniverseID] = None,
     ) -> GetAllInstrumentsResponse:
         """Get a paginated history of all instruments."""
 

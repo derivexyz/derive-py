@@ -1,7 +1,5 @@
 """Tests for Market module."""
 
-import pytest
-
 from derive_client.data_types.generated_models import (
     Asset,
     AssetType,
@@ -64,9 +62,6 @@ def test_markets_get_assets(client_admin_wallet):
     assert all(isinstance(item, Asset) for item in assets)
 
 
-@pytest.mark.skip(
-    reason="Spec/deployment skew: GetLatestSignedFeedsResponse marks funding_data required, testnet omits it."
-)
 def test_markets_get_latest_signed_feeds(client_admin_wallet):
     currency = "ETH"
     signed_feeds = client_admin_wallet.markets.get_latest_signed_feeds(

@@ -6,7 +6,8 @@ from decimal import Decimal
 
 import rich_click as click
 
-from ._utils import struct_to_series, structs_to_dataframe
+from ._columns import MMP_COLUMNS
+from ._utils import console, print_series, print_table, struct_to_series, structs_to_dataframe
 
 
 @click.group("mmp")
@@ -34,8 +35,7 @@ def get_config(ctx, currency: str | None):
     subaccount = client.active_subaccount
     mmp_config = subaccount.mmp.get_config(currency=currency)
 
-    print("\n=== Market Maker Protection Config ===")
-    print(structs_to_dataframe(mmp_config))
+    print_table(structs_to_dataframe(mmp_config), title="MMP Config", columns=MMP_COLUMNS)
 
 
 @mmp.command("set-config")
@@ -98,8 +98,7 @@ def set_config(
         mmp_delta_limit=mmp_delta_limit,
     )
 
-    print("\n=== Updated Market Maker Protection Config ===")
-    print(struct_to_series(mmp_config).to_string(index=True))
+    print_series(struct_to_series(mmp_config), title="Updated MMP Config")
 
 
 @mmp.command("reset")
@@ -116,5 +115,4 @@ def reset(ctx, currency: str | None):
     subaccount = client.active_subaccount
     result = subaccount.mmp.reset(currency=currency)
 
-    print(f"\n=== Market Maker Protection Reset for subaccount {subaccount.id} ===")
-    print(f"MMP reset result: {result}")
+    console.print(f"MMP reset for subaccount {subaccount.id}: {result}")

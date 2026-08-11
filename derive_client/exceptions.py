@@ -6,18 +6,27 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from derive_client.data_types import FeeEstimate
-    from derive_client.data_types.generated_models import GetTransactionResult, VaultActionResponse
+    from derive_client.data_types.generated_models import GetTransactionResult, RPCError, VaultActionResponse
 
 
 class NotConnectedError(RuntimeError):
     """Raised when the client hasn't connected (call connect())."""
 
 
-class ApiException(Exception):
-    """Raised when an API request fails or returns an error response."""
+class DeriveJSONRPCError(Exception):
+    """Raised when a Derive JSON-RPC error payload is returned."""
+
+    def __init__(self, message_id: str | int, rpc_error: RPCError):
+        super().__init__(f"{rpc_error.code}: {rpc_error.message} (message_id={message_id})")
+        self.message_id = message_id
+        self.rpc_error = rpc_error
+
+    def __str__(self):
+        base = f"Derive RPC {self.rpc_error.code}: {self.rpc_error.message}"
+        return f"{base}  [data={self.rpc_error.data!r}]" if self.rpc_error.data is not None else base
 
 
-class EthereumJSONRPCException(ApiException):
+class EthereumJSONRPCException(Exception):
     """Raised when an Ethereum JSON-RPC error payload is returned."""
 
     def __init__(self, code: int, message: str, data: Any = None):
@@ -30,7 +39,7 @@ class EthereumJSONRPCException(ApiException):
         return f"{base}  [data={self.data!r}]" if self.data is not None else base
 
 
-class DeriveJSONRPCException(ApiException):
+class DeriveJSONRPCException(Exception):
     """Raised when a Derive JSON-RPC error payload is returned."""
 
     def __init__(self, code: int, message: str, data: Any = None):
