@@ -118,6 +118,12 @@ def cmd_ws(args) -> int:
     return 0
 
 
+def cmd_history(args) -> int:
+    from benchmarks.history import report_history
+
+    return report_history(args.base, pattern=args.filter, markdown=args.markdown)
+
+
 def cmd_baselines(args) -> int:
     import json
 
@@ -162,6 +168,10 @@ def main(argv: list[str] | None = None) -> int:
 
     p_list = sub.add_parser("list", parents=[common], help="list benchmark names")
     p_list.set_defaults(func=cmd_list)
+
+    p_hist = sub.add_parser("history", parents=[common], help="how the benchmarks moved across this branch")
+    p_hist.add_argument("--base", default="main", help="branch to diff against (default: main)")
+    p_hist.set_defaults(func=cmd_history)
 
     p_base = sub.add_parser("baselines", parents=[common], help="show recorded baselines")
     p_base.set_defaults(func=cmd_baselines)
