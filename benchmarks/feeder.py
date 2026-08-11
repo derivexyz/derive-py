@@ -84,17 +84,19 @@ async def _read_client_frame(reader: asyncio.StreamReader) -> tuple[int, bytes]:
     return b0 & 0x0F, (_unmask(payload, mask) if masked else payload)
 
 
-async def _read_data_frame(reader: asyncio.StreamReader) -> bytes | None:
-    """Next text or binary frame, or None once the client closes.
+async def _read_data_frame(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> bytes | None:
+    """Next text or binary frame, or None once the client has closed.
 
-    Control frames are not answered. A ping goes unanswered and a close is not
-    echoed, because the parent terminates this process the moment the burst is
-    over and a correct closing handshake would only add latency to the thing
-    being measured.
+    A close is echoed back with the peer's own status payload, per RFC 6455.
+    Skipping it makes every burst end with the client waiting out its
+    close_timeout, which is five seconds each and thirty bursts to a default
+    run. Pings still go unanswered: nothing here idles long enough to be pinged.
     """
     while True:
         opcode, payload = await _read_client_frame(reader)
         if opcode == OP_CLOSE:
+            writer.write(_frame(payload, opcode=OP_CLOSE))
+            await writer.drain()
             return None
         if opcode in (OP_TEXT, OP_BINARY):
             return payload
@@ -151,17 +153,17 @@ async def _serve_rpc(reader, writer, result: bytes, ready: asyncio.Event) -> Non
     """
     await _handshake(reader, writer)
     while not ready.is_set():
-        body = await _read_data_frame(reader)
+        body = await _read_data_frame(reader, writer)
         if body is None:
             return
         writer.write(_frame(rpc_reply(json.loads(body).get("id"), result)))
         await writer.drain()
 
 
-async def _serve_one(reader, writer, payload: bytes, count: int, warmup: int, ready: asyncio.Event) -> None:
+async def _serve_one(reader, writer, payload: bytes, count: int, warmup: int) -> None:
     await _handshake(reader, writer)
 
-    body = await _read_data_frame(reader)
+    body = await _read_data_frame(reader, writer)
     if body is None:
         return
     writer.write(_frame(subscribe_reply(json.loads(body))))
@@ -185,8 +187,9 @@ async def _serve_one(reader, writer, payload: bytes, count: int, warmup: int, re
     await asyncio.sleep(0.25)
     await blast(count)
 
-    # Hold the connection open; the parent terminates this process.
-    await ready.wait()
+    # Stay readable until the client closes, so the handshake completes.
+    while await _read_data_frame(reader, writer) is not None:
+        pass
 
 
 def feeder_main(conn, payload: bytes, count: int, warmup: int, mode: str = "notify") -> None:
@@ -204,7 +207,7 @@ def feeder_main(conn, payload: bytes, count: int, warmup: int, mode: str = "noti
                 if mode == "rpc":
                     await _serve_rpc(reader, writer, payload, forever)
                 else:
-                    await _serve_one(reader, writer, payload, count, warmup, forever)
+                    await _serve_one(reader, writer, payload, count, warmup)
             except (asyncio.IncompleteReadError, ConnectionResetError, BrokenPipeError):
                 pass
             finally:

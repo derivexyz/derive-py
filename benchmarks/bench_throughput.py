@@ -29,9 +29,11 @@ to the rate for the same reason.
 from __future__ import annotations
 
 import asyncio
+import logging
 import multiprocessing as mp
 import resource
 import statistics
+import sys
 import time
 from dataclasses import dataclass
 
@@ -42,6 +44,24 @@ from benchmarks.feeder import feeder_main
 from benchmarks.harness import Result
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
+
+
+def _quiet_logger() -> logging.Logger:
+    """Errors only, on an isolated logger.
+
+    A burst logs a connect, a subscribe and a close, which is a page of noise
+    between the numbers at thirty bursts a run. Not a NullHandler: a handler
+    that raises is reported through this same logger, and swallowing that would
+    turn a broken run into a 300 second timeout with no explanation.
+    """
+    logger = logging.getLogger("benchmarks.session")
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter("%(levelname)s %(message)s"))
+        logger.addHandler(handler)
+        logger.propagate = False
+        logger.setLevel(logging.ERROR)
+    return logger
 
 
 @dataclass
@@ -83,7 +103,9 @@ async def _client_burst(port: int, channel: Channel, count: int, warmup: int, as
     async def on_message_async(payload) -> None:
         on_message(payload)
 
-    session = WebSocketSession(url=f"ws://127.0.0.1:{port}", request_timeout=10.0, reconnect=False)
+    session = WebSocketSession(
+        url=f"ws://127.0.0.1:{port}", request_timeout=10.0, reconnect=False, logger=_quiet_logger()
+    )
     await session.open()
     try:
         api = PublicAPI(session)
@@ -139,7 +161,9 @@ async def _rpc_burst(port: int, case: RPCCase, count: int, warmup: int, concurre
     the client's encode and decode on the critical path instead, which is what
     a market maker with several requests in flight actually sees.
     """
-    session = WebSocketSession(url=f"ws://127.0.0.1:{port}", request_timeout=30.0, reconnect=False)
+    session = WebSocketSession(
+        url=f"ws://127.0.0.1:{port}", request_timeout=30.0, reconnect=False, logger=_quiet_logger()
+    )
     await session.open()
     try:
         api = PrivateAPI(session) if case.name == "send_quote" else PublicAPI(session)
