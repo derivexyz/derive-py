@@ -5,7 +5,7 @@ from __future__ import annotations
 import rich_click as click
 
 from ._columns import COLLATERAL_COLUMNS, ORDER_COLUMNS, POSITION_COLUMNS, SUBACCOUNT_COLUMNS
-from ._utils import explode_struct_column, struct_to_series, structs_to_dataframe
+from ._utils import explode_struct_field, print_series, print_table, struct_to_series, structs_to_dataframe
 
 
 @click.group("account")
@@ -23,11 +23,8 @@ def get(ctx):
     account = client.account.get()
     series = struct_to_series(account)
 
-    print("\n=== Account Info ===")
-    print(series.drop("fee_info"))
-
-    print("\n=== Fee Info ===")
-    print(struct_to_series(series.fee_info).to_string(index=True))
+    print_series(series.drop("fee_info"), title="Account")
+    print_series(struct_to_series(series.fee_info), title="Fee Info")
 
 
 @account.command("portfolios")
@@ -38,25 +35,19 @@ def portfolios(ctx):
     client = ctx.obj["client"]
     portfolios = client.account.get_all_portfolios()
 
-    df = structs_to_dataframe(portfolios)
-
-    print("\n=== Portfolio Info ===")
-    print(df[SUBACCOUNT_COLUMNS])
-
-    print("\n=== Collaterals Info ===")
-    collaterals_df = explode_struct_column(df, "subaccount_id", "collaterals")
-    print(collaterals_df[COLLATERAL_COLUMNS])
-
-    print("\n=== Positions Info ===")
-    if df.positions.map(bool).any():
-        positions_df = explode_struct_column(df, "subaccount_id", "positions")
-        print(positions_df[POSITION_COLUMNS])
-    else:
-        print("No open positions")
-
-    print("\n=== Open Orders Info ===")
-    if df.open_orders.map(bool).any():
-        orders_df = explode_struct_column(df, "subaccount_id", "open_orders")
-        print(orders_df[ORDER_COLUMNS])
-    else:
-        print("No open orders")
+    print_table(structs_to_dataframe(portfolios), title="Portfolios", columns=SUBACCOUNT_COLUMNS)
+    print_table(
+        explode_struct_field(portfolios, "subaccount_id", "collaterals"),
+        title="Collaterals",
+        columns=COLLATERAL_COLUMNS,
+    )
+    print_table(
+        explode_struct_field(portfolios, "subaccount_id", "positions"),
+        title="Positions",
+        columns=POSITION_COLUMNS,
+    )
+    print_table(
+        explode_struct_field(portfolios, "subaccount_id", "open_orders"),
+        title="Open Orders",
+        columns=ORDER_COLUMNS,
+    )
