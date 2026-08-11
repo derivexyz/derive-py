@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import os
 import time
@@ -60,10 +61,46 @@ if TYPE_CHECKING:
     from derive_client._clients.rest.http.markets import MarketOperations
 
 
+class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
+    """
+    Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
+    Works for both HTTP and WebSocket transports.
+
+    Fields use msgspec.Raw to defer nested deserialization.
+    """
+
+    # Request/response ID (absent for notifications)
+    id: str | int | msgspec.UnsetType = msgspec.UNSET
+
+    # Protocol version
+    jsonrpc: str = "2.0"
+
+    # Server->client notifications/subscriptions
+    method: str | msgspec.UnsetType = msgspec.UNSET
+    params: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+
+    # RPC response fields (mutually exclusive)
+    result: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+    error: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+
+
 T = TypeVar("T")
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
 
 ENCODER = msgspec.json.Encoder()
+_ENVELOPE_DECODER = msgspec.json.Decoder(JSONRPCEnvelope)
+
+
+@functools.lru_cache
+def decoder_for(schema: type[T]) -> msgspec.json.Decoder[T]:
+    """Cache one Decoder per result type.
+
+    msgspec.json.decode(buf, type=T) resolves the type on every call; a
+    Decoder resolves it once. Unbounded is fine: the generated models are
+    module-level and immortal, so the cache cannot grow past them. Do not
+    extend this to dynamically constructed types.
+    """
+    return msgspec.json.Decoder(schema)
 
 
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
@@ -187,29 +224,6 @@ RATE_LIMIT: dict[RateLimitProfile, RateLimitConfig] = {
 }
 
 
-class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
-    """
-    Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
-    Works for both HTTP and WebSocket transports.
-
-    Fields use msgspec.Raw to defer nested deserialization.
-    """
-
-    # Request/response ID (absent for notifications)
-    id: str | int | msgspec.UnsetType = msgspec.UNSET
-
-    # Protocol version
-    jsonrpc: str = "2.0"
-
-    # Server->client notifications/subscriptions
-    method: str | msgspec.UnsetType = msgspec.UNSET
-    params: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
-
-    # RPC response fields (mutually exclusive)
-    result: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
-    error: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
-
-
 def decode_envelope(data: Data) -> JSONRPCEnvelope:
     """
     Fast first-pass decode of JSON-RPC envelope.
@@ -217,7 +231,7 @@ def decode_envelope(data: Data) -> JSONRPCEnvelope:
     Used in hot path to determine message routing without
     deserializing nested result/error/params fields.
     """
-    return msgspec.json.decode(data, type=JSONRPCEnvelope)
+    return _ENVELOPE_DECODER.decode(data)
 
 
 def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
@@ -247,7 +261,7 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
     if envelope.result is msgspec.UNSET:
         raise ValueError(f"Envelope has neither result nor error (id={envelope.id})")
 
-    return msgspec.json.decode(envelope.result, type=result_schema)
+    return decoder_for(result_schema).decode(envelope.result)
 
 
 def encode_request(obj: msgspec.Struct | None) -> bytes:
