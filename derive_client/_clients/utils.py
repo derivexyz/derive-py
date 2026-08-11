@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Mapping, Optional, TypeAlias, TypeVar
 
 import msgspec
 from dotenv import load_dotenv
@@ -61,6 +61,12 @@ if TYPE_CHECKING:
     from derive_client._clients.rest.http.markets import MarketOperations
 
 
+T = TypeVar("T")
+RequestParams: TypeAlias = msgspec.Struct | Mapping[str, object] | None
+ParamsT = TypeVar("ParamsT", bound=RequestParams)
+InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
+
+
 class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
     """
     Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
@@ -84,8 +90,20 @@ class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
     error: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
 
 
-T = TypeVar("T")
-InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
+class JSONRPCRequest(msgspec.Struct, Generic[ParamsT]):
+    """One outbound JSON-RPC frame. Declaration order is wire order.
+
+    omit_defaults is deliberately off: it would drop `jsonrpc`, and applied to
+    params it would drop pinned constants like referral_code and client. UNSET
+    omission does not need it and works recursively into nested structs, which
+    the old asdict filter never did.
+    """
+
+    id: int | str
+    method: str
+    params: ParamsT
+    jsonrpc: str = "2.0"
+
 
 ENCODER = msgspec.json.Encoder()
 _ENVELOPE_DECODER = msgspec.json.Decoder(JSONRPCEnvelope)
@@ -222,6 +240,11 @@ RATE_LIMIT: dict[RateLimitProfile, RateLimitConfig] = {
         burst_reset_seconds=5,
     ),
 }
+
+
+def encode_rpc_frame(request_id: int | str, method: str, params: RequestParams) -> bytes:
+    """Encode a request frame. Methods with no parameters send `{}`, not null."""
+    return ENCODER.encode(JSONRPCRequest(id=request_id, method=method, params=params if params is not None else {}))
 
 
 def decode_envelope(data: Data) -> JSONRPCEnvelope:

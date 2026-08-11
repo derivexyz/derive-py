@@ -17,7 +17,7 @@ from websockets import Data
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 
-from derive_client._clients.utils import JSONRPCEnvelope, decode_envelope
+from derive_client._clients.utils import JSONRPCEnvelope, decode_envelope, encode_rpc_frame
 from derive_client.data_types import LoggerType
 from derive_client.exceptions import RequestAbandoned
 from derive_client.utils.logger import get_logger
@@ -379,21 +379,7 @@ class WebSocketSession:
 
         request_id = str(uuid.uuid4())
 
-        if params is None:
-            params_filtered = {}
-        elif isinstance(params, msgspec.Struct):
-            params_dict = msgspec.structs.asdict(params)
-            params_filtered = {k: v for k, v in params_dict.items() if v is not None and v is not msgspec.UNSET}
-        else:
-            params_filtered = params
-
-        request = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params_filtered,
-            "id": request_id,
-        }
-        data = msgspec.json.encode(request).decode("utf-8")
+        data = encode_rpc_frame(request_id, method, params).decode("utf-8")
 
         response_queue: asyncio.Queue = asyncio.Queue(maxsize=1)
 
