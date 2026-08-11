@@ -1,101 +1,135 @@
 # WebSocket client benchmarks
 
-How many messages per second `WebSocketClient` can take off a socket, decode
-and hand to a callback. Measurement, not assertion. Nothing here fails a build.
+How many messages per second the WebSocket client takes off a socket, decodes
+and hands to a callback. Measurement, not assertion: nothing here fails a build.
 
-```
+```sh
 make bench                  # messages/second, the headline number
 make bench-decode           # decode costs, the denominator for the above
 python -m benchmarks list   # names, for --channel and --filter
 ```
 
-Scope is the WebSocket transport only. The REST and async-HTTP clients are not
-covered, and neither are the signing wrappers: action signing costs more than
-everything measured here put together, which would drown the signal without
-telling you anything about the transport.
+Scope is the WebSocket transport. REST is not covered, and neither is action
+signing, which costs more than everything measured here put together and would
+drown the signal.
 
 ## What runs
 
-Every measurement goes through the surface a user touches: `WebSocketSession`
-plus the generated subscription methods on `PublicChannels`, and the generated
-RPC methods for the request path. Nothing reaches into the client's internals,
-so a rewrite of the receive path leaves these benchmarks and their recorded
-baselines directly comparable.
+Everything goes through the surface a user touches: `WebSocketSession` and the
+generated methods on `PublicChannels` and the RPC classes. Nothing reaches into
+internals, so a rewrite of the receive path leaves old recordings comparable.
 
-| suite | question |
+| benchmark | measures |
 | --- | --- |
-| `ws/notify/<channel>/async` | messages/second with an `async def` callback |
-| `ws/notify/<channel>/sync` | the same with a plain callback, which the session hands to a thread pool |
-| `ws/notify/<channel>/control` | ceiling: raw `recv` loop, no session, no decode |
-| `ws/rpc/<method>/c<N>` | round trips/second with N requests in flight |
-| `ws/rpc/<method>/control_c<N>` | ceiling for the same, hand-rolled frames |
-| `decode/envelope/<channel>` | first-pass JSON-RPC decode, `Raw` payload |
-| `decode/payload/<channel>` | floor: one typed decode of the payload bytes |
-| `decode/utf8/<channel>` | what `recv()` costs without `decode=False` |
+| `ws/notify/<channel>/async` | one notification, `async def` callback |
+| `ws/notify/<channel>/sync` | the same with a plain callback |
+| `ws/notify/<channel>/control` | raw `recv` loop: no session, no decode |
+| `ws/rpc/<method>/c<N>` | one round trip, N requests in flight |
+| `ws/rpc/<method>/control_c<N>` | the same with hand-rolled frames |
+| `decode/envelope/<channel>` | first-pass JSON-RPC decode |
+| `decode/payload/<channel>` | one typed decode of the payload bytes |
+| `decode/utf8/<channel>` | `bytes.decode` on the frame |
 
-Read the control rows first. If a client rate sits close to its control, the
-harness is the bottleneck and the client number is a floor rather than a
-measurement.
+**Read the control rows first.** They contain no library code, so they measure
+the machine and the harness. If a client rate sits near its control, the
+harness is the bottleneck and the client number is a floor, not a measurement.
 
-`decode/envelope` plus `decode/payload` is the two-pass structure the routing
-design requires: the channel is not known until the envelope is parsed, and the
-payload type is not known until the channel is. Both passes scan the payload
-bytes. `decode/payload` alone is the hard floor, and no arrangement of the
-receive path beats it.
+`decode/payload` is the hard lower bound on the receive path: the payload has
+to be decoded whatever else changes.
 
 ## Why synthetic traffic
 
-A live feed cannot answer the question. Subscription rates are bounded by the
-exchange's publish intervals and by whatever the market is doing, so a live run
-measures Derive rather than the client, and testnet carries no order flow to
-measure at all. RPC volume runs into the account's rate limit long before it
-runs into the client. The feeder here writes pre-framed bytes as fast as
-loopback accepts them, which is faster than any exchange. That is the point:
-the number wanted is the client's ceiling.
+A live feed answers a different question. Subscription rates are capped by the
+exchange's publish intervals, testnet carries no order flow, and RPC volume
+hits the account rate limit long before it hits the client. The feeder here
+writes pre-framed bytes as fast as loopback accepts them, which is faster than
+any exchange — that is the point, since the number wanted is the client's
+ceiling.
 
-`synth.py` walks any msgspec type with `msgspec.inspect` and fabricates a
-plausible value per leaf, seeded, so two runs on one commit produce
-byte-identical frames. That is what makes run-to-run comparison meaningful: a
-change in measured time is a change in the code, not in the data. Values are
-plausible, not valid; nothing honours cross-field invariants, and nothing here
-should be fed to anything that validates.
+`synth.py` walks a msgspec type with `msgspec.inspect` and fabricates a
+plausible value per leaf, seeded, so two runs on one commit produce identical
+frames. A change in measured time is then a change in the code, not the data.
+Values are plausible but not valid: nothing honours cross-field invariants.
 
-Payload types come from `channel_models`, not from copies. A spec regeneration
-that changes a channel changes the benchmark, which is the correct failure
-mode. To check the corpus against reality, record a few frames from a mainnet
-public channel (no auth, no rate limit worth worrying about) and compare frame
-sizes and field population against `Channel.raw`.
+Payload types come from `channel_models`, so a spec regeneration that changes a
+channel changes the benchmark. That is the correct failure mode.
 
-## Comparing runs without keeping old code
+## Comparing two runs
 
-Runs are recorded as `benchmarks/.baselines/<series>@<utc-stamp>.json`,
-gitignored. Nothing is ever overwritten; a comparison resolves to the newest
-recording in the series. Each run merges into that recording rather than
-replacing it, so a filtered run does not drop the rows it skipped.
+Recordings live in `benchmarks/.baselines/<series>@<utc-stamp>.json`,
+gitignored. Nothing is overwritten; a comparison resolves to the newest
+recording in the series, and each run merges into it rather than replacing it,
+so a filtered run does not drop the rows it skipped.
 
 ```sh
 git switch main
 python -m benchmarks ws --save-baseline main    # record the reference
 
-git switch feature/ws-serialisation
+git switch my-branch
 python -m benchmarks ws --baseline main         # compare; this run files under local
 ```
 
-`--baseline` chooses what to measure against, `--save-baseline` chooses where
-this run is filed. They default apart on purpose: comparing against a reference
-series should not write into it.
+`--baseline` is what you measure against, `--save-baseline` is where the run is
+filed. They default apart so comparing against a reference cannot pollute it.
 
 A change reads `faster` or `slower` only if it exceeds 5% *and* the
-interquartile ranges of the two runs are disjoint. Anything else reads `same`
-or `noisy`. On a laptop with a scaling governor, or on a shared VM, raise
-`NOISE_THRESHOLD` in `harness.py`, or take more samples: `--repeats` for `ws`,
-`--samples` for `decode`. 7% swings between identical runs are normal there.
+interquartile ranges are disjoint. On a laptop with a scaling governor, take
+more samples (`--repeats` for `ws`, `--samples` for `decode`) or raise
+`NOISE_THRESHOLD` in `harness.py`.
 
-## Caveats before quoting a number
+## Attributing changes to commits
+
+`history` compares a whole branch instead of two runs.
+
+```sh
+python -m benchmarks history --base main
+python -m benchmarks history --base main --markdown /tmp/bench.md   # table for a PR
+python -m benchmarks history --base main --filter decode/           # per-benchmark grid
+```
+
+It keeps results measured at a clean tree on a commit in `<base>..HEAD`, takes
+the newest per commit, and prints one row per commit in commit order. Results
+from a dirty tree are discarded and counted, since they belong to no commit. It
+aborts if the runs disagree on Python version, interpreter, machine or platform.
+
+Two things it adds beyond the raw median:
+
+- `floor` is that run's `control`; `client` is `total - floor`, the part the
+  library controls.
+- Medians are **corrected for machine speed**. Every run contains benchmarks no
+  library change can affect, so the run's speed relative to the others is
+  measurable from its own data and divided back out. The correction is printed
+  per commit — mains versus battery is a 30% effect and shows up there.
+
+The header prints a **resolution**: how far the corrected controls still
+disagree, which is the method's own error. Nothing smaller than that is a
+claim. Seeing a few percent on a benchmark the commit could not have touched is
+the normal way to watch this work.
+
+To get a row for the branch point, record one in a worktree:
+
+```sh
+git worktree add /tmp/base <base-commit>
+cd /tmp/base
+poetry run python -m benchmarks ws --save-baseline branch-base
+poetry run python -m benchmarks decode --save-baseline branch-base
+cp benchmarks/.baselines/branch-base@*.json <main-worktree>/benchmarks/.baselines/
+cd - && git worktree remove /tmp/base
+```
+
+The commit must contain the benchmark suite, and the corpus must not have
+changed since, or the frames are not the same frames.
+
+> **TODO.** The table is only as dense as the commits that happened to get
+> benchmarked, so a real change can be charged to the next commit with a run.
+> Walking every commit in the range in a worktree would give full attribution,
+> at a few minutes each. Until then, read a large step as belonging to the range
+> since the previous row, and name the change in that range that explains it.
+
+## Before quoting a number
 
 - Loopback, no TLS, one publisher, one subscriber, one machine.
 - The handler does nothing. This is a library; the handler is the user's.
 - Payloads are synthetic. Real frames branch and compress differently.
 - `python -m benchmarks baselines` lists every recording with its series,
-  timestamp and git revision. A delta across two Python versions is not a delta
-  in your code.
+  timestamp and commit.
