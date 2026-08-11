@@ -4,6 +4,8 @@ specs/websocket-channels.json
 
 ethereum_private_key.txt
 
+benchmarks/.baselines
+
 .envrc
 .direnv
 
