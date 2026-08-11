@@ -4,7 +4,6 @@ from decimal import Decimal
 
 import pytest
 
-from derive_client.data_types import PositionTransfer
 from derive_client.data_types.generated_models import (
     Direction,
     RFQStatus,
@@ -12,17 +11,7 @@ from derive_client.data_types.generated_models import (
 )
 
 
-def _min_position_transfer(position) -> PositionTransfer:
-    """The smallest transferable slice of a position as a transfer object."""
-
-    step = Decimal(position.amount_step)
-    full = Decimal(position.amount)
-    magnitude = min(step, abs(full))
-    amount = -magnitude if full < 0 else magnitude
-    return PositionTransfer(position.instrument_name, amount)
-
-
-def test_position_transfer(client_owner_wallet):
+def test_position_transfer(client_owner_wallet, min_position_transfer):
     subaccounts = {sa.id: sa for sa in client_owner_wallet.fetch_subaccounts()}
 
     subaccount_a = subaccounts.get(75723)
@@ -40,7 +29,7 @@ def test_position_transfer(client_owner_wallet):
     else:
         pytest.fail("No open positions found in either subaccount.")
 
-    positions_to_transfer = list(map(_min_position_transfer, source_positions))
+    positions_to_transfer = list(map(min_position_transfer, source_positions))
 
     transfer_position_response: TransferPositionsResponse = source_account.positions.transfer(
         positions=positions_to_transfer,

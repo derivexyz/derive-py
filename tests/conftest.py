@@ -3,10 +3,13 @@ Conftest for derive tests
 """
 
 from contextlib import contextmanager
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
 from pytest_asyncio import is_async_test
+
+from derive_client.data_types import PositionTransfer
 
 OWNER_TEST_WALLET = "0x5cb67F7829d01d9C75385A920De5E51060663374"
 SESSION_KEY_PRIVATE_KEY = "0xf20701f7e29ce946e79a70cb53067f837950841f77edb3e685ce370db7ed7bdd"
@@ -32,3 +35,19 @@ def assert_api_calls(client, expected: int):
     actual = after - before
     if actual != expected:
         raise AssertionError(f"Expected {expected} HTTP calls, got {actual}. (before={before}, after={after})")
+
+
+def _min_position_transfer(position) -> PositionTransfer:
+    """The smallest transferable slice of a position as a transfer object."""
+
+    step = Decimal(position.amount_step)
+    full = Decimal(position.amount)
+    magnitude = min(step, abs(full))
+    return PositionTransfer(position.instrument_name, -magnitude if full < 0 else magnitude)
+
+
+@pytest.fixture
+def min_position_transfer():
+    """Smallest transferable slice of a position. Sync, usable from async tests."""
+
+    return _min_position_transfer
