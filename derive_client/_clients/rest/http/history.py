@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from derive_client._clients.utils import unset_if_none
 from derive_client.data_types import ChecksumAddress
 from derive_client.data_types.generated_models import (
     DepositHistoryResult,
@@ -125,10 +126,10 @@ class HistoryOperations:
         """
 
         params = GetDepositHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            start_timestamp=unset_if_none(start_timestamp),
+            end_timestamp=unset_if_none(end_timestamp),
         )
         result = self._private_api.rpc.get_deposit_history(params)
         return result
@@ -146,10 +147,10 @@ class HistoryOperations:
         """
 
         params = GetWithdrawalHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            start_timestamp=unset_if_none(start_timestamp),
+            end_timestamp=unset_if_none(end_timestamp),
         )
         result = self._private_api.rpc.get_withdrawal_history(params)
         return result
@@ -166,10 +167,10 @@ class HistoryOperations:
         """
 
         params = GetErc20TransferHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            start_timestamp=unset_if_none(start_timestamp),
+            end_timestamp=unset_if_none(end_timestamp),
         )
         result = self._private_api.rpc.get_erc20_transfer_history(params)
         return result
@@ -186,10 +187,10 @@ class HistoryOperations:
         """
 
         params = GetInterestHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            start_timestamp=unset_if_none(start_timestamp),
+            end_timestamp=unset_if_none(end_timestamp),
         )
         result = self._private_api.rpc.get_interest_history(params)
         return result
@@ -202,8 +203,8 @@ class HistoryOperations:
         """
 
         params = GetOptionSettlementHistoryParams(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
         )
         result = self._private_api.rpc.get_option_settlement_history(params)
         return result
@@ -220,11 +221,11 @@ class HistoryOperations:
         perpetual instrument. Paginated: read `pagination` off the result."""
 
         params = GetFundingHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            instrument_name=instrument_name,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            instrument_name=unset_if_none(instrument_name),
+            start_timestamp=unset_if_none(start_timestamp),
+            end_timestamp=unset_if_none(end_timestamp),
             page=page,
             page_size=page_size,
         )
@@ -246,10 +247,10 @@ class HistoryOperations:
         """
 
         params = GetOrderHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            from_timestamp=start_timestamp,
-            to_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            from_timestamp=unset_if_none(start_timestamp),
+            to_timestamp=unset_if_none(end_timestamp),
             page=page,
             page_size=page_size,
         )
@@ -273,13 +274,13 @@ class HistoryOperations:
         """
 
         params = GetTradeHistoryRequest(
-            wallet=self._wallet,
-            subaccount_id=self._subaccount_id,
-            instrument_name=instrument_name,
-            order_id=order_id,
-            quote_id=quote_id,
-            from_timestamp=start_timestamp,
-            to_timestamp=end_timestamp,
+            wallet=unset_if_none(self._wallet),
+            subaccount_id=unset_if_none(self._subaccount_id),
+            instrument_name=unset_if_none(instrument_name),
+            order_id=unset_if_none(order_id),
+            quote_id=unset_if_none(quote_id),
+            from_timestamp=unset_if_none(start_timestamp),
+            to_timestamp=unset_if_none(end_timestamp),
             page=page,
             page_size=page_size,
         )

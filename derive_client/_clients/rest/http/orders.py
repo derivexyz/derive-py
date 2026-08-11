@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
+from derive_client._clients.utils import unset_if_none
 from derive_client._web3.action_signing import TradeModuleData
 from derive_client.config import INT64_MAX
 from derive_client.data_types.generated_models import (
@@ -116,16 +117,16 @@ class OrderOperations:
             signer=signed_action.signer,
             subaccount_id=subaccount_id,
             extra_fee=extra_fee,
-            is_atomic_signing=is_atomic_signing,
+            is_atomic_signing=unset_if_none(is_atomic_signing),
             label=label,
             mmp=mmp,
             order_type=order_type,
             reduce_only=reduce_only,
             reject_timestamp=reject_timestamp,
             time_in_force=time_in_force,
-            trigger_price=trigger_price,
-            trigger_price_type=trigger_price_type,
-            trigger_type=trigger_type,
+            trigger_price=unset_if_none(trigger_price),
+            trigger_price_type=unset_if_none(trigger_price_type),
+            trigger_type=unset_if_none(trigger_type),
         )
         result = self._subaccount._private_api.rpc.order(params)
         return result
@@ -155,10 +156,10 @@ class OrderOperations:
 
         params = GetOrderHistoryRequest(
             subaccount_id=self._subaccount.id,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            page=page,
-            page_size=page_size,
+            from_timestamp=unset_if_none(from_timestamp),
+            to_timestamp=unset_if_none(to_timestamp),
+            page=unset_if_none(page),
+            page_size=unset_if_none(page_size),
         )
         result = self._subaccount._private_api.rpc.get_order_history(params)
         return result
@@ -204,7 +205,7 @@ class OrderOperations:
 
         params = CancelByLabelRequest(
             label=label,
-            instrument_name=instrument_name,
+            instrument_name=unset_if_none(instrument_name),
             subaccount_id=self._subaccount.id,
         )
         result = self._subaccount._private_api.rpc.cancel_by_label(params)
@@ -339,20 +340,20 @@ class OrderOperations:
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
             subaccount_id=subaccount_id,
-            expected_filled_amount=expected_filled_amount,
+            expected_filled_amount=unset_if_none(expected_filled_amount),
             extra_fee=extra_fee,
-            is_atomic_signing=is_atomic_signing,
+            is_atomic_signing=unset_if_none(is_atomic_signing),
             label=label,
             mmp=mmp,
-            nonce_to_cancel=nonce_to_cancel,
-            order_id_to_cancel=order_id_to_cancel,
+            nonce_to_cancel=unset_if_none(nonce_to_cancel),
+            order_id_to_cancel=unset_if_none(order_id_to_cancel),
             order_type=order_type,
             reduce_only=reduce_only,
             reject_timestamp=reject_timestamp,
             time_in_force=time_in_force,
-            trigger_price=trigger_price,
-            trigger_price_type=trigger_price_type,
-            trigger_type=trigger_type,
+            trigger_price=unset_if_none(trigger_price),
+            trigger_price_type=unset_if_none(trigger_price_type),
+            trigger_type=unset_if_none(trigger_type),
         )
         result = self._subaccount._private_api.rpc.replace(params)
         return result
