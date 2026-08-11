@@ -169,7 +169,28 @@ def apply_drift(runs: list[Run]) -> list[str]:
             f"machine speed varied {spread * 100:.0f}% across runs; the adjusted column "
             "divides it out, the raw column does not"
         )
+
+    resolution = _resolution(runs, control_names)
+    if resolution:
+        warnings.append(f"resolution after correction: +/-{resolution * 100:.0f}%; smaller changes are not claims")
     return warnings
+
+
+def _resolution(runs: list[Run], control_names: list[str]) -> float:
+    """How far the corrected controls still disagree between runs.
+
+    A control measures the machine, not the library, so after correction its
+    value should be identical everywhere. Whatever spread survives is the
+    method's error, and no reported change smaller than it means anything.
+    Better than a fixed threshold: it is derived from the same runs being
+    compared, so a quiet machine earns a tighter bound.
+    """
+    spreads = []
+    for name in control_names:
+        values = [v for v in (run.adjusted(name) for run in runs) if v]
+        if len(values) > 1 and min(values):
+            spreads.append(max(values) / min(values) - 1)
+    return statistics.median(spreads) if spreads else 0.0
 
 
 # -- reporting ------------------------------------------------------------
