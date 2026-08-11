@@ -95,14 +95,22 @@ def explode_struct_field(structs: Sequence[StructT], id_field: str, field: str) 
     """One row per Struct found in `field`, tagged with `id_field`.
 
     Accepts scalar struct fields and list fields; empty lists, None and UNSET yield no rows.
+    A struct carrying `id_field` itself keeps its own value rather than gaining a duplicate.
     """
 
     rows = []
     for struct in structs:
         value = getattr(struct, field)
         items = value if isinstance(value, list) else [value]
-        ident = pd.Series({id_field: getattr(struct, id_field)}, dtype=object)
-        rows.extend(pd.concat([ident, struct_to_series(item)]) for item in items if _is_struct(item))
+
+        for item in items:
+            if not _is_struct(item):
+                continue
+            row = struct_to_series(item)
+            if id_field not in row.index:
+                ident = pd.Series({id_field: getattr(struct, id_field)}, dtype=object)
+                row = pd.concat([ident, row])
+            rows.append(row)
 
     return pd.DataFrame(rows)
 
