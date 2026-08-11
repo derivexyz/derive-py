@@ -17,7 +17,7 @@ from websockets import Data
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 
-from derive_client._clients.utils import JSONRPCEnvelope, decode_envelope, encode_rpc_frame
+from derive_client._clients.utils import JSONRPCEnvelope, RequestParams, decode_envelope, encode_rpc_frame
 from derive_client.data_types import LoggerType
 from derive_client.exceptions import RequestAbandoned
 from derive_client.utils.logger import get_logger
@@ -117,9 +117,9 @@ class WebSocketSession:
         self._handlers: dict[str, Handler] = {}
         self._handlers_lock = asyncio.Lock()
 
-        # RPC tracking
+        # RPC tracking. No lock: every mutation is await-free, so the event loop
+        # already serialises it. asyncio.Lock would not help across threads anyway
         self._pending_requests: dict[str | int, asyncio.Queue] = {}
-        self._requests_lock = asyncio.Lock()
 
         # Background tasks
         self._receiver_task: asyncio.Task | None = None
@@ -372,22 +372,21 @@ class WebSocketSession:
                 self._logger.error(f"Failed to resubscribe to {channel}: {e}")
                 # Continue trying other channels
 
-    async def _send_request(self, method: str, params: msgspec.Struct | dict | None) -> JSONRPCEnvelope:
+    async def _send_request(self, method: str, params: RequestParams) -> JSONRPCEnvelope:
         """Send RPC request and return decoded envelope."""
-        if not self._ws:
+
+        # Bound once: the reconnect loop can replace self._ws while this coroutine is suspended in send()
+        ws = self._ws
+        if ws is None:
             raise RuntimeError("WebSocket not connected")
 
         request_id = str(uuid.uuid4())
-
-        data = encode_rpc_frame(request_id, method, params).decode("utf-8")
-
+        data = encode_rpc_frame(request_id, method, params)
         response_queue: asyncio.Queue = asyncio.Queue(maxsize=1)
-
-        async with self._requests_lock:
-            self._pending_requests[request_id] = response_queue
+        self._pending_requests[request_id] = response_queue
 
         try:
-            await self._ws.send(data)
+            await ws.send(data, text=True)
 
             try:
                 envelope = await asyncio.wait_for(response_queue.get(), timeout=self._request_timeout)
@@ -399,13 +398,11 @@ class WebSocketSession:
                 raise TimeoutError(f"RPC timeout after {self._request_timeout}s")
 
         finally:
-            async with self._requests_lock:
-                self._pending_requests.pop(request_id, None)
+            self._pending_requests.pop(request_id, None)
 
     async def _fail_pending_requests(self, reason: str) -> None:
         """Hand every in-flight RPC an exception rather than letting it time out."""
-        async with self._requests_lock:
-            pending, self._pending_requests = self._pending_requests, {}
+        pending, self._pending_requests = self._pending_requests, {}
 
         for request_id in pending:
             try:
@@ -453,8 +450,7 @@ class WebSocketSession:
 
         # RPC response
         if envelope.id is not msgspec.UNSET:
-            async with self._requests_lock:
-                queue = self._pending_requests.get(envelope.id)
+            queue = self._pending_requests.get(envelope.id)
 
             if queue:
                 try:
