@@ -104,13 +104,8 @@ class JSONRPCRequest(msgspec.Struct, Generic[ParamsT]):
     jsonrpc: str = "2.0"
 
 
-class SubscriptionAck(msgspec.Struct):
-    """Subscribe reply.
-
-    Mirrors the generated SubscriptionResult, which neither this module nor
-    session.py can import: api.py imports both. `status` defaults because it
-    only explains a refusal, while current_subscriptions is the verdict.
-    """
+class SubscriptionResult(msgspec.Struct):
+    """Subscription acknowledgement."""
 
     current_subscriptions: list[str]
     status: dict[str, str] = {}
@@ -124,7 +119,7 @@ def confirm_subscriptions(channels: Iterable[str], envelope: JSONRPCEnvelope) ->
     explains. An unusable reply raises, via decode_result.
     """
 
-    ack = decode_result(envelope, SubscriptionAck)
+    ack = decode_result(envelope, SubscriptionResult)
     live = set(ack.current_subscriptions)
     confirmed = [channel for channel in channels if channel in live]
     refused = {

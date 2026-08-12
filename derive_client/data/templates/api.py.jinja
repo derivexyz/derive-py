@@ -13,7 +13,7 @@ from derive_client._clients.utils import decode_envelope, decode_result, AuthCon
 from derive_client._clients.rest.endpoints import PublicEndpoints, PrivateEndpoints
 {% else %}
 from derive_client._clients.websockets.session import WebSocketSession
-from derive_client._clients.utils import decode_envelope, decode_result, encode_request
+from derive_client._clients.utils import SubscriptionResult, decode_envelope, decode_result, encode_request
 {% endif %}
 from derive_client.data_types.generated_models import (
 {% for schema in rpc_schema_imports -%}
@@ -37,10 +37,6 @@ from derive_client.data_types.channel_models import (
 
 MessageT = TypeVar('MessageT')
 Handler = Callable[[MessageT], None] | Callable[[MessageT], Awaitable[None]]
-
-class SubscriptionResult(msgspec.Struct):
-    status: dict[str, str]
-    current_subscriptions: list[str]
 {% endif %}
 
 # ============================================================================
