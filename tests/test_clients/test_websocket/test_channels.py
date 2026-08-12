@@ -12,6 +12,7 @@ from derive_client.data_types.generated_models import (
     AssetType,
     BatchStatus,
 )
+from derive_client.exceptions import DeriveJSONRPCError
 
 TIMEOUT = 5
 SUBSCRIPTION_OK = "ok"
@@ -226,3 +227,15 @@ async def test_private_rfqs_by_wallet(client_admin_wallet):
     )
 
     assert subscription_result.status[f"{wallet}.rfqs"] == SUBSCRIPTION_OK
+
+
+@pytest.mark.asyncio
+async def test_rejected_subscription_is_not_registered(client_admin_wallet):
+    with pytest.raises(DeriveJSONRPCError):
+        await client_admin_wallet.public_channels.orderbook_group_depth_by_instrument_name(
+            instrument_name="ETH-PERP",
+            group=1,
+            depth=2,
+            callback=noop,
+        )
+    assert "orderbook.ETH-PERP.1.2" not in client_admin_wallet.subscriptions
