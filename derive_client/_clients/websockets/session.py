@@ -271,30 +271,37 @@ class WebSocketSession:
             self._logger.exception(f"Subscribe RPC failed for {channel}")
             raise
 
-    async def unsubscribe(self, channel: str) -> JSONRPCEnvelope | None:
+    async def unsubscribe(self, *channels: str) -> JSONRPCEnvelope | None:
         """
-        Unsubscribe from a channel and remove its handler.
+        Unsubscribe from one or more channels and drop their handlers.
 
-        Args:
-            channel: Channel name
-
-        Returns:
-            JSONRPCEnvelope with unsubscribe confirmation
+        Handlers are dropped before the request goes out, not after. If the
+        request fails the venue keeps sending a channel nothing here routes,
+        which the next reconnect clears. Dropping them afterwards would instead
+        leave a channel the caller asked to stop being resubscribed on every
+        reconnect, which nothing clears.
         """
-        if channel not in self._subscriptions:
-            self._logger.warning(f"Not subscribed to channel: {channel}")
+
+        requested = dict.fromkeys(channels)
+        if unknown := requested.keys() - self._subscriptions.keys():
+            self._logger.warning(f"Not subscribed to: {', '.join(sorted(unknown))}")
+
+        known = [channel for channel in requested if channel not in unknown]
+        if not known:
             return None
 
-        del self._subscriptions[channel]
+        for channel in known:
+            del self._subscriptions[channel]
 
-        self._logger.info(f"Unsubscribing from channel: {channel}")
+        self._logger.info(f"Unsubscribing from {len(known)} channels: {', '.join(known)}")
         try:
-            envelope = await self._send_request("unsubscribe", {"channels": [channel]})
-            self._logger.debug(f"Unsubscribe RPC response for {channel}: {envelope}")
-            return envelope
+            envelope = await self._send_request("unsubscribe", {"channels": known})
         except Exception:
-            self._logger.exception(f"Unsubscribe RPC failed for {channel}")
+            self._logger.exception(f"Unsubscribe RPC failed for {', '.join(known)}")
             raise
+
+        self._logger.debug(f"Unsubscribe RPC response: {envelope}")
+        return envelope
 
     async def _connect(self) -> None:
         """Establish WebSocket connection and start receiver task.
