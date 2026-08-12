@@ -2,6 +2,7 @@ import asyncio
 
 import msgspec
 import pytest
+import pytest_asyncio
 
 from derive_client.data_types.channel_models import (
     OrderbookSnapshot,
@@ -16,6 +17,14 @@ from derive_client.exceptions import DeriveJSONRPCError
 
 TIMEOUT = 5
 SUBSCRIPTION_OK = "ok"
+
+
+@pytest_asyncio.fixture(autouse=True, loop_scope="session")
+async def _drop_subscriptions(client_admin_wallet):
+    """Leave the shared connection clean, since the client fixture is session-scoped."""
+
+    yield
+    await client_admin_wallet.unsubscribe(*client_admin_wallet.subscriptions)
 
 
 def noop(result: msgspec.Struct) -> None:
