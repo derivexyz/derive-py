@@ -145,7 +145,7 @@ class WebSocketClient:
         """
         Toggle cancel-on-disconnect for the authenticated wallet.
         """
-        params = SetCancelOnDisconnectRequest(enabled=enabled)
+        params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
         return await self._private_api.rpc.set_cancel_on_disconnect(params)
 
     async def _initialize_account_and_markets(self) -> None:
