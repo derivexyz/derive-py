@@ -21,7 +21,7 @@ from derive_client._clients.utils import (
     JSONRPCEnvelope,
     RequestParams,
     SubscriptionParams,
-    SubscriptionResult,
+    UnsubscribeResult,
     confirm_subscriptions,
     decode_envelope,
     decode_result,
@@ -273,7 +273,7 @@ class WebSocketSession:
             self._logger.exception(f"Subscribe RPC failed for {channel}")
             raise
 
-    async def unsubscribe(self, *channels: str) -> JSONRPCEnvelope | None:
+    async def unsubscribe(self, *channels: str) -> UnsubscribeResult | None:
         """
         Unsubscribe from one or more channels and drop their handlers.
 
@@ -303,9 +303,9 @@ class WebSocketSession:
             raise
 
         self._logger.debug(f"Unsubscribe RPC response: {envelope}")
-        ack = decode_result(envelope, SubscriptionResult)
-        self._note_divergence(ack.current_subscriptions)
-        return envelope
+        unsubscribe_result = decode_result(envelope, UnsubscribeResult)
+        self._note_divergence(unsubscribe_result.remaining_subscriptions)
+        return unsubscribe_result
 
     def _note_divergence(self, live: Iterable[str]) -> None:
         """Log where the venue's view of this connection differs from ours."""

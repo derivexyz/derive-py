@@ -25,7 +25,11 @@ from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
-from derive_client._clients.utils import AuthContext, SubscriptionResult, decode_result, load_client_config
+from derive_client._clients.utils import (
+    AuthContext,
+    UnsubscribeResult,
+    load_client_config,
+)
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
 from derive_client._web3 import ContractRegistry, Deposits
@@ -353,18 +357,10 @@ class WebSocketClient:
 
         return self._session.subscriptions
 
-    async def unsubscribe(self, channel: str) -> SubscriptionResult | None:
-        """Unsubscribe from a channel and drop its handler.
+    async def unsubscribe(self, *channels: str) -> UnsubscribeResult | None:
+        """Unsubscribe from one or more channels and drop their handlers."""
 
-        The channel name is the key of the `status` map returned when you
-        subscribed, and every live one is listed in `subscriptions`. Returns
-        None if this session was not subscribed to it.
-        """
-
-        envelope = await self._session.unsubscribe(channel)
-        if envelope is None:
-            return None
-        return decode_result(envelope, SubscriptionResult)
+        return await self._session.unsubscribe(*channels)
 
     @contextlib.contextmanager
     def timeout(self, seconds: float) -> Generator[None, None, None]:

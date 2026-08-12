@@ -111,6 +111,13 @@ class SubscriptionResult(msgspec.Struct):
     status: dict[str, str] = {}
 
 
+class UnsubscribeResult(msgspec.Struct):
+    """Unsubscribe acknowledgement."""
+
+    remaining_subscriptions: list[str]
+    status: dict[str, str] = {}
+
+
 def confirm_subscriptions(channels: Iterable[str], envelope: JSONRPCEnvelope) -> tuple[list[str], dict[str, str]]:
     """Split channels into the confirmed ones, and the refused ones with a reason.
 
