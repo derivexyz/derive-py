@@ -213,6 +213,11 @@ class WebSocketSession:
 
         self._logger.info("WebSocket session closed")
 
+    @property
+    def subscriptions(self) -> tuple[str, ...]:
+        """Channels this session holds a handler for, in subscription order."""
+        return tuple(self._subscriptions)
+
     async def subscribe(
         self,
         channel: str,
