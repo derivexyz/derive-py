@@ -9,7 +9,7 @@ import inspect
 import uuid
 import weakref
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Iterable, Optional, Type, cast
 
 import msgspec
 from msgspec import ValidationError
@@ -21,8 +21,10 @@ from derive_client._clients.utils import (
     JSONRPCEnvelope,
     RequestParams,
     SubscriptionParams,
+    SubscriptionResult,
     confirm_subscriptions,
     decode_envelope,
+    decode_result,
     decoder_for,
     encode_rpc_frame,
 )
@@ -301,7 +303,20 @@ class WebSocketSession:
             raise
 
         self._logger.debug(f"Unsubscribe RPC response: {envelope}")
+        ack = decode_result(envelope, SubscriptionResult)
+        self._note_divergence(ack.current_subscriptions)
         return envelope
+
+    def _note_divergence(self, live: Iterable[str]) -> None:
+        """Log where the venue's view of this connection differs from ours."""
+
+        live = set(live)
+
+        if stray := live - self._subscriptions.keys():
+            self._logger.error(f"Subscribed at the venue with no handler here: {', '.join(sorted(stray))}")
+
+        if missing := self._subscriptions.keys() - live:
+            self._logger.warning(f"Registered here but not subscribed at the venue: {', '.join(sorted(missing))}")
 
     async def _connect(self) -> None:
         """Establish WebSocket connection and start receiver task.
