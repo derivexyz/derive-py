@@ -144,6 +144,13 @@ class WebSocketClient:
     async def set_cancel_on_disconnect(self, enabled: bool = True) -> str:
         """
         Toggle cancel-on-disconnect for the authenticated wallet.
+
+        Survives a reconnect: the setting is not scoped to the connection it
+        was set on, and does not need re-applying after a drop.
+
+        With auto-reconnect enabled this means a transient drop cancels every
+        resting order and the client comes back looking perfectly healthy.
+        Both behaviours are sensible alone and surprising together.
         """
         params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
         return await self._private_api.rpc.set_cancel_on_disconnect(params)
