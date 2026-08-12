@@ -1,234 +1,156 @@
 """
-E2E test for WebSocket reconnection logic.
+Live reconnection test.
+
+The offline suite in test_reconnect_resubscribe.py covers the reconnect logic
+against a venue we control, in seconds. This covers the three things a fake
+venue cannot: the real subscribe ack shape, re-authentication actually
+restoring a *private* channel, and the batched resubscribe against the live
+exchange.
 """
 
 import asyncio
+import contextlib
 
 import pytest
 
 from derive_client import WebSocketClient
 from derive_client.data_types.channel_models import TickerSlimPayload
 
-TIMEOUT = 30
-SUBSCRIPTION_OK = "ok"
-ALREADY_SUBSCRIBED = "already subscribed"
-
 INTERVAL = 1000
+PUBLIC_CHANNEL = f"ticker_slim.ETH-PERP.{INTERVAL}"
+
+MESSAGE_TIMEOUT = 15
+RECONNECT_TIMEOUT = 60
 
 
-@pytest.mark.asyncio
-async def test_reconnection_after_forced_disconnect(client_admin_wallet: WebSocketClient):
+async def _wait_until(predicate, timeout: float, message: str) -> None:
+    """Poll until predicate holds, rather than sleeping a guessed span."""
+
+    try:
+        async with asyncio.timeout(timeout):
+            while not await predicate():
+                await asyncio.sleep(0.2)
+    except TimeoutError:
+        pytest.fail(f"{message} within {timeout}s")
+
+
+@contextlib.contextmanager
+def _lifecycle_events(session):
+    """Signal the session's disconnect and re-auth hooks, then put them back.
+
+    The client fixture is session-scoped, so hooks left wrapped would fire for
+    every later test.
     """
-    Test that:
-    1. We can subscribe and receive messages
-    2. After forcing a disconnect, we automatically reconnect
-    3. We re-authenticate and resubscribe
-    4. We continue receiving messages
-    """
 
-    messages = []
-    msg_event = asyncio.Event()
-    disconnect_event = asyncio.Event()
-    reconnect_event = asyncio.Event()
-    reauth_event = asyncio.Event()
+    events = {"disconnected": asyncio.Event(), "reauthenticated": asyncio.Event()}
+    original_disconnect = session._on_disconnect
+    original_reauth = session._on_before_resubscribe
 
-    def callback(result):
-        messages.append(result)
-        msg_event.set()
+    def on_disconnect():
+        events["disconnected"].set()
+        return original_disconnect() if original_disconnect else None
 
-    # Hook into client's session callbacks
-    ws_session = client_admin_wallet._session
-    original_disconnect = client_admin_wallet._handle_disconnect
-    original_reconnect = client_admin_wallet._handle_reconnect
-    original_reauth = client_admin_wallet._handle_before_resubscribe
-
-    async def on_disconnect():
-        disconnect_event.set()
-        if original_disconnect:
-            original_disconnect()
-
-    async def on_reconnect():
-        reconnect_event.set()
-        if original_reconnect:
-            original_reconnect()
-
-    async def on_reauth():
-        reauth_event.set()
+    async def on_before_resubscribe():
         if original_reauth:
             await original_reauth()
+        # Set after, not before: a re-auth that raises must not look like one
+        # that worked, since a failed attempt is retried.
+        events["reauthenticated"].set()
 
-    ws_session._on_disconnect = on_disconnect
-    ws_session._on_reconnect = on_reconnect
-    ws_session._on_before_resubscribe = on_reauth
-
-    # Step 1: Subscribe and verify initial message
-    subscription_result = await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
-        instrument_name="ETH-PERP",
-        interval=INTERVAL,
-        callback=callback,
-    )
-
-    assert subscription_result.status[f"ticker_slim.ETH-PERP.{INTERVAL}"] in [SUBSCRIPTION_OK, ALREADY_SUBSCRIBED]
-
-    # Wait for first message
-    await asyncio.sleep(TIMEOUT)
-    assert msg_event.is_set() is True
-    assert len(messages) >= 1
-    assert isinstance(messages[0], TickerSlimPayload)
-
-    first_message_count = len(messages)
-
-    # Step 2: Force disconnect
-    if ws_session._ws:
-        await ws_session._ws.close()
-    msg_event.clear()
-
-    # Wait for disconnect to be detected
-
-    await asyncio.sleep(TIMEOUT)
-    assert disconnect_event.is_set() is True, "Disconnect was not detected"
-
-    # Step 3: Wait for reconnection
-    assert reconnect_event.is_set() is True, "Reconnection did not occur"
-
-    # Step 4: Verify re-authentication happened
-    assert reauth_event.is_set() is True, "Re-authentication did not occur"
-
-    # Step 5: Verify we continue receiving messages after reconnection
-    assert msg_event.is_set() is True, "No messages received after reconnection"
-    assert len(messages) > first_message_count, "No new messages after reconnection"
-
-    # Verify the new message is still the correct type
-    assert isinstance(messages[-1], TickerSlimPayload)
-
-    print(f"✓ Received {len(messages)} total messages")
-    print(f"✓ Messages before disconnect: {first_message_count}")
-    print(f"✓ Messages after reconnect: {len(messages) - first_message_count}")
+    session._on_disconnect = on_disconnect
+    session._on_before_resubscribe = on_before_resubscribe
+    try:
+        yield events
+    finally:
+        session._on_disconnect = original_disconnect
+        session._on_before_resubscribe = original_reauth
 
 
 @pytest.mark.asyncio
-async def test_reconnection_with_multiple_channels(client_admin_wallet):
+async def test_an_abrupt_drop_restores_both_channels(client_admin_wallet: WebSocketClient):
     """
-    Test that all subscribed channels are properly resubscribed after reconnection.
-    """
+    Test that an abrupt drop restores a public and a private channel.
 
-    eth_messages = []
-    btc_messages = []
-    eth_event = asyncio.Event()
-    btc_event = asyncio.Event()
-    reconnect_event = asyncio.Event()
-
-    def eth_callback(result):
-        eth_messages.append(result)
-        eth_event.set()
-
-    def btc_callback(result):
-        btc_messages.append(result)
-        btc_event.set()
-
-    ws_session = client_admin_wallet._session
-    original_reconnect = ws_session._on_reconnect
-
-    def on_reconnect():
-        reconnect_event.set()
-        if original_reconnect:
-            original_reconnect()
-
-    ws_session._on_reconnect = on_reconnect
-
-    # Subscribe to two different channels
-    await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
-        instrument_name="ETH-PERP",
-        interval=INTERVAL,
-        callback=eth_callback,
-    )
-
-    await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
-        instrument_name="BTC-PERP",
-        interval=INTERVAL,
-        callback=btc_callback,
-    )
-
-    # Wait for initial messages from both
-    await asyncio.sleep(TIMEOUT)
-    eth_received = eth_event.wait()
-    btc_received = btc_event.wait()
-    assert eth_received and btc_received
-
-    eth_count_before = len(eth_messages)
-    btc_count_before = len(btc_messages)
-
-    # Force disconnect
-    if ws_session._ws:
-        await ws_session._ws.close()
-
-    eth_event.clear()
-    btc_event.clear()
-    # Wait for reconnection
-    await asyncio.sleep(TIMEOUT)
-    reconnected = await reconnect_event.wait()
-    assert reconnected is True
-
-    # Verify BOTH channels receive messages after reconnect
-    await asyncio.sleep(TIMEOUT)
-    eth_after = await eth_event.wait()
-    btc_after = await btc_event.wait()
-
-    assert eth_after is True, "ETH channel not working after reconnect"
-    assert btc_after is True, "BTC channel not working after reconnect"
-    assert len(eth_messages) > eth_count_before
-    assert len(btc_messages) > btc_count_before
-
-    print(f"✓ ETH: {eth_count_before} → {len(eth_messages)} messages")
-    print(f"✓ BTC: {btc_count_before} → {len(btc_messages)} messages")
-
-
-@pytest.mark.stress
-@pytest.mark.asyncio
-async def test_multiple_reconnections(client_admin_wallet):
-    """
-    Stress test: Force multiple disconnects and verify we handle them all.
+    The private one is the point: it can only be subscribed on an
+    authenticated connection, so its return is the proof that the re-auth hook
+    ran on the new socket and that the venue accepted it.
     """
 
-    messages = []
-    reconnect_count = [0]
+    session = client_admin_wallet._session
+    subaccount_id = client_admin_wallet.active_subaccount.id
+    private_channel = f"{subaccount_id}.orders"
 
-    def callback(result):
-        messages.append(result)
+    messages: list = []
+    received = asyncio.Event()
 
-    ws_session = client_admin_wallet._session
-    original_reconnect = ws_session._on_reconnect
+    def on_ticker(payload):
+        messages.append(payload)
+        received.set()
 
-    def on_reconnect():
-        reconnect_count[0] += 1
-        if original_reconnect:
-            original_reconnect()
+    def on_order(_payload):
+        return None
 
-    ws_session._on_reconnect = on_reconnect
+    try:
+        with _lifecycle_events(session) as events:
+            await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
+                instrument_name="ETH-PERP",
+                interval=INTERVAL,
+                callback=on_ticker,
+            )
+            await client_admin_wallet.private_channels.orders_by_subaccount_id(
+                subaccount_id=str(subaccount_id),
+                callback=on_order,
+            )
 
-    # Subscribe
-    await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
-        instrument_name="ETH-PERP",
-        interval=INTERVAL,
-        callback=callback,
-    )
+            await _wait_until(
+                lambda: asyncio.sleep(0, result=received.is_set()),
+                MESSAGE_TIMEOUT,
+                "the public channel never delivered before the drop",
+            )
+            assert isinstance(messages[0], TickerSlimPayload)
 
-    await asyncio.sleep(2)  # Get some initial messages
-    initial_count = len(messages)
+            # A TCP abort, not a close frame: an orderly close is the easy path
+            # and not the one that breaks reconnection.
+            assert session._ws is not None, "not connected, nothing to drop"
+            session._ws.transport.abort()
 
-    # Force 3 disconnects
-    for i in range(3):
-        if ws_session._ws:
-            await ws_session._ws.close()
-        await asyncio.sleep(8)  # Wait for reconnection + reauth
+            received.clear()
+            delivered_before_drop = len(messages)
 
-    # Verify we reconnected all 3 times
-    assert reconnect_count[0] == 3, f"Expected 3 reconnects, got {reconnect_count[0]}"
+            await _wait_until(
+                lambda: asyncio.sleep(0, result=events["disconnected"].is_set()),
+                RECONNECT_TIMEOUT,
+                "the drop was never detected",
+            )
+            await _wait_until(
+                lambda: asyncio.sleep(0, result=events["reauthenticated"].is_set()),
+                RECONNECT_TIMEOUT,
+                "re-authentication never ran",
+            )
 
-    # Verify we're still receiving messages
-    await asyncio.sleep(5)
-    final_count = len(messages)
-    assert final_count > initial_count, "No messages received after multiple reconnects"
+            # The session is marked connected only once re-auth and every
+            # channel have come back, so this is the reconnect completing, not
+            # merely a socket opening.
+            await _wait_until(
+                session._state.is_connected,
+                RECONNECT_TIMEOUT,
+                "the session never became usable again",
+            )
 
-    print(f"✓ Survived {reconnect_count[0]} reconnections")
-    print(f"✓ Total messages: {final_count}")
+        await _wait_until(
+            lambda: asyncio.sleep(0, result=received.is_set()),
+            MESSAGE_TIMEOUT,
+            "reconnected, but the public channel is silent",
+        )
+        assert len(messages) > delivered_before_drop
+        assert isinstance(messages[-1], TickerSlimPayload)
+
+        # Ask the venue what this connection holds. Our own registry keeps a
+        # refused channel registered on purpose, so it cannot answer this.
+        remaining = await client_admin_wallet.unsubscribe(PUBLIC_CHANNEL)
+        assert remaining is not None
+        assert private_channel in remaining.remaining_subscriptions, "the private channel did not survive the reconnect"
+
+    finally:
+        with contextlib.suppress(Exception):
+            await client_admin_wallet.unsubscribe(PUBLIC_CHANNEL, private_channel)
