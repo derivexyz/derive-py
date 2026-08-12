@@ -4032,14 +4032,14 @@
             "items": {
               "type": "integer",
               "format": "uint8",
-              "minimum": 0.0
+              "minimum": 0
             }
           },
           "expiry": {
             "description": "Unix timestamp after which the action is invalid (`uint256`).",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "module": {
             "description": "Module address that will process this action (`address`).",
@@ -4049,7 +4049,7 @@
             "description": "Replay-protection nonce (`uint256`), interpreted as a UTC-**nanosecond** timestamp: it must fall within the nonce validity window (one day) of the action's timestamp.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "owner": {
             "description": "Owner of the subaccount (`address`).",
@@ -4063,7 +4063,7 @@
             "description": "Subaccount identifier (`uint256`).",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4235,7 +4235,7 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "risk_universe_name": {
             "description": "Display name of the universe (uppercase, e.g. \"PRIME\"); absent until set by the exchange.",
@@ -4279,7 +4279,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "request_id": {
             "$ref": "#/components/schemas/VaultRequestId"
@@ -4296,7 +4296,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -4305,7 +4305,7 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "withdraw_hash": {
             "description": "0x-prefixed hex of the 32-byte user withdraw-action hash.",
@@ -4444,7 +4444,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4496,7 +4496,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4672,7 +4672,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4709,7 +4709,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4753,7 +4753,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -4762,7 +4762,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -4771,12 +4771,12 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "vault_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -4793,7 +4793,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5116,7 +5116,7 @@
           "cooldown_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "deposit_spot_asset": {
             "$ref": "#/components/schemas/Address"
@@ -5134,12 +5134,12 @@
           "management_fee_bps": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "manager_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "max_fee_usd": {
             "description": "Maximum sequencer fee the signer authorises, in USD, as a decimal string (e.g. `\"1.5\"`).",
@@ -5149,17 +5149,17 @@
           "max_slippage_bps": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "performance_fee_bps": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -5168,7 +5168,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -5177,7 +5177,7 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5278,7 +5278,7 @@
             "description": "Number of trades during last 24h",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "oi": {
             "description": "Current total open interest",
@@ -5324,7 +5324,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "amount": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -5354,12 +5354,12 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "tx_hash": {
             "type": [
@@ -5457,7 +5457,7 @@
           "decimals": {
             "type": "integer",
             "format": "uint8",
-            "minimum": 0.0
+            "minimum": 0
           },
           "underlying_erc20": {
             "description": "On-chain ERC20 token deposited into the spot asset (informational).",
@@ -5540,7 +5540,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5567,7 +5567,7 @@
             "description": "UTC timestamp of expiry, unix seconds.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5586,7 +5586,7 @@
             "description": "The vault's subaccount ID.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5613,12 +5613,12 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "expiry": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "fwd_diff": {
             "type": "string"
@@ -5635,7 +5635,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5659,7 +5659,7 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "funding_rate": {
             "description": "Per-hour funding rate as a decimal string.",
@@ -5671,7 +5671,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5710,7 +5710,7 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",
@@ -5783,7 +5783,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -5792,7 +5792,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "risk_universe_id": {
             "default": null,
@@ -5801,7 +5801,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5865,7 +5865,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -5904,7 +5904,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "description": "Start of the window, unix milliseconds (default 0).",
@@ -5914,7 +5914,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -5945,7 +5945,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "description": "Start of the window, unix milliseconds (default 0).",
@@ -5955,7 +5955,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -6000,7 +6000,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -6009,7 +6009,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "default": null,
@@ -6026,7 +6026,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "default": null,
@@ -6089,17 +6089,17 @@
           "end_timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "period": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6126,7 +6126,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "description": "Start of the window, unix milliseconds (default 0).",
@@ -6136,7 +6136,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -6145,7 +6145,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "default": null,
@@ -6190,7 +6190,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "default": null,
@@ -6219,7 +6219,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6300,12 +6300,12 @@
           "limit": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6319,12 +6319,12 @@
           "limit": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6351,7 +6351,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "end_timestamp": {
             "default": null,
@@ -6368,7 +6368,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -6377,7 +6377,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "default": null,
@@ -6438,7 +6438,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "default": null,
@@ -6479,7 +6479,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -6488,7 +6488,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -6572,7 +6572,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6630,7 +6630,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -6639,7 +6639,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -6681,13 +6681,13 @@
             "default": 1,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": 20,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "quote_id": {
             "default": null,
@@ -6715,7 +6715,7 @@
             "format": "int64"
           },
           "to_timestamp": {
-            "default": 9223372036854775807,
+            "default": 9223372036854776000,
             "type": "integer",
             "format": "int64"
           }
@@ -6820,13 +6820,13 @@
             "default": 1,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": 20,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "rfq_id": {
             "default": null,
@@ -6847,7 +6847,7 @@
             "format": "int64"
           },
           "to_timestamp": {
-            "default": 9223372036854775807,
+            "default": 9223372036854776000,
             "type": "integer",
             "format": "int64"
           }
@@ -6874,7 +6874,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -6974,7 +6974,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -6983,7 +6983,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "quote_id": {
             "default": null,
@@ -7030,7 +7030,7 @@
           "end_timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "instrument_name": {
             "type": "string"
@@ -7038,12 +7038,12 @@
           "period": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7125,7 +7125,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -7134,12 +7134,12 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7167,7 +7167,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "resolution": {
             "$ref": "#/components/schemas/PerformanceResolution"
@@ -7175,7 +7175,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "to": {
             "description": "Optional exclusive upper bound (unix seconds).",
@@ -7197,7 +7197,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7214,7 +7214,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": null,
@@ -7223,7 +7223,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "description": "The shareholder wallet (0x hex).",
@@ -7250,13 +7250,13 @@
             "default": 1,
             "type": "integer",
             "format": "uint",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": 100,
             "type": "integer",
             "format": "uint",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7294,7 +7294,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "start_timestamp": {
             "description": "Start of the window, unix milliseconds (default 0).",
@@ -7304,7 +7304,7 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": null,
@@ -7513,7 +7513,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",
@@ -7539,7 +7539,7 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "supply_apy": {
             "$ref": "#/components/schemas/Ohlc"
@@ -7699,7 +7699,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "request_id": {
             "$ref": "#/components/schemas/VaultRequestId"
@@ -7716,7 +7716,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -7725,7 +7725,7 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7757,12 +7757,12 @@
           "mmp_frozen_time": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "mmp_interval": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "mmp_unfreeze_time": {
             "type": "integer",
@@ -7771,7 +7771,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7791,7 +7791,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7812,7 +7812,7 @@
           "total": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -7881,12 +7881,12 @@
           "action_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "action_type": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "action_type_label": {
             "type": "string"
@@ -7894,7 +7894,7 @@
           "block_number": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "data": {
             "description": "Raw action calldata, 0x-hex.",
@@ -7996,7 +7996,7 @@
           "expiry": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "index": {
             "type": "string"
@@ -8125,7 +8125,7 @@
             "description": "Expiry of the option, unix seconds.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "instrument_name": {
             "type": "string"
@@ -8140,7 +8140,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -8413,7 +8413,7 @@
           "recipient_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "worst_fee": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -8441,7 +8441,7 @@
           "expiry": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "module": {
             "type": "string"
@@ -8449,7 +8449,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "owner": {
             "type": "string"
@@ -8460,7 +8460,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -8632,7 +8632,7 @@
             "type": "boolean"
           },
           "reject_timestamp": {
-            "default": 9223372036854775807,
+            "default": 9223372036854776000,
             "type": "integer",
             "format": "int64"
           },
@@ -8840,7 +8840,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -8877,12 +8877,12 @@
           "count": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "num_pages": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -8908,7 +8908,7 @@
             "description": "Per-queue id assigned by the `OnchainActionManager`; `0` for fast deposits (indexed from the factory event, not the pooled OAM action).",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "action_type": {
             "description": "`Deposit` (existing subaccount), `DepositToNewSubaccount`, or `FastDeposit` (pooled, credited off-chain).",
@@ -8924,7 +8924,7 @@
           "block_number": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "credit_nonce": {
             "description": "Fast only: the credit transfer's nonce, disambiguating a deposit's entries. Absent on slow entries and the uncredited remainder. Decimal string — the value exceeds JS number precision.",
@@ -8940,13 +8940,13 @@
           "log_index": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "manager_id": {
             "description": "Manager of the new subaccount; `0` for existing-subaccount deposits.",
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "status": {
             "description": "`detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists) Fast deposits additionally show: `crediting` (transfer in flight), `credited` (paid out) `partial_revert` (reorged out after a chunk was paid)",
@@ -9029,7 +9029,7 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signatures": {
             "$ref": "#/components/schemas/OracleSignatureDataResponse"
@@ -9040,7 +9040,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "type": {
             "type": "string"
@@ -9078,7 +9078,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",
@@ -9125,13 +9125,13 @@
             "default": 1,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": 20,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "quote_id": {
             "default": null,
@@ -9159,7 +9159,7 @@
             "format": "int64"
           },
           "to_timestamp": {
-            "default": 9223372036854775807,
+            "default": 9223372036854776000,
             "type": "integer",
             "format": "int64"
           }
@@ -9180,13 +9180,13 @@
             "default": 1,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "page_size": {
             "default": 20,
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "rfq_id": {
             "default": null,
@@ -9215,7 +9215,7 @@
             "format": "int64"
           },
           "to_timestamp": {
-            "default": 9223372036854775807,
+            "default": 9223372036854776000,
             "type": "integer",
             "format": "int64"
           }
@@ -9381,7 +9381,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9411,13 +9411,13 @@
               "null"
             ],
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "fallback_subaccount_id": {
             "description": "Subaccount that receives deposits whose requested destination is unusable — unknown manager id, or the per-wallet subaccount cap already reached. Allocated with the account, and always in the fallback risk universe (id 0).",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "fee_info": {
             "$ref": "#/components/schemas/AccountFeeInfo"
@@ -9430,7 +9430,7 @@
             "additionalProperties": {
               "type": "integer",
               "format": "uint16",
-              "minimum": 0.0
+              "minimum": 0
             }
           },
           "referral_code": {
@@ -9444,7 +9444,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           },
           "wallet": {
@@ -9453,22 +9453,22 @@
           "websocket_matching_tps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "websocket_non_matching_tps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "websocket_option_tps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "websocket_perp_tps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "whitelisted_recipients": {
             "description": "Recipients that session keys may withdraw or transfer ERC-20s to. The owner and `Admin`-scoped session keys bypass this list.",
@@ -9495,7 +9495,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9515,7 +9515,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9531,7 +9531,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           },
           "wallet": {
@@ -9563,13 +9563,13 @@
           "last_seen_trade_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "liquidate_subaccount_id": {
             "description": "Subaccount being liquidated.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "merge_account": {
             "type": "boolean"
@@ -9594,7 +9594,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -9603,7 +9603,7 @@
             "description": "Bidder subaccount.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9620,7 +9620,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9652,7 +9652,7 @@
           "expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "ip_whitelist": {
             "type": "array",
@@ -9687,7 +9687,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           }
         }
@@ -9726,7 +9726,7 @@
             "description": "Manager id for the new subaccount when `to_subaccount_id == 0`.",
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "nonce": {
             "type": "integer",
@@ -9742,7 +9742,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -9750,18 +9750,18 @@
           "sub_id": {
             "type": "integer",
             "format": "uint128",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "to_subaccount_id": {
             "description": "Recipient's existing destination subaccount. `0` → create a new subaccount for `recipient_address` under `new_subaccount_manager`.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9778,7 +9778,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9815,7 +9815,7 @@
             "description": "Non-zero → create a new sender-owned subaccount under this manager id.",
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "nonce": {
             "type": "integer",
@@ -9827,7 +9827,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -9835,18 +9835,18 @@
           "sub_id": {
             "type": "integer",
             "format": "uint128",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "to_subaccount_id": {
             "description": "Existing destination subaccount. Ignored when `new_subaccount_manager != 0`.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9863,7 +9863,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9913,7 +9913,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -9921,7 +9921,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9938,7 +9938,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -9968,17 +9968,17 @@
           "last_fee_settled_at_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "protocol_fee_share_bps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "total_shares": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -10043,7 +10043,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10283,7 +10283,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10297,7 +10297,7 @@
             "description": "Subaccount to auction.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10314,7 +10314,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10425,7 +10425,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "total_shares": {
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
@@ -10476,7 +10476,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -10484,7 +10484,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10949,12 +10949,12 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "expiry": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "rate": {
             "type": "string"
@@ -10965,7 +10965,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -10991,7 +10991,7 @@
             "description": "Milliseconds before the next request is allowed (0 if none).",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "remainingPoints": {
             "description": "Number of remaining points (tokens).",
@@ -11059,7 +11059,7 @@
           "unique_traders_referred": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -11103,7 +11103,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "default": 0,
@@ -11136,7 +11136,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": [
@@ -11515,7 +11515,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -11544,7 +11544,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -11553,7 +11553,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -11562,12 +11562,12 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "vault_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -11587,7 +11587,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "shares_to_burn": {
             "description": "Number of vault shares to burn, as a decimal string.",
@@ -11601,7 +11601,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "$ref": "#/components/schemas/Address"
@@ -11610,12 +11610,12 @@
             "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "vault_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -11805,7 +11805,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -11957,7 +11957,7 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "security_module": {
             "$ref": "#/components/schemas/SecurityModuleDetails"
@@ -11992,7 +11992,7 @@
             "description": "Pass this as `manager_id` when depositing to a new subaccount.",
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "margin_type": {
             "$ref": "#/components/schemas/MarginType"
@@ -12019,7 +12019,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12095,7 +12095,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12167,7 +12167,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12187,7 +12187,7 @@
           "expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "ip_whitelist": {
             "type": "array",
@@ -12218,7 +12218,7 @@
           "registered_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_ids": {
             "description": "Subaccounts this key may act on. An empty stored value means \"all subaccounts\" and is expanded to the wallet's current subaccount list.",
@@ -12226,7 +12226,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           }
         }
@@ -12270,17 +12270,17 @@
           "mmp_frozen_time": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "mmp_interval": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12308,17 +12308,17 @@
           "mmp_frozen_time": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "mmp_interval": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12340,7 +12340,7 @@
           "expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "ip_whitelist": {
             "type": [
@@ -12385,7 +12385,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -12398,7 +12398,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           },
           "wallet": {
@@ -12549,7 +12549,7 @@
             "items": {
               "type": "integer",
               "format": "uint8",
-              "minimum": 0.0
+              "minimum": 0
             }
           }
         }
@@ -12654,7 +12654,7 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "feed_source_type": {
             "type": [
@@ -12671,7 +12671,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -12690,7 +12690,7 @@
           "decimals": {
             "type": "integer",
             "format": "uint8",
-            "minimum": 0.0
+            "minimum": 0
           },
           "supply_index": {
             "type": "string"
@@ -12737,7 +12737,7 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "srm_im_discount": {
             "description": "SRM collateral discount (cash asset \"1\"; non-collateral \"0\").",
@@ -12817,7 +12817,7 @@
           "manager_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "margin_type": {
             "type": "string"
@@ -12856,12 +12856,12 @@
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "subaccount_value": {
             "type": "string"
@@ -13318,7 +13318,7 @@
           "from_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "from_wallet": {
             "type": "string"
@@ -13332,12 +13332,12 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "to_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "to_wallet": {
             "type": "string"
@@ -13428,12 +13428,12 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "risk_universe_id": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           },
           "risk_universe_name": {
             "description": "Display name of the universe (uppercase, e.g. \"PRIME\"); absent until set by the exchange.",
@@ -13449,7 +13449,7 @@
               "null"
             ],
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13486,7 +13486,7 @@
             "description": "The vault's subaccount ID; the caller must be the vault's curator.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "whitelist_only": {
             "default": null,
@@ -13519,7 +13519,7 @@
           "nonce": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "remove": {
             "description": "Recipient wallet addresses to remove from the whitelist.",
@@ -13534,7 +13534,7 @@
           "signature_expiry_sec": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signer": {
             "type": "string"
@@ -13559,7 +13559,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "whitelisted_recipients": {
             "description": "The account's whitelisted recipients after the update was applied.",
@@ -13719,7 +13719,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "operation_uuid": {
             "type": "string"
@@ -13752,7 +13752,7 @@
           "vault_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "type": "string"
@@ -13780,7 +13780,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13810,7 +13810,7 @@
             "description": "Min seconds between a holder's last deposit and their withdrawal.",
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "deposit_spot_asset": {
             "$ref": "#/components/schemas/Address"
@@ -13818,18 +13818,18 @@
           "management_fee_bps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "max_slippage_bps": {
             "description": "Max deviation of the curator's quoted share price from the mtm-derived price, both sides. Bounded at creation by the protocol-wide maximum slippage limit.",
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           },
           "performance_fee_bps": {
             "type": "integer",
             "format": "uint16",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13847,7 +13847,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13872,7 +13872,7 @@
           "vault_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13890,7 +13890,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -13906,7 +13906,7 @@
             "items": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0.0
+              "minimum": 0
             }
           }
         }
@@ -13931,7 +13931,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -14026,7 +14026,7 @@
           "vault_subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "wallet": {
             "$ref": "#/components/schemas/Address"
@@ -14048,7 +14048,7 @@
           "creation_timestamp_ms": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "id": {
             "$ref": "#/components/schemas/VaultRequestId"
@@ -14060,7 +14060,7 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "user_action_hash": {
             "description": "0x-prefixed hex of the 32-byte user-action hash the curator commits to.",
@@ -14085,7 +14085,7 @@
           "operation_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           }
         }
       },
@@ -14162,12 +14162,12 @@
           "deadline": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "expiry": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "signatures": {
             "$ref": "#/components/schemas/OracleSignatureDataResponse"
@@ -14175,7 +14175,7 @@
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "vol_data": {
             "$ref": "#/components/schemas/VolSVIParamDataResponse"
@@ -14265,12 +14265,12 @@
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "timestamp": {
             "type": "integer",
             "format": "uint64",
-            "minimum": 0.0
+            "minimum": 0
           },
           "tx_hash": {
             "type": [
