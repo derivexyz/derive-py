@@ -5,7 +5,6 @@ Asynchronous WebSocket session with automatic reconnection and auth hook.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import inspect
 import uuid
 import weakref
@@ -22,12 +21,13 @@ from derive_client._clients.utils import (
     JSONRPCEnvelope,
     RequestParams,
     SubscriptionParams,
+    confirm_subscriptions,
     decode_envelope,
     decoder_for,
     encode_rpc_frame,
 )
 from derive_client.data_types import LoggerType
-from derive_client.exceptions import RequestAbandoned
+from derive_client.exceptions import DeriveJSONRPCError, RequestAbandoned
 from derive_client.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -42,13 +42,7 @@ class Subscribe(msgspec.Struct):
 
 @dataclass(slots=True)
 class Subscription:
-    """A channel's handler and the decoder for its payload type.
-
-    One record rather than two parallel dicts: both are written together at
-    subscribe and read together on every message, so nothing can put them out
-    of step. The decoder is built once here instead of resolving the payload
-    type on every notification.
-    """
+    """A channel's handler and the decoder for its payload type."""
 
     handler: Handler
     decoder: msgspec.json.Decoder
@@ -65,15 +59,39 @@ class ConnectionState:
     async def set_connected(self):
         async with self._lock:
             self._connected = True
-            self._reconnecting = False
+
+    async def set_connected_if(self, still_valid: Callable[[], bool]) -> bool:
+        """Mark connected only while `still_valid` holds.
+
+        Tested and set under the lock a disconnect also takes, so a drop cannot
+        land between the two and leave the session claiming a socket that has
+        already gone.
+        """
+        async with self._lock:
+            if not still_valid():
+                return False
+            self._connected = True
+            return True
 
     async def set_disconnected(self):
         async with self._lock:
             self._connected = False
 
-    async def set_reconnecting(self):
+    async def begin_reconnect(self) -> bool:
+        """Claim the reconnect. False if another loop already holds it."""
         async with self._lock:
+            if self._reconnecting:
+                return False
             self._reconnecting = True
+            return True
+
+    async def end_reconnect(self) -> bool:
+        """Release the claim. True if the session still needs a reconnect."""
+        # Released and observed under one lock: a drop that lands while a loop
+        # is finishing cannot claim the reconnect, so it has to be seen here.
+        async with self._lock:
+            self._reconnecting = False
+            return not self._connected
 
     async def is_connected(self) -> bool:
         async with self._lock:
@@ -150,12 +168,29 @@ class WebSocketSession:
         self._finalizer = weakref.finalize(self, self._finalize, logger=self._logger)
 
     async def open(self) -> None:
-        """Establish WebSocket connection and start receiver task."""
+        """Establish WebSocket connection, start receiver task, restore channels."""
         if await self._state.is_connected():
             self._logger.warning("WebSocket already connected")
             return
 
+        if await self._state.is_reconnecting():
+            # Dialling under the reconnect would orphan one of the two sockets.
+            self._logger.warning("Reconnection in progress, not opening a second connection")
+            return
+
         await self._connect()
+        try:
+            # Subscriptions survive close(), so reopening has to restore them.
+            if self._subscriptions:
+                await self._before_resubscribe()
+                await self._resubscribe_all()
+        except Exception:
+            # A part-way open looks healthy to the venue and delivers nothing,
+            # and the next open() would dial on top of its receiver.
+            await self._close_connection()
+            raise
+
+        await self._state.set_connected()
 
     async def close(self) -> None:
         """Close connection and stop all tasks. Idempotent."""
@@ -165,18 +200,13 @@ class WebSocketSession:
         self._logger.info("Closing WebSocket session")
         self._stop_event.set()
 
-        # Close WebSocket
-        await self._close_connection()
-
-        # Cancel background tasks
-        for task in [self._receiver_task, self._reconnect_task]:
-            if task and not task.done():
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
-
-        self._receiver_task = None
+        # Stop the reconnect loop first: one that is already past its stop
+        # check can finish dialling and leave a fresh socket behind us.
+        await self._cancel(self._reconnect_task)
         self._reconnect_task = None
+
+        # Close WebSocket, which also stops the receiver task
+        await self._close_connection()
 
         await self._state.set_disconnected()
         await self._fail_pending_requests("session closed")
@@ -223,6 +253,11 @@ class WebSocketSession:
         self._logger.info(f"Subscribing to channel: {channel}")
         try:
             envelope = await self._send_request("subscribe", params=params)
+            # A handler kept for a channel that never subscribed is silent for
+            # the life of the session, and asked for again on every reconnect.
+            confirmed, refused = confirm_subscriptions([channel], envelope)
+            if not confirmed:
+                raise ConnectionError(f"{channel} is not subscribed: the venue refuses it ({refused[channel]})")
             self._logger.debug(f"Subscribe RPC response for {channel}: {envelope}")
             return envelope
         except Exception:
@@ -257,11 +292,15 @@ class WebSocketSession:
             raise
 
     async def _connect(self) -> None:
-        """Establish WebSocket connection and start receiver task."""
+        """Establish WebSocket connection and start receiver task.
+
+        Does not mark the session connected: an open socket is not a usable
+        session until its channels are back. Callers decide when that is true.
+        """
         self._logger.info(f"Connecting to {self._url}")
 
         try:
-            self._ws = await connect(
+            ws = await connect(
                 self._url,
                 max_size=16 * 1024 * 1024,  # 16MB max message
                 open_timeout=10.0,
@@ -271,16 +310,39 @@ class WebSocketSession:
             self._logger.error(f"Connection failed: {e}")
             raise
 
-        await self._state.set_connected()
+        self._ws = ws
 
-        # Start receiver task
+        # Start receiver task, bound to the connection it was started for, so
+        # it can never end up sharing a recv() with a newer connection.
         self._stop_event.clear()
-        self._receiver_task = asyncio.create_task(self._receive_loop(), name="ws-receiver")
+        self._receiver_task = asyncio.create_task(self._receive_loop(ws), name="ws-receiver")
 
         self._logger.info("WebSocket connected, receiver task started")
 
+    async def _cancel(self, task: asyncio.Task | None) -> None:
+        """Cancel a task and wait for it, without adopting how it died."""
+        # Callers are tearing a connection down; adopting the task's own
+        # exception would abandon that teardown half-finished.
+        if task is None or task.done() or task is asyncio.current_task():
+            return
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            self._logger.debug(f"Task {task.get_name()} ended with {e!r}")
+
     async def _close_connection(self) -> None:
-        """Close the WebSocket connection."""
+        """Close the WebSocket connection and stop the receiver reading it."""
+        # Cancelled before the socket closes, so the receiver cannot observe
+        # the close and re-enter _handle_disconnect from inside a teardown.
+        # Handlers run on the receiver, so one in flight is cancelled with it:
+        # handlers are expected to be short, and a teardown must be bounded
+        # even when the one we were handed is not.
+        task, self._receiver_task = self._receiver_task, None
+        await self._cancel(task)
+
         if self._ws:
             try:
                 await self._ws.close()
@@ -289,6 +351,9 @@ class WebSocketSession:
             finally:
                 self._ws = None
 
+        # Nothing is left to deliver a reply, so waiters are told now rather
+        # than left to time out.
+        await self._fail_pending_requests("connection closed")
         await self._state.set_disconnected()
 
     async def _handle_disconnect(self) -> None:
@@ -309,20 +374,44 @@ class WebSocketSession:
             except Exception as e:
                 self._logger.error(f"Error in on_disconnect callback: {e}")
 
-        # Start reconnection if enabled
-        if self._reconnect_enabled and not await self._state.is_reconnecting():
-            await self._state.set_reconnecting()
-            self._reconnect_task = asyncio.create_task(
-                self._reconnect_loop(),
-                name="ws-reconnect",
-            )
+        # Start reconnection if enabled. The claim is atomic, so concurrent
+        # disconnects cannot each start a loop.
+        if self._reconnect_enabled and await self._state.begin_reconnect():
+            try:
+                self._reconnect_task = asyncio.create_task(
+                    self._reconnect_loop(),
+                    name="ws-reconnect",
+                )
+            except Exception:
+                # Nothing will release the claim if the loop never starts.
+                await self._state.end_reconnect()
+                raise
 
     async def _reconnect_loop(self) -> None:
         """Reconnection loop with exponential backoff."""
+        try:
+            await self._reconnect_until_subscribed()
+        finally:
+            # Releasing here always: a stuck claim would strand the session.
+            # A drop that landed while this loop was finishing could not claim
+            # the reconnect, so it is handed a fresh loop instead.
+            if await self._state.end_reconnect() and self._reconnect_enabled and not self._stop_event.is_set():
+                self._logger.warning("Disconnected while finishing the reconnect, restarting")
+                self._reconnect_task = asyncio.create_task(
+                    self._reconnect_loop(),
+                    name="ws-reconnect",
+                )
+
+    async def _reconnect_until_subscribed(self) -> None:
+        """Dial, re-authenticate and resubscribe until the session is usable.
+
+        Termination is not derived from the connected flag: another task can
+        flip that at any time, and an open socket is not a restored session.
+        """
         delay = self._reconnect_delay
         attempt = 1
 
-        while not self._stop_event.is_set() and not await self._state.is_connected():
+        while not self._stop_event.is_set():
             self._logger.info(f"Reconnection attempt {attempt} in {delay:.1f}s")
             await asyncio.sleep(delay)
 
@@ -335,6 +424,7 @@ class WebSocketSession:
 
                 # Establish new connection
                 await self._connect()
+                connection = self._ws
 
                 # Call reconnect callback (for re-auth, etc.)
                 if self._on_reconnect is not None:
@@ -347,31 +437,47 @@ class WebSocketSession:
                         # Don't fail reconnection if callback fails
 
                 # Call before_resubscribe callback (for re-authentication)
-                if self._on_before_resubscribe is not None:
-                    try:
-                        res = self._on_before_resubscribe()
-                        if inspect.isawaitable(res):
-                            await cast(Awaitable[None], res)
-                    except Exception as e:
-                        self._logger.error(f"Error in on_before_resubscribe callback: {e}")
-                        raise  # Re-auth failure should trigger retry
+                await self._before_resubscribe()
 
                 # Resubscribe to all channels
                 await self._resubscribe_all()
+
+                # A drop in the window above leaves no receiver to report it,
+                # and close_code is set by the transport before anything of
+                # ours can observe the loss, so it is the reliable witness.
+                still_ours = await self._state.set_connected_if(
+                    lambda: connection is not None and self._ws is connection and connection.close_code is None
+                )
+                if not still_ours:
+                    raise ConnectionError("connection dropped before resubscribing finished")
 
                 self._logger.info(f"Reconnected successfully after {attempt} attempts")
                 return
 
             except Exception as e:
                 self._logger.error(f"Reconnection attempt {attempt} failed: {e}")
+                # A part-way connection looks healthy and delivers nothing.
+                await self._close_connection()
                 attempt += 1
                 delay = min(delay * 2, self._max_reconnect_delay)
 
         await self._state.set_disconnected()
         self._logger.info("Reconnection stopped")
 
+    async def _before_resubscribe(self) -> None:
+        """Run the re-auth callback. Its failure has to fail the attempt."""
+        if self._on_before_resubscribe is None:
+            return
+        try:
+            res = self._on_before_resubscribe()
+            if inspect.isawaitable(res):
+                await cast(Awaitable[None], res)
+        except Exception as e:
+            self._logger.error(f"Error in on_before_resubscribe callback: {e}")
+            raise  # Re-auth failure should trigger retry
+
     async def _resubscribe_all(self) -> None:
-        """Resubscribe to all channels after reconnection."""
+        """Resubscribe every channel, and raise unless some came back."""
         channels = list(self._subscriptions)
 
         if not channels:
@@ -379,15 +485,46 @@ class WebSocketSession:
             return
 
         self._logger.info(f"Resubscribing to {len(channels)} channels")
+        confirmed, refused = await self._subscribe_batch(channels)
 
+        # Nothing subscribed is a connection failure - a rejected re-auth looks
+        # exactly like this - but a channel the venue will not serve must not
+        # fail the attempt, or one delisted instrument would end all market
+        # data. It stays registered, is reported, and is tried again next time.
+        if not confirmed:
+            raise ConnectionError(f"no channel came back: {refused}")
+
+        for channel, reason in refused.items():
+            self._logger.error(f"{channel} is not subscribed: the venue refuses it ({reason})")
+
+        self._logger.debug(f"Resubscribed to {len(confirmed)} channels")
+
+    async def _subscribe_batch(self, channels: list[str]) -> tuple[list[str], dict[str, str]]:
+        """Subscribe in one request, falling back to one at a time."""
+        # One request, not one per channel: a trader profile has five
+        # non-matching requests per second, which a channel at a time spends on
+        # every reconnect. A single bad channel is answered with `Invalid
+        # params` for the whole request, hence the fallback below.
+        envelope = await self._send_request("subscribe", params=Subscribe(channels=channels))
+        if envelope.error is msgspec.UNSET:
+            return confirm_subscriptions(channels, envelope)
+
+        self._logger.warning(f"Subscribe rejected for {len(channels)} channels at once, asking one at a time")
+        confirmed: list[str] = []
+        refused: dict[str, str] = {}
         for channel in channels:
             try:
-                params = Subscribe(channels=[channel])
-                envelope = await self._send_request("subscribe", params=params)
-                self._logger.debug(f"Resubscribed to {channel}: {envelope}")
-            except Exception as e:
-                self._logger.error(f"Failed to resubscribe to {channel}: {e}")
-                # Continue trying other channels
+                reply = await self._send_request("subscribe", params=Subscribe(channels=[channel]))
+                accepted, rejected = confirm_subscriptions([channel], reply)
+            except DeriveJSONRPCError as e:
+                # The venue rejected this one channel. Anything else - an
+                # abandoned request, a timeout - is the connection itself, and
+                # has to fail the attempt rather than be filed as a refusal.
+                refused[channel] = str(e)
+                continue
+            confirmed.extend(accepted)
+            refused.update(rejected)
+        return confirmed, refused
 
     async def _send_request(self, method: str, params: RequestParams) -> JSONRPCEnvelope:
         """Send RPC request and return decoded envelope."""
@@ -404,8 +541,7 @@ class WebSocketSession:
         self._pending_requests[request_id] = response_queue
 
         try:
-            # text=True sends the already-UTF-8 bytes in a Text frame, which is
-            # what Derive accepts; it rejects Binary frames.
+            # UTF-8 bytes in a Text frame, which is what Derive accepts; it rejects Binary frames.
             await ws.send(data, text=True)
 
             try:
@@ -430,14 +566,18 @@ class WebSocketSession:
             except asyncio.QueueFull:
                 self._logger.warning(f"Could not notify pending request {request_id}: {reason}")
 
-    async def _receive_loop(self) -> None:
-        """Background task: continuously receive and dispatch messages."""
+    async def _receive_loop(self, ws: ClientConnection) -> None:
+        """Background task: continuously receive and dispatch messages.
+
+        Reads the connection it was started for, never whatever self._ws
+        currently points at.
+        """
         self._logger.info("Receiver task started")
 
         try:
-            while not self._stop_event.is_set() and self._ws:
+            while not self._stop_event.is_set():
                 try:
-                    message = await self._ws.recv(decode=False)
+                    message = await ws.recv(decode=False)
                     try:
                         await self._dispatch_message(message)
                     except Exception:
@@ -465,12 +605,6 @@ class WebSocketSession:
         try:
             envelope = decode_envelope(data)
         except ValidationError as e:
-            # Only reachable for a notification whose params are not
-            # {channel, data}. Typing params that way is what lets the channel
-            # and the payload come out of one scan instead of three; the cost
-            # is that any other params-bearing notification lands here rather
-            # than in the debug branch below. If Derive adds one, give it a
-            # branch of its own rather than loosening the envelope.
             self._logger.warning(f"Unexpected envelope shape ({e}): {data[:200]!r}")
             return
         except Exception as e:
@@ -493,9 +627,7 @@ class WebSocketSession:
         # Subscription notification
         if envelope.method == "subscription":
             params = envelope.params
-            # isinstance rather than `is not msgspec.UNSET`: pyright does not
-            # narrow on identity against UnsetType, and 50 ns is nothing beside
-            # the decode below.
+
             if not isinstance(params, SubscriptionParams):
                 self._logger.warning("Subscription message missing params")
                 return
@@ -528,6 +660,9 @@ class WebSocketSession:
         per-channel ordering, which an orderbook feed requires, in exchange for
         a handler that must not block. Awaiting the returned value rather than
         testing iscoroutinefunction also handles partials and callable objects.
+
+        A teardown cancels the receiver, so a handler in flight is cancelled
+        with it. Handlers must not treat that as a failure to report.
         """
         try:
             result = handler(notification)
