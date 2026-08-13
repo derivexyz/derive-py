@@ -11,6 +11,7 @@ from web3.contract.contract import ContractFunction
 from web3.exceptions import TransactionNotFound
 from web3.types import TxParams
 
+from derive_client._web3.provider import pinned_provider, provider_generation
 from derive_client.config import GAS_FEE_BUFFER, MIN_PRIORITY_FEE
 from derive_client.data_types import (
     ChecksumAddress,
@@ -99,38 +100,48 @@ def prepare_transaction(
     whether TypedTransaction's fields match a pre-sign build_transaction()
     output. (It IS confirmed to match the post-mine get_transaction()
     response -- see wait_for_finality below, which uses it there.)
+
+    Pinned: nonce, fee history, eth_estimateGas, native balance and the
+    eth_call simulation must all describe the same chain state. Resetting to a
+    lower-index endpoint halfway through would mix views from two nodes.
     """
 
-    nonce = w3.eth.get_transaction_count(cast(EthChecksumAddress, from_address))
-    fee_estimates = estimate_fees(w3, blocks=gas_blocks)
-    fee_estimate = fee_estimates[gas_priority]
-    logger.info(f"Fee estimate [{gas_priority.name}]: {fee_estimate}")
+    with pinned_provider(w3):
+        # "pending", not the default "latest". The deposit planners yield an
+        # approve step and only then build the deposit; under "latest" the
+        # deposit reuses the approve's nonce whenever the approve has been
+        # broadcast but not yet mined, and either replaces it or is rejected
+        # as an underpriced replacement.
+        nonce = w3.eth.get_transaction_count(cast(EthChecksumAddress, from_address), "pending")
+        fee_estimates = estimate_fees(w3, blocks=gas_blocks)
+        fee_estimate = fee_estimates[gas_priority]
+        logger.info(f"Fee estimate [{gas_priority.name}]: {fee_estimate}")
 
-    tx = func.build_transaction(
-        cast(
-            TxParams,
-            {
-                "from": from_address,
-                "nonce": nonce,
-                "maxFeePerGas": fee_estimate.max_fee_per_gas,
-                "maxPriorityFeePerGas": fee_estimate.max_priority_fee_per_gas,
-                "chainId": w3.eth.chain_id,
-                "value": value,
-            },
+        tx = func.build_transaction(
+            cast(
+                TxParams,
+                {
+                    "from": from_address,
+                    "nonce": nonce,
+                    "maxFeePerGas": fee_estimate.max_fee_per_gas,
+                    "maxPriorityFeePerGas": fee_estimate.max_priority_fee_per_gas,
+                    "chainId": w3.eth.chain_id,
+                    "value": value,
+                },
+            )
         )
-    )
 
-    gas_limit = tx.get("gas")
-    if gas_limit is None:
-        # build_transaction() always populates this via eth_estimateGas
-        raise RuntimeError("build_transaction() did not return a 'gas' value, cannot preflight balance check.")
+        gas_limit = tx.get("gas")
+        if gas_limit is None:
+            # build_transaction() always populates this via eth_estimateGas
+            raise RuntimeError("build_transaction() did not return a 'gas' value, cannot preflight balance check.")
 
-    preflight_native_balance_check(
-        w3=w3, account_address=from_address, fee_estimate=fee_estimate, gas_limit=gas_limit, value=value
-    )
+        preflight_native_balance_check(
+            w3=w3, account_address=from_address, fee_estimate=fee_estimate, gas_limit=gas_limit, value=value
+        )
 
-    # Simulate against current state; raises with the revert reason if it would fail.
-    w3.eth.call(tx)
+        # Simulate against current state; raises with the revert reason if it would fail.
+        w3.eth.call(tx)
 
     return tx
 
@@ -164,83 +175,90 @@ def wait_for_finality(
       - TxPendingTimeout: no receipt, but tx present and pending in mempool
       - TransactionDropped: no receipt and tx not known to node (likely dropped)
 
+    Runs pinned so the provider cannot reset to a lower-index endpoint mid-wait.
+    A failover can still happen if the pinned endpoint dies; in that case the
+    new node may simply never have seen the broadcast, and TransactionDropped
+    would be a false negative. The generation check below detects exactly that.
+
     Notes on reorgs and provider inconsistency:
       - A chain reorg can cause a previously-seen receipt to disappear (tx becomes "unmined").
         In that case the tx will often reappear as pending in the mempool (TxPendingTimeout),
         but it can also be dropped entirely (TransactionDropped) or re-mined later.
-      - With rotating RPC providers you may observe receipts, tx entries, and block numbers
-        from different nodes that disagree. This function classifies a timeout based on a
-        single get_transaction probe and is intentionally conservative; callers should
-        interpret exceptions as:
-          * FinalityTimeout: node reports mined or we observed a receipt but not enough confirms:
-            wait longer; invoke this function again.
-          * TxPendingTimeout: node knows the tx and reports it pending:
-            either wait/poll longer or resubmit (reuse the nonce to prevent duplication).
-          * TransactionDropped: node has no record (likely dropped or node out-of-sync):
-            either wait/poll longer or resubmit (reuse the nonce to prevent duplication).
+      - Callers should interpret exceptions as:
+          * FinalityTimeout: wait longer; invoke this function again.
+          * TxPendingTimeout: wait/poll longer or resubmit (reuse the nonce).
+          * TransactionDropped: wait/poll longer or resubmit (reuse the nonce).
     """
 
     block_number = -1
     tx_hash = cast(HexStr, tx_hash)
     start_time = time.monotonic()
+    start_generation = provider_generation(w3)
 
-    while True:
-        try:
-            raw_receipt = w3.eth.get_transaction_receipt(tx_hash)
-            receipt = TypedTxReceipt.model_validate(raw_receipt)
-        # receipt can disappear temporarily during reorgs, or if RPC provider is not synced
-        except TransactionNotFound as exc:
-            receipt = None
-            logger.debug("No tx receipt for tx_hash=%s", tx_hash, extra={"exc": exc})
-
-        # blockNumber can change as tx gets reorged into different blocks
-        try:
-            if receipt is not None:
-                block_number = w3.eth.block_number
-                if block_number >= receipt.blockNumber + finality_blocks:
-                    return receipt
-        except Exception as exc:
-            msg = "Failed to fetch block_number trying to assess finality of tx_hash=%s"
-            logger.debug(msg, tx_hash, extra={"exc": exc})
-
-        if time.monotonic() - start_time > timeout:
-            # 1) We have a receipt but did not reach required confirmations
-            if receipt is not None:
-                raise FinalityTimeout(
-                    f"Timed out waiting for finality: tx={tx_hash!r}, timeout_s={timeout}, "
-                    f"required confirmations={finality_blocks}."
-                    f"\nreceipt_block={receipt.blockNumber!r}, current_block={block_number!r}.",
-                    "\nAction: wait longer / poll for finality again.",
-                )
-            # 2) No receipt: check if tx is known to node (mempool) or dropped
+    with pinned_provider(w3):
+        while True:
             try:
-                tx = TypedTransaction.model_validate(w3.eth.get_transaction(tx_hash))
-            except Exception as exc:
-                tx = None
-                logger.debug("get_transaction probe failed for tx_hash=%s", tx_hash, extra={"exc": exc})
+                raw_receipt = w3.eth.get_transaction_receipt(tx_hash)
+                receipt = TypedTxReceipt.model_validate(raw_receipt)
+            # receipt can disappear temporarily during reorgs, or if RPC provider is not synced
+            except TransactionNotFound as exc:
+                receipt = None
+                logger.debug("No tx receipt for tx_hash=%s", tx_hash, extra={"exc": exc})
 
-            # still pending in mempool
-            if tx is not None and tx.blockNumber is None:
-                raise TxPendingTimeout(
-                    f"No receipt within timeout: tx={tx_hash!r}, timeout_s={timeout}.",
-                    "\nNode reports transaction present and pending in mempool.",
-                    "\nAction: either wait/poll longer or resubmit (reuse the nonce to prevent duplication).",
-                )
-            # node reports tx mined, but no receipt
-            elif tx is not None:
-                raise FinalityTimeout(
-                    f"Timed out waiting for finality: tx={tx_hash!r}, timeout_s={timeout}, "
-                    f"required confirmations={finality_blocks}."
-                    f"\nNode reports tx mined at block {tx.blockNumber!r} but receipt not observed by this verifier."
-                    "\nAction: wait longer / poll for finality again.",
-                )
-            # tx dropped or node no longer knows about it
-            else:
+            # blockNumber can change as tx gets reorged into different blocks
+            try:
+                if receipt is not None:
+                    block_number = w3.eth.block_number
+                    if block_number >= receipt.blockNumber + finality_blocks:
+                        return receipt
+            except Exception as exc:
+                msg = "Failed to fetch block_number trying to assess finality of tx_hash=%s"
+                logger.debug(msg, tx_hash, extra={"exc": exc})
+
+            if time.monotonic() - start_time > timeout:
+                if receipt is not None:
+                    raise FinalityTimeout(
+                        f"Timed out waiting for finality: tx={tx_hash!r}, timeout_s={timeout}, "
+                        f"required confirmations={finality_blocks}."
+                        f"\nreceipt_block={receipt.blockNumber!r}, current_block={block_number!r}.",
+                        "\nAction: wait longer / poll for finality again.",
+                    )
+
+                try:
+                    tx = TypedTransaction.model_validate(w3.eth.get_transaction(tx_hash))
+                except Exception as exc:
+                    tx = None
+                    logger.debug("get_transaction probe failed for tx_hash=%s", tx_hash, extra={"exc": exc})
+
+                if tx is not None and tx.blockNumber is None:
+                    raise TxPendingTimeout(
+                        f"No receipt within timeout: tx={tx_hash!r}, timeout_s={timeout}.",
+                        "\nNode reports transaction present and pending in mempool.",
+                        "\nAction: either wait/poll longer or resubmit (reuse the nonce to prevent duplication).",
+                    )
+                elif tx is not None:
+                    raise FinalityTimeout(
+                        f"Timed out waiting for finality: tx={tx_hash!r}, timeout_s={timeout}, "
+                        f"required confirmations={finality_blocks}.\n"
+                        f"Node reports tx mined at block {tx.blockNumber!r} but receipt not observed by this verifier."
+                        "\nAction: wait longer / poll for finality again.",
+                    )
+
+                endpoint_changed = start_generation is not None and provider_generation(w3) != start_generation
+                if endpoint_changed:
+                    current_endpoint = getattr(w3.provider, 'endpoint_uri', None)
+                    raise TxPendingTimeout(
+                        f"No receipt within timeout: tx={tx_hash!r}, timeout_s={timeout}.",
+                        f"\nThe RPC endpoint changed during the wait (now {current_endpoint}); "
+                        "the current node has no record, but it may simply never have seen the broadcast.",
+                        "\nAction: do NOT treat as dropped. Wait/poll longer, or resubmit reusing the SAME nonce.",
+                    )
+
                 raise TransactionDropped(
                     f"Transaction not found after timeout: tx={tx_hash!r}, timeout_s={timeout}.",
                     "\nNode does not report a receipt or pending transaction (likely dropped).",
                     "\nAction: either wait/poll longer or resubmit (reuse the nonce to prevent duplication).",
                 )
 
-        logger.debug("Waiting for finality: tx=%s sleeping=%.1fs", tx_hash, poll_interval)
-        time.sleep(poll_interval)
+            logger.debug("Waiting for finality: tx=%s sleeping=%.1fs", tx_hash, poll_interval)
+            time.sleep(poll_interval)
