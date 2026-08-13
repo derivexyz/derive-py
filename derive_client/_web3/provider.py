@@ -62,7 +62,12 @@ class _EndpointUnavailable(Exception):
     """Internal: this endpoint failed in a way another endpoint may not."""
 
 
-_RETRYABLE_HTTP_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 529})
+# 400/401/403 are endpoint-level rejections, not consensus answers: a plan
+# gate, a missing key, a geo-block. Observed in the wild as HTTP 400 wrapping
+# {"code":35,"message":"chain is not available on free plan"}. Retrying
+# elsewhere either succeeds or yields AllEndpointsFailed listing N identical
+# refusals, which diagnoses a genuinely malformed request just as clearly.
+_RETRYABLE_HTTP_STATUS = frozenset({400, 401, 403, 408, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 529})
 
 # Infrastructure rather than consensus. -32601 is included because a node
 # lacking eth_feeHistory should hand off, not kill the call.
@@ -174,6 +179,17 @@ def _raw_tx_hash(params: RPCParams) -> HexStr:
     if isinstance(raw, str):
         return Web3.to_hex(Web3.keccak(hexstr=HexStr(raw)))
     raise TypeError(f"eth_sendRawTransaction payload is {type(raw).__name__}, expected hex string or bytes")
+
+
+def _describe(exc: BaseException) -> str:
+    """HTTPError's repr is just the status line. Gateways put the actual
+    reason in the body, and raise_for_status() fires before anything parses
+    it, so the useful half is lost unless we reach for it here."""
+
+    if isinstance(exc, HTTPError) and exc.response is not None:
+        body = exc.response.text.strip()[:200]
+        return f"{exc!r} body={body}" if body else repr(exc)
+    return repr(exc)
 
 
 def _build_http_providers(endpoints: Sequence[str], timeout: float) -> list[HTTPProvider]:
