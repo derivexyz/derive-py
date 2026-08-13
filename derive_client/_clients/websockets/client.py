@@ -138,6 +138,9 @@ class WebSocketClient:
         await self._authenticate()
         await self._initialize_account_and_markets()
 
+        if self._light_account is not None and self._light_account.state.cancel_on_disconnect:
+            self._warn_if_cancel_on_disconnect_unwatched()
+
     @property
     def connection_state(self) -> ConnectionState:
         """Whether the session is usable right now."""
@@ -185,6 +188,18 @@ class WebSocketClient:
                 f"Available subaccounts: {subaccount_ids}"
             )
 
+    def _warn_if_cancel_on_disconnect_unwatched(self) -> None:
+        """Orders that can vanish deserve someone listening."""
+
+        if self._session.on_state_change is not None:
+            return
+        self._logger.warning(
+            "cancel-on-disconnect is enabled but no on_state_change callback is registered: "
+            "a dropped connection cancels every resting order, and auto-reconnect returns "
+            "the client looking healthy with an empty book. Pass one to connect(), or poll "
+            "connection_state."
+        )
+
     async def set_cancel_on_disconnect(self, enabled: bool = True) -> str:
         """
         Toggle cancel-on-disconnect for the authenticated wallet.
@@ -197,6 +212,8 @@ class WebSocketClient:
         Re-place from `orders.list_open()` when `on_state_change` reports
         CONNECTED; a warning is logged if no callback is registered.
         """
+        if enabled:
+            self._warn_if_cancel_on_disconnect_unwatched()
         params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
         return await self._private_api.rpc.set_cancel_on_disconnect(params)
 
