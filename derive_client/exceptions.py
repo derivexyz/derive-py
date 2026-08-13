@@ -138,3 +138,22 @@ class VaultRequestTimeout(VaultRequestError):
     `action` is None when the request had not yet appeared in the history at
     all, which is normal in the first seconds after queueing.
     """
+
+
+class ChainIdMismatch(Exception):
+    """An RPC endpoint reports a chain id other than the configured one."""
+
+    def __init__(self, message: str, *, endpoint: str, expected: int, actual: int):
+        super().__init__(message)
+        self.endpoint = endpoint
+        self.expected = expected
+        self.actual = actual
+
+
+class AllEndpointsFailed(Exception):
+    """Every RPC endpoint failed or was disabled for a single request."""
+
+    def __init__(self, message: str, *, method: str, failures: dict[str, str]):
+        super().__init__(message)
+        self.method = method
+        self.failures = failures
