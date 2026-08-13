@@ -124,7 +124,14 @@ class WebSocketClient:
         return cls(**config.model_dump())
 
     async def connect(self, *, on_state_change: StateCallback | None = None) -> None:
-        """Connect to Derive via WebSocket and validate credentials."""
+        """
+        Connect to Derive via WebSocket, authenticate, and load account state.
+
+        Args:
+            on_state_change: Called on every connection state transition. Also
+                settable afterwards via the property of the same name. Without
+                it, a drop is only observable by polling `connection_state`.
+        """
         if on_state_change is not None:
             self._session.on_state_change = on_state_change
         await self._session.open()
@@ -139,11 +146,17 @@ class WebSocketClient:
 
     @property
     def on_state_change(self) -> StateCallback | None:
-        """Callback for connection state transitions.
+        """
+        Called on every connection state transition, with the new state.
 
-        Fires on every change. A reconnect reports RECONNECTING then CONNECTED,
-        and CONNECTED means re-authenticated and resubscribed. Run on its own
-        task, so it may take as long as it needs.
+        A drop reports RECONNECTING then CONNECTED, and CONNECTED means
+        re-authenticated and every channel resubscribed, not merely a socket
+        that is open. Delivered in order on its own task, so it may take as
+        long as it needs without delaying the reconnect.
+
+        CONNECTED is the resync point: updates during the outage were missed,
+        so reload from `orders` and `positions` rather than trusting  local state.
+        With cancel-on-disconnect enabled, the resting orders are also gone.
         """
 
         return self._session.on_state_change
@@ -176,12 +189,13 @@ class WebSocketClient:
         """
         Toggle cancel-on-disconnect for the authenticated wallet.
 
-        Survives a reconnect: the setting is not scoped to the connection it
-        was set on, and does not need re-applying after a drop.
+        A persisted account setting, not a property of the connection: it
+        survives a reconnect and does not need re-applying after a drop.
 
-        With auto-reconnect enabled this means a transient drop cancels every
-        resting order and the client comes back looking perfectly healthy.
-        Both behaviours are sensible alone and surprising together.
+        Every drop therefore empties the book, including one the client
+        recovers from on its own, after which it looks healthy and is not.
+        Re-place from `orders.list_open()` when `on_state_change` reports
+        CONNECTED; a warning is logged if no callback is registered.
         """
         params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
         return await self._private_api.rpc.set_cancel_on_disconnect(params)
