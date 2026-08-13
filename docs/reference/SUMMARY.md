@@ -39,7 +39,6 @@
         * [TypedTxReceipt](data_types/models/typedtxreceipt.md)
         * [TypedSignedTransaction](data_types/models/typedsignedtransaction.md)
         * [TypedTransaction](data_types/models/typedtransaction.md)
-        * [RPCEndpoints](data_types/models/rpcendpoints.md)
         * [FeeHistory](data_types/models/feehistory.md)
         * [FeeEstimate](data_types/models/feeestimate.md)
         * [FeeEstimates](data_types/models/feeestimates.md)

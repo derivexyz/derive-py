@@ -17,7 +17,6 @@ This section contains all data model classes used in the derive_client.
 - [TypedTxReceipt](models/typedtxreceipt.md)
 - [TypedSignedTransaction](models/typedsignedtransaction.md)
 - [TypedTransaction](models/typedtransaction.md)
-- [RPCEndpoints](models/rpcendpoints.md)
 - [FeeHistory](models/feehistory.md)
 - [FeeEstimate](models/feeestimate.md)
 - [FeeEstimates](models/feeestimates.md)

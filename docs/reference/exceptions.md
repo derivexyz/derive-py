@@ -170,3 +170,23 @@
       show_source: true
       members: false
 
+## ChainIdMismatch
+
+::: derive_client.exceptions.ChainIdMismatch
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
+## AllEndpointsFailed
+
+::: derive_client.exceptions.AllEndpointsFailed
+    options:
+      show_root_heading: false
+      heading_level: 3
+      show_bases: true
+      show_source: true
+      members: false
+
