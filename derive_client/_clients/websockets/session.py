@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import inspect
+import random
 import uuid
 import weakref
 from dataclasses import dataclass
@@ -517,8 +518,11 @@ class WebSocketSession:
         attempt = 1
 
         while not self._stop_event.is_set():
-            self._logger.info(f"Reconnection attempt {attempt} in {delay:.1f}s")
-            await asyncio.sleep(delay)
+            # Jitter, so a server restart does not bring every client back in
+            # lockstep and trip the per-IP connection cap.
+            wait = random.uniform(delay / 2, delay)
+            self._logger.info(f"Reconnection attempt {attempt} in {wait:.1f}s")
+            await asyncio.sleep(wait)
 
             if self._stop_event.is_set():
                 break
