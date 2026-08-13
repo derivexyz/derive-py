@@ -23,9 +23,12 @@ ABI_DATA_DIR = DATA_DIR / "abis"
 
 PUBLIC_HEADERS = {"accept": "application/json", "content-type": "application/json"}
 
-GAS_FEE_BUFFER = 1.1  # buffer multiplier to pad maxFeePerGas
-GAS_LIMIT_BUFFER = 1.1  # buffer multiplier to pad gas limit
-MIN_PRIORITY_FEE = 10_000
+#: EIP-1559 caps base fee growth at 12.5% per block.
+#: 6 blocks is ~72s on L1, and 1.125**6 ≈ 2.03, which is what web3.py's uses
+BASE_FEE_MAX_GROWTH_PER_BLOCK: Final[float] = 1.125
+BASE_FEE_LOOKAHEAD_BLOCKS: Final[int] = 6
+GAS_FEE_BUFFER: Final[float] = BASE_FEE_MAX_GROWTH_PER_BLOCK**BASE_FEE_LOOKAHEAD_BLOCKS
+MIN_PRIORITY_FEE: Final[int] = 10_000
 
 ETHEREUM_MAINNET_CHAIN_ID = 1
 SEPOLIA_CHAIN_ID = 11155111
