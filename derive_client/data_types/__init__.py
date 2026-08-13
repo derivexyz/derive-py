@@ -3,6 +3,7 @@
 from logging import Logger, LoggerAdapter
 
 from .enums import (
+    ConnectionState,
     DeriveJSONRPCErrorCode,
     Environment,
     EthereumJSONRPCErrorCode,
@@ -34,6 +35,7 @@ from .models import (
     TypedSignedTransaction,
     TypedTransaction,
     TypedTxReceipt,
+    WebSocketSessionConfig,
     Wei,
 )
 from .utils import D
@@ -45,6 +47,7 @@ __all__ = [
     "AssetType",
     "ChecksumAddress",
     "ClientConfig",
+    "ConnectionState",
     "D",
     "DeriveJSONRPCErrorCode",
     "DeriveContractAddresses",
@@ -71,5 +74,6 @@ __all__ = [
     "TypedTxReceipt",
     "RiskUniverseID",
     "VaultAction",
+    "WebSocketSessionConfig",
     "Wei",
 ]

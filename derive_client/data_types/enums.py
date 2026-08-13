@@ -3,6 +3,18 @@
 from enum import Enum, IntEnum, StrEnum
 
 
+class ConnectionState(StrEnum):
+    """Whether the WebSocket session is usable.
+
+    CONNECTED means usable: authenticated and every channel resubscribed, not
+    merely a socket that is open.
+    """
+
+    CONNECTED = "connected"
+    RECONNECTING = "reconnecting"
+    DISCONNECTED = "disconnected"
+
+
 class RiskUniverseID(IntEnum):
     """Risk universe ID."""
 

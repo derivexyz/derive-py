@@ -96,18 +96,45 @@ class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
 
 
 class JSONRPCRequest(msgspec.Struct, Generic[ParamsT]):
-    """One outbound JSON-RPC frame. Declaration order is wire order.
-
-    omit_defaults is deliberately off: it would drop `jsonrpc`, and applied to
-    params it would drop pinned constants like referral_code and client. UNSET
-    omission does not need it and works recursively into nested structs, which
-    the old asdict filter never did.
-    """
+    """Outbound JSON-RPC frame."""
 
     id: int | str
     method: str
     params: ParamsT
     jsonrpc: str = "2.0"
+
+
+class SubscriptionResult(msgspec.Struct):
+    """Subscription acknowledgement."""
+
+    current_subscriptions: list[str]
+    status: dict[str, str] = {}
+
+
+class UnsubscribeResult(msgspec.Struct):
+    """Unsubscribe acknowledgement."""
+
+    remaining_subscriptions: list[str]
+    status: dict[str, str] = {}
+
+
+def confirm_subscriptions(channels: Iterable[str], envelope: JSONRPCEnvelope) -> tuple[list[str], dict[str, str]]:
+    """Split channels into the confirmed ones, and the refused ones with a reason.
+
+    `current_subscriptions` holds what the connection is subscribed to after
+    the call, so it decides; `status` is free text on failure and only
+    explains. An unusable reply raises, via decode_result.
+    """
+
+    ack = decode_result(envelope, SubscriptionResult)
+    live = set(ack.current_subscriptions)
+    confirmed = [channel for channel in channels if channel in live]
+    refused = {
+        channel: ack.status.get(channel) or "not listed in current_subscriptions"
+        for channel in channels
+        if channel not in live
+    }
+    return confirmed, refused
 
 
 ENCODER = msgspec.json.Encoder()
@@ -263,23 +290,7 @@ def decode_envelope(data: Data) -> JSONRPCEnvelope:
 
 
 def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
-    """
-    Deserialize RPC result field into typed schema.
-
-    Should only be called after verifying envelope.result is present.
-    Raises DeriveJSONRPCError if envelope contains error instead.
-
-    Args:
-        envelope: Already-decoded envelope from decode_envelope()
-        result_schema: Target struct type for result field
-
-    Returns:
-        Deserialized result
-
-    Raises:
-        DeriveJSONRPCError: If envelope contains error field
-        ValueError: If envelope has neither result nor error
-    """
+    """Deserialize RPC result field into typed schema."""
 
     if envelope.error is not msgspec.UNSET:
         error = msgspec.json.decode(envelope.error, type=RPCError)
@@ -293,13 +304,7 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
 
 
 def encode_request(obj: msgspec.Struct | None) -> bytes:
-    """Encode a request struct. UNSET fields are omitted by msgspec, recursively.
-
-    Methods with no parameters pass None (EmptyRequest) and encode as `{}`.
-    No filtering happens here: request models carry no nullable fields, so
-    there is nothing to strip, and the previous asdict-and-filter pass only
-    ever reached the top level anyway.
-    """
+    """Encode a request struct. UNSET fields are omitted by msgspec."""
     return ENCODER.encode(obj) if obj is not None else b"{}"
 
 

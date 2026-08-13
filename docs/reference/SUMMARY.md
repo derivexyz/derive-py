@@ -16,6 +16,7 @@
     * [VaultOperations](operations/vaultoperations.md)
 * Data Types
     * [Enums](data_types/enums.md)
+        * [ConnectionState](data_types/enums/connectionstate.md)
         * [RiskUniverseID](data_types/enums/riskuniverseid.md)
         * [GasPriority](data_types/enums/gaspriority.md)
         * [Environment](data_types/enums/environment.md)
@@ -28,6 +29,7 @@
         * [DeriveContractAddresses](data_types/models/derivecontractaddresses.md)
         * [EnvConfig](data_types/models/envconfig.md)
         * [ClientConfig](data_types/models/clientconfig.md)
+        * [WebSocketSessionConfig](data_types/models/websocketsessionconfig.md)
         * [PHexBytes](data_types/models/phexbytes.md)
         * [ChecksumAddress](data_types/models/checksumaddress.md)
         * [TxHash](data_types/models/txhash.md)

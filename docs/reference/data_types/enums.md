@@ -4,6 +4,7 @@ This section contains all enumeration types used in the derive_client.
 
 ## Available Enums
 
+- [ConnectionState](enums/connectionstate.md)
 - [RiskUniverseID](enums/riskuniverseid.md)
 - [GasPriority](enums/gaspriority.md)
 - [Environment](enums/environment.md)
