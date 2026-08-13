@@ -5,9 +5,6 @@ The offline suite in test_reconnect_resubscribe.py covers the reconnect logic
 against a venue we control, in seconds. These cover what a fake venue cannot:
 the real subscribe ack shape, re-authentication actually restoring a *private*
 channel, and whether cancel-on-disconnect survives a reconnect.
-
-Two tests, deliberately. Everything else about reconnection is cheaper and
-more thorough offline.
 """
 
 import asyncio
@@ -18,6 +15,7 @@ from decimal import Decimal
 import pytest
 
 from derive_client import WebSocketClient
+from derive_client.data_types import ConnectionState
 from derive_client.data_types.channel_models import TickerSlimPayload
 from derive_client.data_types.generated_models import Direction
 
@@ -48,67 +46,52 @@ async def _wait_until(predicate, timeout: float, message: str) -> None:
         pytest.fail(f"{message} within {timeout}s")
 
 
-async def _is_set(event: asyncio.Event) -> bool:
-    """Adapt an Event to the predicate _wait_until expects."""
-
-    return event.is_set()
-
-
 @contextlib.contextmanager
-def _lifecycle_events(session):
-    """Signal the session's disconnect and re-auth hooks, then put them back.
+def _recorded_states(client: WebSocketClient):
+    """Record every state transition, then put the callback back.
 
-    The client fixture is session-scoped, so hooks left wrapped would fire for
-    every later test.
+    The client fixture is session-scoped, so a callback left installed would
+    keep recording into a finished test's list.
     """
 
-    events = {"disconnected": asyncio.Event(), "reauthenticated": asyncio.Event()}
-    original_disconnect = session._on_disconnect
-    original_reauth = session._on_before_resubscribe
-
-    def on_disconnect():
-        events["disconnected"].set()
-        return original_disconnect() if original_disconnect else None
-
-    async def on_before_resubscribe():
-        if original_reauth:
-            await original_reauth()
-        # Set after, not before: a re-auth that raises must not look like one
-        # that worked, since a failed attempt is retried.
-        events["reauthenticated"].set()
-
-    session._on_disconnect = on_disconnect
-    session._on_before_resubscribe = on_before_resubscribe
+    seen: list[ConnectionState] = []
+    previous = client.on_state_change
+    client.on_state_change = seen.append
     try:
-        yield events
+        yield seen
     finally:
-        session._on_disconnect = original_disconnect
-        session._on_before_resubscribe = original_reauth
+        client.on_state_change = previous
 
 
-async def _drop_and_recover(session, events) -> None:
+async def _seen(states: list[ConnectionState], state: ConnectionState) -> bool:
+    return state in states
+
+
+async def _drop_and_recover(client: WebSocketClient, seen: list[ConnectionState]) -> None:
     """Abort the socket and wait until the session is usable again.
 
     A TCP abort, not a close frame: an orderly close is the easy path and not
     the one that breaks reconnection.
     """
 
-    events["disconnected"].clear()
+    seen.clear()
+    session = client._session
     assert session._ws is not None, "not connected, nothing to drop"
     session._ws.transport.abort()
 
     await _wait_until(
-        lambda: _is_set(events["disconnected"]),
+        lambda: _seen(seen, ConnectionState.RECONNECTING),
         RECONNECT_TIMEOUT,
-        "the drop was never detected",
+        "the drop was never reported",
     )
-    # The session is marked connected only once re-auth and every channel have
-    # come back, so this is the reconnect completing, not a socket opening.
+    # CONNECTED is published only once re-auth and every channel have come
+    # back, so this is the reconnect completing, not a socket opening.
     await _wait_until(
-        session._state.is_connected,
+        lambda: _seen(seen, ConnectionState.CONNECTED),
         RECONNECT_TIMEOUT,
         "the session never became usable again",
     )
+    assert client.connection_state is ConnectionState.CONNECTED
 
 
 async def _resting_bid_price(client_admin_wallet: WebSocketClient) -> Decimal:
@@ -130,7 +113,6 @@ async def test_an_abrupt_drop_restores_both_channels(client_admin_wallet: WebSoc
     ran on the new socket and that the venue accepted it.
     """
 
-    session = client_admin_wallet._session
     subaccount_id = client_admin_wallet.active_subaccount.id
     private_channel = f"{subaccount_id}.orders"
 
@@ -144,8 +126,11 @@ async def test_an_abrupt_drop_restores_both_channels(client_admin_wallet: WebSoc
     def on_order(_payload):
         return None
 
+    async def delivered() -> bool:
+        return received.is_set()
+
     try:
-        with _lifecycle_events(session) as events:
+        with _recorded_states(client_admin_wallet) as seen:
             await client_admin_wallet.public_channels.ticker_slim_interval_by_instrument_name(
                 instrument_name="ETH-PERP",
                 interval=INTERVAL,
@@ -156,31 +141,17 @@ async def test_an_abrupt_drop_restores_both_channels(client_admin_wallet: WebSoc
                 callback=on_order,
             )
 
-            await _wait_until(
-                lambda: _is_set(received),
-                MESSAGE_TIMEOUT,
-                "the public channel never delivered before the drop",
-            )
+            await _wait_until(delivered, MESSAGE_TIMEOUT, "the public channel never delivered before the drop")
             assert isinstance(messages[0], TickerSlimPayload)
 
             received.clear()
             delivered_before_drop = len(messages)
 
-            await _drop_and_recover(session, events)
+            await _drop_and_recover(client_admin_wallet, seen)
 
-            await _wait_until(
-                lambda: _is_set(received),
-                MESSAGE_TIMEOUT,
-                "reconnected, but the public channel is silent",
-            )
+            await _wait_until(delivered, MESSAGE_TIMEOUT, "reconnected, but the public channel is silent")
             assert len(messages) > delivered_before_drop
             assert isinstance(messages[-1], TickerSlimPayload)
-
-            await _wait_until(
-                lambda: _is_set(events["reauthenticated"]),
-                RECONNECT_TIMEOUT,
-                "re-authentication never ran",
-            )
 
         # Ask the venue what this connection holds. Our own registry keeps a
         # refused channel registered on purpose, so it cannot answer this.
@@ -204,7 +175,6 @@ async def test_cancel_on_disconnect_survives_a_reconnect(client_admin_wallet: We
     perfectly healthy.
     """
 
-    session = client_admin_wallet._session
     orders = client_admin_wallet.orders
     run = uuid.uuid4().hex[:8]
 
@@ -229,10 +199,10 @@ async def test_cancel_on_disconnect_survives_a_reconnect(client_admin_wallet: We
         account = await client_admin_wallet.account.get()
         assert account.cancel_on_disconnect is True, "the venue did not record cancel-on-disconnect as enabled"
 
-        with _lifecycle_events(session) as events:
+        with _recorded_states(client_admin_wallet) as seen:
             # First drop: does it work at all.
             await rest_an_order(f"{run}-1")
-            await _drop_and_recover(session, events)
+            await _drop_and_recover(client_admin_wallet, seen)
             await _wait_until(
                 lambda: open_orders(f"{run}-1"),
                 CANCEL_TIMEOUT,
@@ -241,7 +211,7 @@ async def test_cancel_on_disconnect_survives_a_reconnect(client_admin_wallet: We
 
             # Second drop: was it scoped to the connection it was set on.
             await rest_an_order(f"{run}-2")
-            await _drop_and_recover(session, events)
+            await _drop_and_recover(client_admin_wallet, seen)
             await _wait_until(
                 lambda: open_orders(f"{run}-2"),
                 CANCEL_TIMEOUT,
@@ -254,3 +224,22 @@ async def test_cancel_on_disconnect_survives_a_reconnect(client_admin_wallet: We
             await client_admin_wallet.set_cancel_on_disconnect(enabled=False)
         with contextlib.suppress(Exception):
             await orders.cancel_all()
+
+
+@pytest.mark.asyncio
+async def test_state_transitions_are_reported_in_order(client_admin_wallet: WebSocketClient):
+    """
+    Test that a drop is reported, in order, and never claims to be usable early.
+
+    Out-of-order delivery would be worse than no signal: a caller told
+    CONNECTED while the socket is gone believes it is safe to trade.
+    """
+
+    with _recorded_states(client_admin_wallet) as seen:
+        assert client_admin_wallet.connection_state is ConnectionState.CONNECTED
+        await _drop_and_recover(client_admin_wallet, seen)
+
+    assert seen[-1] is ConnectionState.CONNECTED, f"did not end connected: {seen}"
+    assert ConnectionState.CONNECTED not in seen[:-1], f"claimed connected mid-outage: {seen}"
+    assert ConnectionState.RECONNECTING in seen, f"never reported reconnecting: {seen}"
+    assert all(a is not b for a, b in zip(seen, seen[1:])), f"repeated a state: {seen}"

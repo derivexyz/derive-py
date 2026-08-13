@@ -31,11 +31,19 @@ from derive_client._clients.utils import (
     load_client_config,
 )
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
-from derive_client._clients.websockets.session import WebSocketSession
+from derive_client._clients.websockets.session import StateCallback, WebSocketSession
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
+from derive_client.data_types import (
+    ChecksumAddress,
+    ConnectionState,
+    Environment,
+    GasPriority,
+    LoggerType,
+    MarginType,
+    RiskUniverseID,
+)
 from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
 
@@ -115,11 +123,34 @@ class WebSocketClient:
         config = load_client_config(session_key_path=session_key_path, env_file=env_file)
         return cls(**config.model_dump())
 
-    async def connect(self) -> None:
+    async def connect(self, *, on_state_change: StateCallback | None = None) -> None:
         """Connect to Derive via WebSocket and validate credentials."""
+        if on_state_change is not None:
+            self._session.on_state_change = on_state_change
         await self._session.open()
         await self._authenticate()
         await self._initialize_account_and_markets()
+
+    @property
+    def connection_state(self) -> ConnectionState:
+        """Whether the session is usable right now."""
+
+        return self._session.state
+
+    @property
+    def on_state_change(self) -> StateCallback | None:
+        """Callback for connection state transitions.
+
+        Fires on every change. A reconnect reports RECONNECTING then CONNECTED,
+        and CONNECTED means re-authenticated and resubscribed. Run on its own
+        task, so it may take as long as it needs.
+        """
+
+        return self._session.on_state_change
+
+    @on_state_change.setter
+    def on_state_change(self, callback: StateCallback | None) -> None:
+        self._session.on_state_change = callback
 
     async def _authenticate(self) -> None:
         """

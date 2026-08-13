@@ -3,6 +3,7 @@
 from logging import Logger, LoggerAdapter
 
 from .enums import (
+    ConnectionState,
     DeriveJSONRPCErrorCode,
     Environment,
     EthereumJSONRPCErrorCode,
@@ -45,6 +46,7 @@ __all__ = [
     "AssetType",
     "ChecksumAddress",
     "ClientConfig",
+    "ConnectionState",
     "D",
     "DeriveJSONRPCErrorCode",
     "DeriveContractAddresses",

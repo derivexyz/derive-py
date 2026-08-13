@@ -5,6 +5,7 @@ Asynchronous WebSocket session with automatic reconnection and auth hook.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import uuid
 import weakref
@@ -28,7 +29,7 @@ from derive_client._clients.utils import (
     decoder_for,
     encode_rpc_frame,
 )
-from derive_client.data_types import LoggerType
+from derive_client.data_types import ConnectionState, LoggerType
 from derive_client.exceptions import DeriveJSONRPCError, RequestAbandoned
 from derive_client.utils.logger import get_logger
 
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
     from derive_client._clients.websockets.api import Handler, MessageT
 
 LifecycleCallback = Callable[[], None] | Callable[[], Awaitable[None]]
+StateCallback = Callable[[ConnectionState], None] | Callable[[ConnectionState], Awaitable[None]]
 
 
 class Subscribe(msgspec.Struct):
@@ -50,17 +52,45 @@ class Subscription:
     decoder: msgspec.json.Decoder
 
 
-class ConnectionState:
-    """Task-safe connection state tracking."""
+class ConnectionTracker:
+    """Task-safe connection state tracking.
 
-    def __init__(self):
+    Two flags rather than one state, because they have different owners: the
+    receiver clears `connected`, the reconnect loop owns `reconnecting`.
+    `state` is the caller's view of the pair, and connected wins, so a
+    reconnect that has restored the session reads as connected whatever its
+    claim still says.
+
+    Every transition passes through here, so publishing from inside the lock
+    is the one place it cannot be forgotten and cannot arrive out of order.
+    """
+
+    def __init__(self, on_change: Callable[[ConnectionState], None] | None = None):
         self._lock = asyncio.Lock()
         self._connected = False
         self._reconnecting = False
+        self._on_change = on_change
+        self._published = ConnectionState.DISCONNECTED
+
+    @property
+    def state(self) -> ConnectionState:
+        """The pair as one state."""
+        if self._connected:
+            return ConnectionState.CONNECTED
+        return ConnectionState.RECONNECTING if self._reconnecting else ConnectionState.DISCONNECTED
+
+    def _publish(self) -> None:
+        """Announce a transition. Call inside the lock, after mutating."""
+        if (current := self.state) is self._published:
+            return
+        self._published = current
+        if self._on_change is not None:
+            self._on_change(current)
 
     async def set_connected(self):
         async with self._lock:
             self._connected = True
+            self._publish()
 
     async def set_connected_if(self, still_valid: Callable[[], bool]) -> bool:
         """Mark connected only while `still_valid` holds.
@@ -73,11 +103,13 @@ class ConnectionState:
             if not still_valid():
                 return False
             self._connected = True
+            self._publish()
             return True
 
     async def set_disconnected(self):
         async with self._lock:
             self._connected = False
+            self._publish()
 
     async def begin_reconnect(self) -> bool:
         """Claim the reconnect. False if another loop already holds it."""
@@ -85,6 +117,7 @@ class ConnectionState:
             if self._reconnecting:
                 return False
             self._reconnecting = True
+            self._publish()
             return True
 
     async def end_reconnect(self) -> bool:
@@ -93,6 +126,7 @@ class ConnectionState:
         # is finishing cannot claim the reconnect, so it has to be seen here.
         async with self._lock:
             self._reconnecting = False
+            self._publish()
             return not self._connected
 
     async def is_connected(self) -> bool:
@@ -122,6 +156,7 @@ class WebSocketSession:
         on_disconnect: LifecycleCallback | None = None,
         on_reconnect: LifecycleCallback | None = None,
         on_before_resubscribe: LifecycleCallback | None = None,
+        on_state_change: StateCallback | None = None,
     ):
         """
         Args:
@@ -134,6 +169,7 @@ class WebSocketSession:
             on_disconnect: Callback when disconnection is detected
             on_reconnect: Callback after successful reconnection (before resubscribe)
             on_before_resubscribe: Callback before resubscribing channels (for re-auth)
+            on_state_change: Callback for connection state transitions
         """
         self._url = url
         self._request_timeout = request_timeout
@@ -147,15 +183,15 @@ class WebSocketSession:
         self._on_reconnect = on_reconnect
         self._on_before_resubscribe = on_before_resubscribe
 
-        # Connection state
+        # Connection state. The queue and its task keep a slow or failing
+        # callback off the reconnect path while preserving arrival order.
         self._ws: ClientConnection | None = None
-        self._state = ConnectionState()
+        self._on_state_change = on_state_change
+        self._state_queue: asyncio.Queue[ConnectionState] = asyncio.Queue()
+        self._notifier_task: asyncio.Task | None = None
+        self._state = ConnectionTracker(on_change=self._state_queue.put_nowait)
 
-        # Message routing - ONE subscription per channel.
-        # No lock on this or on _pending_requests: every mutation of either is
-        # await-free, so the event loop already serialises them. asyncio.Lock
-        # would not help across threads anyway, and cost 1.26 us per message
-        # for a race that cannot occur.
+        # Message routing; one subscription per channel
         self._subscriptions: dict[str, Subscription] = {}
 
         # RPC tracking
@@ -169,8 +205,25 @@ class WebSocketSession:
         # Cleanup
         self._finalizer = weakref.finalize(self, self._finalize, logger=self._logger)
 
+    @property
+    def state(self) -> ConnectionState:
+        """Current connection state."""
+        return self._state.state
+
+    @property
+    def on_state_change(self) -> StateCallback | None:
+        """Callback for connection state transitions. Settable after construction."""
+        return self._on_state_change
+
+    @on_state_change.setter
+    def on_state_change(self, callback: StateCallback | None) -> None:
+        self._on_state_change = callback
+
     async def open(self) -> None:
         """Establish WebSocket connection, start receiver task, restore channels."""
+        if self._notifier_task is None or self._notifier_task.done():
+            self._notifier_task = asyncio.create_task(self._notify_state_changes(), name="ws-state-notifier")
+
         if await self._state.is_connected():
             self._logger.warning("WebSocket already connected")
             return
@@ -196,7 +249,7 @@ class WebSocketSession:
 
     async def close(self) -> None:
         """Close connection and stop all tasks. Idempotent."""
-        if self._ws is None and not await self._state.is_reconnecting():
+        if self._ws is None and not await self._state.is_reconnecting() and self._notifier_task is None:
             return
 
         self._logger.info("Closing WebSocket session")
@@ -212,6 +265,12 @@ class WebSocketSession:
 
         await self._state.set_disconnected()
         await self._fail_pending_requests("session closed")
+
+        # Deliver the transitions this close produced before stopping.
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(self._state_queue.join(), timeout=5.0)
+        await self._cancel(self._notifier_task)
+        self._notifier_task = None
 
         self._logger.info("WebSocket session closed")
 
@@ -392,17 +451,9 @@ class WebSocketSession:
         await self._fail_pending_requests("connection lost")
         self._logger.warning("WebSocket disconnected")
 
-        # Notify user callback
-        if self._on_disconnect is not None:
-            try:
-                res = self._on_disconnect()
-                if inspect.isawaitable(res):
-                    await cast(Awaitable[None], res)
-            except Exception as e:
-                self._logger.error(f"Error in on_disconnect callback: {e}")
-
         # Start reconnection if enabled. The claim is atomic, so concurrent
-        # disconnects cannot each start a loop.
+        # disconnects cannot each start a loop. Before the hook, not after: a
+        # hook that takes seconds must not delay the reconnect by seconds.
         if self._reconnect_enabled and await self._state.begin_reconnect():
             try:
                 self._reconnect_task = asyncio.create_task(
@@ -413,6 +464,33 @@ class WebSocketSession:
                 # Nothing will release the claim if the loop never starts.
                 await self._state.end_reconnect()
                 raise
+
+        # Notify user callback
+        if self._on_disconnect is not None:
+            try:
+                res = self._on_disconnect()
+                if inspect.isawaitable(res):
+                    await cast(Awaitable[None], res)
+            except Exception as e:
+                self._logger.error(f"Error in on_disconnect callback: {e}")
+
+    async def _notify_state_changes(self) -> None:
+        """Deliver state transitions to the caller, in order.
+
+        On its own task so a caller cancelling orders elsewhere cannot hold up
+        the reconnect, and so one raising callback cannot end the stream.
+        """
+        while True:
+            state = await self._state_queue.get()
+            try:
+                if (callback := self._on_state_change) is not None:
+                    result = callback(state)
+                    if inspect.isawaitable(result):
+                        await result
+            except Exception as e:
+                self._logger.error(f"Error in on_state_change callback for {state}: {e}", exc_info=True)
+            finally:
+                self._state_queue.task_done()
 
     async def _reconnect_loop(self) -> None:
         """Reconnection loop with exponential backoff."""
