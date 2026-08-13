@@ -20,6 +20,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     HttpUrl,
     RootModel,
+    model_validator,
 )
 from pydantic_core import core_schema
 from web3.types import FilterParams, LogReceipt, TxReceipt
@@ -67,6 +68,31 @@ class ClientConfig(BaseModel):
     wallet: ChecksumAddress
     subaccount_id: int
     env: Environment
+
+
+class WebSocketSessionConfig(BaseModel, frozen=True):
+    """Transport and reconnection settings for a WebSocket session."""
+
+    request_timeout: float = 10.0
+    reconnect: bool = True
+    reconnect_delay: float = 1.0
+    max_reconnect_delay: float = 60.0
+
+    open_timeout: float = 10.0
+    close_timeout: float = 5.0
+    max_size: int = 16 * 1024 * 1024
+
+    # The venue pings on its own ~180s heartbeat and `websockets` answers automatically.
+    # These are our pings, and they are what detects a half-open connection:
+    # worst case ping_interval + ping_timeout.
+    ping_interval: float = 20.0
+    ping_timeout: float = 20.0
+
+    @model_validator(mode="after")
+    def _delays_are_ordered(self) -> WebSocketSessionConfig:
+        if self.reconnect_delay > self.max_reconnect_delay:
+            raise ValueError("reconnect_delay cannot exceed max_reconnect_delay")
+        return self
 
 
 class PHexBytes(HexBytes):

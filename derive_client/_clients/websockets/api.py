@@ -3,9 +3,7 @@
 from enum import Enum
 from typing import Awaitable, Callable, Literal, TypeVar
 
-import msgspec
-
-from derive_client._clients.utils import decode_result
+from derive_client._clients.utils import SubscriptionResult, decode_result
 from derive_client._clients.websockets.session import WebSocketSession
 from derive_client.data_types.channel_models import (
     AuctionResult,
@@ -214,11 +212,6 @@ from derive_client.data_types.generated_models import (
 
 MessageT = TypeVar('MessageT')
 Handler = Callable[[MessageT], None] | Callable[[MessageT], Awaitable[None]]
-
-
-class SubscriptionResult(msgspec.Struct):
-    status: dict[str, str]
-    current_subscriptions: list[str]
 
 
 # ============================================================================

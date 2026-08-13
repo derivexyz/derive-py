@@ -63,9 +63,9 @@ class BalanceUpdateType(StrEnum):
 
 
 class LoginRequest(Struct):
-    signature: str | None = None
-    timestamp: int | None = None
-    wallet: str | None = None
+    signature: str | UnsetType = UNSET
+    timestamp: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class MarginWatchResult(Struct):
@@ -113,8 +113,8 @@ class RPCError(Struct):
 
 
 class SetCancelOnDisconnectRequest(Struct):
-    enabled: bool | None = None
-    wallet: str | None = None
+    enabled: bool | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class SpotFeedEntry(Struct):

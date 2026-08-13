@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import os
 import time
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Mapping, Optional, TypeAlias, TypeVar
 
 import msgspec
 from dotenv import load_dotenv
@@ -61,7 +62,95 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
+RequestParams: TypeAlias = msgspec.Struct | Mapping[str, object] | None
+ParamsT = TypeVar("ParamsT", bound=RequestParams)
 InstrumentT = TypeVar("InstrumentT", LegUnpricedParams, PricedLegParamsAndResponse, PositionTransfer)
+
+
+class SubscriptionParams(msgspec.Struct):
+    channel: str
+    data: msgspec.Raw
+
+
+class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
+    """
+    Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
+    Works for both HTTP and WebSocket transports.
+
+    Fields use msgspec.Raw to defer nested deserialization.
+    """
+
+    # Request/response ID (absent for notifications)
+    id: str | int | msgspec.UnsetType = msgspec.UNSET
+
+    # Protocol version
+    jsonrpc: str = "2.0"
+
+    # Server->client notifications/subscriptions
+    method: str | msgspec.UnsetType = msgspec.UNSET
+    params: SubscriptionParams | msgspec.UnsetType = msgspec.UNSET
+
+    # RPC response fields (mutually exclusive)
+    result: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+    error: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+
+
+class JSONRPCRequest(msgspec.Struct, Generic[ParamsT]):
+    """Outbound JSON-RPC frame."""
+
+    id: int | str
+    method: str
+    params: ParamsT
+    jsonrpc: str = "2.0"
+
+
+class SubscriptionResult(msgspec.Struct):
+    """Subscription acknowledgement."""
+
+    current_subscriptions: list[str]
+    status: dict[str, str] = {}
+
+
+class UnsubscribeResult(msgspec.Struct):
+    """Unsubscribe acknowledgement."""
+
+    remaining_subscriptions: list[str]
+    status: dict[str, str] = {}
+
+
+def confirm_subscriptions(channels: Iterable[str], envelope: JSONRPCEnvelope) -> tuple[list[str], dict[str, str]]:
+    """Split channels into the confirmed ones, and the refused ones with a reason.
+
+    `current_subscriptions` holds what the connection is subscribed to after
+    the call, so it decides; `status` is free text on failure and only
+    explains. An unusable reply raises, via decode_result.
+    """
+
+    ack = decode_result(envelope, SubscriptionResult)
+    live = set(ack.current_subscriptions)
+    confirmed = [channel for channel in channels if channel in live]
+    refused = {
+        channel: ack.status.get(channel) or "not listed in current_subscriptions"
+        for channel in channels
+        if channel not in live
+    }
+    return confirmed, refused
+
+
+ENCODER = msgspec.json.Encoder()
+_ENVELOPE_DECODER = msgspec.json.Decoder(JSONRPCEnvelope)
+
+
+@functools.lru_cache
+def decoder_for(schema: type[T]) -> msgspec.json.Decoder[T]:
+    """Cache one Decoder per result type.
+
+    msgspec.json.decode(buf, type=T) resolves the type on every call; a
+    Decoder resolves it once. Unbounded is fine: the generated models are
+    module-level and immortal, so the cache cannot grow past them. Do not
+    extend this to dynamically constructed types.
+    """
+    return msgspec.json.Decoder(schema)
 
 
 def sort_by_instrument_name(items: Iterable[InstrumentT]) -> list[InstrumentT]:
@@ -185,27 +274,9 @@ RATE_LIMIT: dict[RateLimitProfile, RateLimitConfig] = {
 }
 
 
-class JSONRPCEnvelope(msgspec.Struct, omit_defaults=True):
-    """
-    Minimal JSON-RPC 2.0 envelope for hot-path dispatch.
-    Works for both HTTP and WebSocket transports.
-
-    Fields use msgspec.Raw to defer nested deserialization.
-    """
-
-    # Request/response ID (absent for notifications)
-    id: str | int | msgspec.UnsetType = msgspec.UNSET
-
-    # Protocol version
-    jsonrpc: str = "2.0"
-
-    # Server->client notifications/subscriptions
-    method: str | msgspec.UnsetType = msgspec.UNSET
-    params: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
-
-    # RPC response fields (mutually exclusive)
-    result: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
-    error: msgspec.Raw | msgspec.UnsetType = msgspec.UNSET
+def encode_rpc_frame(request_id: int | str, method: str, params: RequestParams) -> bytes:
+    """Encode a request frame. Methods with no parameters send `{}`, not null."""
+    return ENCODER.encode(JSONRPCRequest(id=request_id, method=method, params=params if params is not None else {}))
 
 
 def decode_envelope(data: Data) -> JSONRPCEnvelope:
@@ -215,27 +286,11 @@ def decode_envelope(data: Data) -> JSONRPCEnvelope:
     Used in hot path to determine message routing without
     deserializing nested result/error/params fields.
     """
-    return msgspec.json.decode(data, type=JSONRPCEnvelope)
+    return _ENVELOPE_DECODER.decode(data)
 
 
 def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
-    """
-    Deserialize RPC result field into typed schema.
-
-    Should only be called after verifying envelope.result is present.
-    Raises DeriveJSONRPCError if envelope contains error instead.
-
-    Args:
-        envelope: Already-decoded envelope from decode_envelope()
-        result_schema: Target struct type for result field
-
-    Returns:
-        Deserialized result
-
-    Raises:
-        DeriveJSONRPCError: If envelope contains error field
-        ValueError: If envelope has neither result nor error
-    """
+    """Deserialize RPC result field into typed schema."""
 
     if envelope.error is not msgspec.UNSET:
         error = msgspec.json.decode(envelope.error, type=RPCError)
@@ -245,23 +300,17 @@ def decode_result(envelope: JSONRPCEnvelope, result_schema: type[T]) -> T:
     if envelope.result is msgspec.UNSET:
         raise ValueError(f"Envelope has neither result nor error (id={envelope.id})")
 
-    return msgspec.json.decode(envelope.result, type=result_schema)
+    return decoder_for(result_schema).decode(envelope.result)
 
 
-def encode_json_exclude_none(obj: msgspec.Struct | None) -> bytes:
-    """
-    Encode msgspec Struct omitting None and UNSET values.
+def encode_request(obj: msgspec.Struct | None) -> bytes:
+    """Encode a request struct. UNSET fields are omitted by msgspec."""
+    return ENCODER.encode(obj) if obj is not None else b"{}"
 
-    The Derive API requires optional fields to be omitted entirely
-    rather than sent as null. Methods with no request parameters pass
-    None (EmptyRequest); encode as an empty JSON object.
-    """
-    if obj is None:
-        return b"{}"
 
-    data = msgspec.structs.asdict(obj)
-    filtered = {k: v for k, v in data.items() if v is not None and v is not msgspec.UNSET}
-    return msgspec.json.encode(filtered)
+def unset_if_none(value: T | None) -> T | msgspec.UnsetType:
+    """Map None to UNSET, leaving every other value alone."""
+    return msgspec.UNSET if value is None else value
 
 
 async def async_fetch_all_pages_of_instrument_type(

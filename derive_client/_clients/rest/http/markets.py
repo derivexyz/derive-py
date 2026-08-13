@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-import msgspec
-
 from derive_client._clients.rest.http.api import PublicAPI
-from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type
+from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type, unset_if_none
 from derive_client.config import INT64_MAX
 from derive_client.data_types import LoggerType, RiskUniverseID
 from derive_client.data_types.generated_models import (
@@ -194,10 +192,10 @@ class MarketOperations:
         params = GetAllInstrumentsRequest(
             expired=expired,
             instrument_type=instrument_type,
-            currency=currency,
+            currency=unset_if_none(currency),
             page=page,
             page_size=page_size,
-            risk_universe_id=risk_universe_id,
+            risk_universe_id=unset_if_none(risk_universe_id),
         )
         result = self._public_api.rpc.get_all_instruments(params)
         return result
@@ -229,8 +227,8 @@ class MarketOperations:
         """Returns the most recent oracle-signed feed data."""
 
         params = GetLatestSignedFeedsRequest(
-            currency=currency,
-            expiry=expiry,
+            currency=unset_if_none(currency),
+            expiry=unset_if_none(expiry),
         )
 
         result = self._public_api.rpc.get_latest_signed_feeds(params)
@@ -271,9 +269,9 @@ class MarketOperations:
         """
 
         params = GetTickersRequest(
-            currency=currency,
+            currency=unset_if_none(currency),
             instrument_type=instrument_type,
-            expiry_date=expiry_date or msgspec.UNSET,
+            expiry_date=unset_if_none(expiry_date),
         )
         result = self._public_api.rpc.get_tickers(params)
         return result.tickers
@@ -294,16 +292,16 @@ class MarketOperations:
         """Returns paginated, anonymized settled trades with optional filters."""
 
         params = GetPublicTradeHistoryRequest(
-            currency=currency,
+            currency=unset_if_none(currency),
             from_timestamp=from_timestamp,
-            instrument_name=instrument_name,
-            instrument_type=instrument_type,
+            instrument_name=unset_if_none(instrument_name),
+            instrument_type=unset_if_none(instrument_type),
             page=page,
             page_size=page_size,
-            subaccount_id=subaccount_id,
+            subaccount_id=unset_if_none(subaccount_id),
             to_timestamp=to_timestamp,
-            trade_id=trade_id,
-            batch_status=batch_status,
+            trade_id=unset_if_none(trade_id),
+            batch_status=unset_if_none(batch_status),
         )
         result = self._public_api.rpc.get_trade_history(params)
         return result.trades

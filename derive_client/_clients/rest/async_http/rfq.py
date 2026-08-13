@@ -5,9 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, Protocol
 
-import msgspec
-
-from derive_client._clients.utils import sort_by_instrument_name
+from derive_client._clients.utils import sort_by_instrument_name, unset_if_none
 from derive_client._web3.action_signing import (
     RFQExecuteModuleData,
     RFQQuoteDetails,
@@ -85,10 +83,10 @@ class RFQOperations:
         params = SendRfqRequest(
             legs=legs,
             subaccount_id=subaccount_id,
-            counterparties=counterparties or msgspec.UNSET,
+            counterparties=unset_if_none(counterparties),
             label=label,
-            max_total_cost=max_total_cost,
-            min_total_cost=min_total_cost,
+            max_total_cost=unset_if_none(max_total_cost),
+            min_total_cost=unset_if_none(min_total_cost),
             partial_fill_step=partial_fill_step,
         )
         result = await self._subaccount._private_api.rpc.send_rfq(params)
@@ -114,8 +112,8 @@ class RFQOperations:
             from_timestamp=from_timestamp,
             page=page,
             page_size=page_size,
-            rfq_id=rfq_id,
-            status=status,
+            rfq_id=unset_if_none(rfq_id),
+            status=unset_if_none(status),
             to_timestamp=to_timestamp,
         )
         result = await self._subaccount._private_api.rpc.get_rfqs(params)
@@ -153,9 +151,9 @@ class RFQOperations:
         subaccount_id = self._subaccount.id
         params = CancelBatchRfqsRequest(
             subaccount_id=subaccount_id,
-            label=label,
-            nonce=nonce,
-            rfq_id=rfq_id,
+            label=unset_if_none(label),
+            nonce=unset_if_none(nonce),
+            rfq_id=unset_if_none(rfq_id),
         )
         result = await self._subaccount._private_api.rpc.cancel_batch_rfqs(params)
         return result
@@ -183,9 +181,9 @@ class RFQOperations:
             from_timestamp=from_timestamp,
             page=page,
             page_size=page_size,
-            rfq_id=rfq_id,
-            rfq_subaccount_id=rfq_subaccount_id,
-            status=status,
+            rfq_id=unset_if_none(rfq_id),
+            rfq_subaccount_id=unset_if_none(rfq_subaccount_id),
+            status=unset_if_none(status),
             to_timestamp=to_timestamp,
         )
         result = await self._subaccount._private_api.rpc.poll_rfqs(params)
@@ -287,10 +285,10 @@ class RFQOperations:
         subaccount_id = self._subaccount.id
         params = CancelBatchQuotesRequest(
             subaccount_id=subaccount_id,
-            label=label,
-            nonce=nonce,
-            quote_id=quote_id,
-            rfq_id=rfq_id,
+            label=unset_if_none(label),
+            nonce=unset_if_none(nonce),
+            quote_id=unset_if_none(quote_id),
+            rfq_id=unset_if_none(rfq_id),
         )
         result = await self._subaccount._private_api.rpc.cancel_batch_quotes(params)
         return result
@@ -317,9 +315,9 @@ class RFQOperations:
             from_timestamp=from_timestamp,
             page=page,
             page_size=page_size,
-            quote_id=quote_id,
-            rfq_id=rfq_id,
-            status=status,
+            quote_id=unset_if_none(quote_id),
+            rfq_id=unset_if_none(rfq_id),
+            status=unset_if_none(status),
             to_timestamp=to_timestamp,
         )
         result = await self._subaccount._private_api.rpc.get_quotes(params)
@@ -348,9 +346,9 @@ class RFQOperations:
             from_timestamp=from_timestamp,
             page=page,
             page_size=page_size,
-            quote_id=quote_id,
-            rfq_id=rfq_id,
-            status=status,
+            quote_id=unset_if_none(quote_id),
+            rfq_id=unset_if_none(rfq_id),
+            status=unset_if_none(status),
             to_timestamp=to_timestamp,
         )
         result = await self._subaccount._private_api.rpc.poll_quotes(params)

@@ -7,6 +7,7 @@ This section contains all data model classes used in the derive_client.
 - [DeriveContractAddresses](models/derivecontractaddresses.md)
 - [EnvConfig](models/envconfig.md)
 - [ClientConfig](models/clientconfig.md)
+- [WebSocketSessionConfig](models/websocketsessionconfig.md)
 - [PHexBytes](models/phexbytes.md)
 - [ChecksumAddress](models/checksumaddress.md)
 - [TxHash](models/txhash.md)

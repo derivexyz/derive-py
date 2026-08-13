@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
+from derive_client._clients.utils import unset_if_none
 from derive_client.data_types.generated_models import (
     MmpConfigResult,
     MmpScopeRequest,
@@ -34,7 +35,7 @@ class MMPOperations:
         subaccount_id = self._subaccount.id
         params = MmpScopeRequest(
             subaccount_id=subaccount_id,
-            currency=currency,
+            currency=unset_if_none(currency),
         )
         result = self._subaccount._private_api.rpc.get_mmp_config(params=params)
         return result
@@ -68,7 +69,7 @@ class MMPOperations:
         subaccount_id = self._subaccount.id
         params = MmpScopeRequest(
             subaccount_id=subaccount_id,
-            currency=currency,
+            currency=unset_if_none(currency),
         )
         result = self._subaccount._private_api.rpc.reset_mmp(params=params)
         return result

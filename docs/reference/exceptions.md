@@ -40,9 +40,9 @@
       show_source: true
       members: false
 
-## NoAvailableRPC
+## RequestAbandoned
 
-::: derive_client.exceptions.NoAvailableRPC
+::: derive_client.exceptions.RequestAbandoned
     options:
       show_root_heading: false
       heading_level: 3

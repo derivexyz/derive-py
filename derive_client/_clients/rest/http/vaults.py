@@ -34,8 +34,7 @@ import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-import msgspec
-
+from derive_client._clients.utils import unset_if_none
 from derive_client._web3.action_signing import (
     SignedAction,
     VaultBurnSharesModuleData,
@@ -136,7 +135,7 @@ class VaultOperations:
         """Get every vault on the exchange, paginated. This is how shareholders
         discover a vault."""
 
-        params = GetVaultsRequest(page=page, page_size=page_size or msgspec.UNSET)
+        params = GetVaultsRequest(page=page, page_size=page_size)
         result = self._subaccount._public_api.rpc.get_vaults(params)
         return result
 
@@ -156,9 +155,9 @@ class VaultOperations:
 
         params = GetVaultActionHistoryRequest(
             subaccount_id=_resolve_vault_id(self._subaccount, vault_subaccount_id),
-            event_type=event_type,
-            page=page,
-            page_size=page_size,
+            event_type=unset_if_none(event_type),
+            page=unset_if_none(page),
+            page_size=unset_if_none(page),
         )
         result = self._subaccount._public_api.rpc.get_vault_action_history(params)
         return result
@@ -181,9 +180,9 @@ class VaultOperations:
         params = GetVaultPerformanceHistoryRequest(
             subaccount_id=_resolve_vault_id(self._subaccount, vault_subaccount_id),
             resolution=resolution,
-            from_=from_timestamp,
-            to=to_timestamp,
-            limit=limit,
+            from_=unset_if_none(from_timestamp),
+            to=unset_if_none(to_timestamp),
+            limit=unset_if_none(limit),
         )
         result = self._subaccount._public_api.rpc.get_vault_performance_history(params)
         return result
@@ -246,7 +245,9 @@ class VaultOperations:
         wait_for_settlement to poll until a curator settles the request.
         """
 
-        params = GetVaultRequestHistoryRequest(wallet=self._subaccount._auth.wallet, page=page, page_size=page_size)
+        params = GetVaultRequestHistoryRequest(
+            wallet=self._subaccount._auth.wallet, page=unset_if_none(page), page_size=unset_if_none(page_size)
+        )
         result = self._subaccount._private_api.rpc.get_vault_request_history(params)
         return result
 
@@ -620,10 +621,10 @@ class VaultOperations:
 
         params = UpdateVaultInfoRequest(
             subaccount_id=_resolve_vault_id(self._subaccount, vault_subaccount_id),
-            name=name,
-            description=description,
-            mtm_cap=mtm_cap,
-            whitelist_only=whitelist_only,
+            name=unset_if_none(name),
+            description=unset_if_none(description),
+            mtm_cap=unset_if_none(mtm_cap),
+            whitelist_only=unset_if_none(whitelist_only),
         )
         result = self._subaccount._private_api.rpc.update_vault_info(params)
         return result
@@ -642,7 +643,7 @@ class VaultOperations:
         stop taking deposits during a winddown, alongside whitelist_only.
         """
 
-        params = RejectDepositRequestRequest(request_id=request_id, reason=reason)
+        params = RejectDepositRequestRequest(request_id=request_id, reason=unset_if_none(reason))
         result = self._subaccount._private_api.rpc.reject_deposit_request(params)
         return result
 

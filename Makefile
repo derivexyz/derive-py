@@ -61,12 +61,12 @@ tests:
 
 .PHONY: fmt
 fmt:
-	poetry run ruff format tests derive_client examples scripts
-	poetry run ruff check tests derive_client examples scripts --fix
+	poetry run ruff format tests derive_client examples benchmarks scripts
+	poetry run ruff check tests derive_client examples benchmarks scripts --fix
 
 .PHONY: lint
 lint:
-	poetry run ruff check tests derive_client examples scripts
+	poetry run ruff check tests derive_client examples benchmarks scripts
 
 
 .PHONY: docs
@@ -126,7 +126,7 @@ download-abis:
 codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
 typecheck:
-	poetry run pyright derive_client tests examples
+	poetry run pyright derive_client tests examples benchmarks
 
 check_diff:
 	@git diff --exit-code

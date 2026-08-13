@@ -25,13 +25,26 @@ from derive_client._clients.rest.async_http.rfq import RFQOperations
 from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
-from derive_client._clients.utils import AuthContext, load_client_config
+from derive_client._clients.utils import (
+    AuthContext,
+    UnsubscribeResult,
+    load_client_config,
+)
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
-from derive_client._clients.websockets.session import WebSocketSession
+from derive_client._clients.websockets.session import StateCallback, WebSocketSession
 from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
+from derive_client.data_types import (
+    ChecksumAddress,
+    ConnectionState,
+    Environment,
+    GasPriority,
+    LoggerType,
+    MarginType,
+    RiskUniverseID,
+    WebSocketSessionConfig,
+)
 from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
 
@@ -48,7 +61,7 @@ class WebSocketClient:
         subaccount_id: int,
         env: Environment,
         logger: LoggerType | None = None,
-        request_timeout: float = 10.0,
+        session_config: WebSocketSessionConfig | None = None,
     ):
         config = CONFIGS[env]
         w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
@@ -69,9 +82,8 @@ class WebSocketClient:
         self._logger = logger if logger is not None else get_logger()
         self._session = WebSocketSession(
             url=config.ws_address,
-            request_timeout=request_timeout,
+            config=session_config if session_config is not None else WebSocketSessionConfig(),
             logger=self._logger,
-            reconnect=True,
             on_disconnect=self._handle_disconnect,
             on_reconnect=self._handle_reconnect,
             on_before_resubscribe=self._handle_before_resubscribe,  # Re-authentication hook
@@ -111,11 +123,50 @@ class WebSocketClient:
         config = load_client_config(session_key_path=session_key_path, env_file=env_file)
         return cls(**config.model_dump())
 
-    async def connect(self) -> None:
-        """Connect to Derive via WebSocket and validate credentials."""
+    async def connect(self, *, on_state_change: StateCallback | None = None) -> None:
+        """
+        Connect to Derive via WebSocket, authenticate, and load account state.
+
+        Args:
+            on_state_change: Called on every connection state transition. Also
+                settable afterwards via the property of the same name. Without
+                it, a drop is only observable by polling `connection_state`.
+        """
+        if on_state_change is not None:
+            self._session.on_state_change = on_state_change
         await self._session.open()
         await self._authenticate()
         await self._initialize_account_and_markets()
+
+        if self._light_account is not None and self._light_account.state.cancel_on_disconnect:
+            self._warn_if_cancel_on_disconnect_unwatched()
+
+    @property
+    def connection_state(self) -> ConnectionState:
+        """Whether the session is usable right now."""
+
+        return self._session.state
+
+    @property
+    def on_state_change(self) -> StateCallback | None:
+        """
+        Called on every connection state transition, with the new state.
+
+        A drop reports RECONNECTING then CONNECTED, and CONNECTED means
+        re-authenticated and every channel resubscribed, not merely a socket
+        that is open. Delivered in order on its own task, so it may take as
+        long as it needs without delaying the reconnect.
+
+        CONNECTED is the resync point: updates during the outage were missed,
+        so reload from `orders` and `positions` rather than trusting  local state.
+        With cancel-on-disconnect enabled, the resting orders are also gone.
+        """
+
+        return self._session.on_state_change
+
+    @on_state_change.setter
+    def on_state_change(self, callback: StateCallback | None) -> None:
+        self._session.on_state_change = callback
 
     async def _authenticate(self) -> None:
         """
@@ -137,11 +188,33 @@ class WebSocketClient:
                 f"Available subaccounts: {subaccount_ids}"
             )
 
+    def _warn_if_cancel_on_disconnect_unwatched(self) -> None:
+        """Orders that can vanish deserve someone listening."""
+
+        if self._session.on_state_change is not None:
+            return
+        self._logger.warning(
+            "cancel-on-disconnect is enabled but no on_state_change callback is registered: "
+            "a dropped connection cancels every resting order, and auto-reconnect returns "
+            "the client looking healthy with an empty book. Pass one to connect(), or poll "
+            "connection_state."
+        )
+
     async def set_cancel_on_disconnect(self, enabled: bool = True) -> str:
         """
         Toggle cancel-on-disconnect for the authenticated wallet.
+
+        A persisted account setting, not a property of the connection: it
+        survives a reconnect and does not need re-applying after a drop.
+
+        Every drop therefore empties the book, including one the client
+        recovers from on its own, after which it looks healthy and is not.
+        Re-place from `orders.list_open()` when `on_state_change` reports
+        CONNECTED; a warning is logged if no callback is registered.
         """
-        params = SetCancelOnDisconnectRequest(enabled=enabled)
+        if enabled:
+            self._warn_if_cancel_on_disconnect_unwatched()
+        params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
         return await self._private_api.rpc.set_cancel_on_disconnect(params)
 
     async def _initialize_account_and_markets(self) -> None:
@@ -347,6 +420,17 @@ class WebSocketClient:
         """Access private channel subscriptions."""
         return self._private_api.channels
 
+    @property
+    def subscriptions(self) -> tuple[str, ...]:
+        """Channels currently subscribed, as the venue names them."""
+
+        return self._session.subscriptions
+
+    async def unsubscribe(self, *channels: str) -> UnsubscribeResult | None:
+        """Unsubscribe from one or more channels and drop their handlers."""
+
+        return await self._session.unsubscribe(*channels)
+
     @contextlib.contextmanager
     def timeout(self, seconds: float) -> Generator[None, None, None]:
         """Temporarily override request timeout for RPC calls."""
@@ -358,9 +442,9 @@ class WebSocketClient:
         finally:
             self._session._request_timeout = prev
 
-    async def __enter__(self):
+    async def __aenter__(self) -> WebSocketClient:
         await self.connect()
         return self
 
-    async def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.disconnect()
