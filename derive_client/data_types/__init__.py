@@ -35,6 +35,7 @@ from .models import (
     TypedSignedTransaction,
     TypedTransaction,
     TypedTxReceipt,
+    WebSocketSessionConfig,
     Wei,
 )
 from .utils import D
@@ -73,5 +74,6 @@ __all__ = [
     "TypedTxReceipt",
     "RiskUniverseID",
     "VaultAction",
+    "WebSocketSessionConfig",
     "Wei",
 ]

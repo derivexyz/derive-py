@@ -43,6 +43,7 @@ from derive_client.data_types import (
     LoggerType,
     MarginType,
     RiskUniverseID,
+    WebSocketSessionConfig,
 )
 from derive_client.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
 from derive_client.utils.logger import get_logger
@@ -60,7 +61,7 @@ class WebSocketClient:
         subaccount_id: int,
         env: Environment,
         logger: LoggerType | None = None,
-        request_timeout: float = 10.0,
+        session_config: WebSocketSessionConfig | None = None,
     ):
         config = CONFIGS[env]
         w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
@@ -81,9 +82,8 @@ class WebSocketClient:
         self._logger = logger if logger is not None else get_logger()
         self._session = WebSocketSession(
             url=config.ws_address,
-            request_timeout=request_timeout,
+            config=session_config if session_config is not None else WebSocketSessionConfig(),
             logger=self._logger,
-            reconnect=True,
             on_disconnect=self._handle_disconnect,
             on_reconnect=self._handle_reconnect,
             on_before_resubscribe=self._handle_before_resubscribe,  # Re-authentication hook

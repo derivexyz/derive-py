@@ -30,7 +30,7 @@ from derive_client._clients.utils import (
     decoder_for,
     encode_rpc_frame,
 )
-from derive_client.data_types import ConnectionState, LoggerType
+from derive_client.data_types import ConnectionState, LoggerType, WebSocketSessionConfig
 from derive_client.exceptions import DeriveJSONRPCError, RequestAbandoned
 from derive_client.utils.logger import get_logger
 
@@ -149,10 +149,7 @@ class WebSocketSession:
     def __init__(
         self,
         url: str,
-        request_timeout: float = 10.0,
-        reconnect: bool = True,
-        reconnect_delay: float = 1.0,
-        max_reconnect_delay: float = 60.0,
+        config: WebSocketSessionConfig | None = None,
         logger: LoggerType | None = None,
         on_disconnect: LifecycleCallback | None = None,
         on_reconnect: LifecycleCallback | None = None,
@@ -162,10 +159,7 @@ class WebSocketSession:
         """
         Args:
             url: WebSocket URL
-            request_timeout: RPC request timeout in seconds
-            reconnect: Enable automatic reconnection
-            reconnect_delay: Initial reconnection delay in seconds
-            max_reconnect_delay: Maximum reconnection delay (for backoff)
+            config: Transport and reconnection settings
             logger: Logger instance
             on_disconnect: Callback when disconnection is detected
             on_reconnect: Callback after successful reconnection (before resubscribe)
@@ -173,13 +167,13 @@ class WebSocketSession:
             on_state_change: Callback for connection state transitions
         """
         self._url = url
-        self._request_timeout = request_timeout
+        self._config = config if config is not None else WebSocketSessionConfig()
         self._logger = logger if logger is not None else get_logger()
 
-        # Reconnection config
-        self._reconnect_enabled = reconnect
-        self._reconnect_delay = reconnect_delay
-        self._max_reconnect_delay = max_reconnect_delay
+        # Live value, seeded from the config: timeout() overrides it per block,
+        # and the config is frozen and may be shared between sessions.
+        self._request_timeout = self._config.request_timeout
+
         self._on_disconnect = on_disconnect
         self._on_reconnect = on_reconnect
         self._on_before_resubscribe = on_before_resubscribe
@@ -389,9 +383,11 @@ class WebSocketSession:
         try:
             ws = await connect(
                 self._url,
-                max_size=16 * 1024 * 1024,  # 16MB max message
-                open_timeout=10.0,
-                close_timeout=5.0,
+                max_size=self._config.max_size,
+                open_timeout=self._config.open_timeout,
+                close_timeout=self._config.close_timeout,
+                ping_interval=self._config.ping_interval,
+                ping_timeout=self._config.ping_timeout,
             )
         except Exception as e:
             self._logger.error(f"Connection failed: {e}")
@@ -455,7 +451,7 @@ class WebSocketSession:
         # Start reconnection if enabled. The claim is atomic, so concurrent
         # disconnects cannot each start a loop. Before the hook, not after: a
         # hook that takes seconds must not delay the reconnect by seconds.
-        if self._reconnect_enabled and await self._state.begin_reconnect():
+        if self._config.reconnect and await self._state.begin_reconnect():
             try:
                 self._reconnect_task = asyncio.create_task(
                     self._reconnect_loop(),
@@ -501,7 +497,7 @@ class WebSocketSession:
             # Releasing here always: a stuck claim would strand the session.
             # A drop that landed while this loop was finishing could not claim
             # the reconnect, so it is handed a fresh loop instead.
-            if await self._state.end_reconnect() and self._reconnect_enabled and not self._stop_event.is_set():
+            if await self._state.end_reconnect() and self._config.reconnect and not self._stop_event.is_set():
                 self._logger.warning("Disconnected while finishing the reconnect, restarting")
                 self._reconnect_task = asyncio.create_task(
                     self._reconnect_loop(),
@@ -514,12 +510,12 @@ class WebSocketSession:
         Termination is not derived from the connected flag: another task can
         flip that at any time, and an open socket is not a restored session.
         """
-        delay = self._reconnect_delay
+        delay = self._config.reconnect_delay
         attempt = 1
 
         while not self._stop_event.is_set():
             # Jitter, so a server restart does not bring every client back in
-            # lockstep and trip the per-IP connection cap.
+            # lockstep and trip the venue's per-IP connection cap.
             wait = random.uniform(delay / 2, delay)
             self._logger.info(f"Reconnection attempt {attempt} in {wait:.1f}s")
             await asyncio.sleep(wait)
@@ -568,7 +564,7 @@ class WebSocketSession:
                 # A part-way connection looks healthy and delivers nothing.
                 await self._close_connection()
                 attempt += 1
-                delay = min(delay * 2, self._max_reconnect_delay)
+                delay = min(delay * 2, self._config.max_reconnect_delay)
 
         await self._state.set_disconnected()
         self._logger.info("Reconnection stopped")

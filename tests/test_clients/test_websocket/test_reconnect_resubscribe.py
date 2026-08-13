@@ -16,12 +16,14 @@ import pytest
 from websockets.asyncio.server import serve
 
 from derive_client._clients.websockets.session import WebSocketSession
+from derive_client.data_types import WebSocketSessionConfig
 
 CHANNEL = "test.channel"
 OTHER = "other.channel"
 # Live re-auth is a round trip over TLS; on loopback the race has no window.
 LOGIN_DELAY = 1.0
 REQUEST_TIMEOUT = 2.0
+RECONNECT_DELAY = 0.2
 
 
 class FakeVenue:
@@ -145,8 +147,7 @@ async def _settled(venue, port, received, on_before_resubscribe=None, channels=(
 
     session = WebSocketSession(
         url=f"ws://127.0.0.1:{port}",
-        request_timeout=REQUEST_TIMEOUT,
-        reconnect_delay=0.2,
+        config=WebSocketSessionConfig(request_timeout=REQUEST_TIMEOUT, reconnect_delay=RECONNECT_DELAY),
         on_before_resubscribe=on_before_resubscribe,
     )
     try:

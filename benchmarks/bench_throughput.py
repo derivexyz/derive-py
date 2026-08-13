@@ -44,6 +44,7 @@ from benchmarks.feeder import feeder_main
 from benchmarks.harness import Result, _git_rev
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import WebSocketSession
+from derive_client.data_types import WebSocketSessionConfig
 
 
 def _quiet_logger() -> logging.Logger:
@@ -104,7 +105,9 @@ async def _client_burst(port: int, channel: Channel, count: int, warmup: int, as
         on_message(payload)
 
     session = WebSocketSession(
-        url=f"ws://127.0.0.1:{port}", request_timeout=10.0, reconnect=False, logger=_quiet_logger()
+        url=f"ws://127.0.0.1:{port}",
+        config=WebSocketSessionConfig(request_timeout=10.0, reconnect=False),
+        logger=_quiet_logger(),
     )
     await session.open()
     try:
@@ -162,7 +165,9 @@ async def _rpc_burst(port: int, case: RPCCase, count: int, warmup: int, concurre
     a market maker with several requests in flight actually sees.
     """
     session = WebSocketSession(
-        url=f"ws://127.0.0.1:{port}", request_timeout=30.0, reconnect=False, logger=_quiet_logger()
+        url=f"ws://127.0.0.1:{port}",
+        config=WebSocketSessionConfig(request_timeout=30.0, reconnect=False),
+        logger=_quiet_logger(),
     )
     await session.open()
     try:
