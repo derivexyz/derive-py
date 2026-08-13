@@ -402,11 +402,15 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     except Exception:
         raise ValueError(f"Invalid DERIVE_ENV '{env_name}': expected one of {[e.name for e in Environment]}")
 
+    raw_endpoints = os.environ.get("ETH_RPC_ENDPOINTS")
+    rpc_endpoints = tuple(part.strip() for part in raw_endpoints.split(",") if part.strip()) if raw_endpoints else None
+
     return ClientConfig(
         session_key=session_key,
         wallet=wallet_checksum,
         subaccount_id=subaccount_id,
         env=env,
+        rpc_endpoints=rpc_endpoints,
     )
 
 

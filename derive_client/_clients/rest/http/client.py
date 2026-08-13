@@ -3,11 +3,10 @@ from __future__ import annotations
 import contextlib
 from decimal import Decimal
 from pathlib import Path
-from typing import Generator, Iterator, cast
+from typing import Generator, Iterator, Sequence, cast
 
 from hexbytes import HexBytes
 from pydantic import ConfigDict, validate_call
-from web3 import Web3
 
 from derive_client._clients.rest.http.account import LightAccount
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
@@ -23,7 +22,7 @@ from derive_client._clients.rest.http.subaccount import Subaccount
 from derive_client._clients.rest.http.system import SystemOperations
 from derive_client._clients.rest.http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
-from derive_client._web3 import ContractRegistry, Deposits
+from derive_client._web3 import ContractRegistry, Deposits, make_web3
 from derive_client._web3.deposits import DepositStep
 from derive_client.config import CONFIGS
 from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
@@ -41,11 +40,14 @@ class HTTPClient:
         session_key: str,
         subaccount_id: int,
         env: Environment,
+        rpc_endpoints: str | Sequence[str] | None = None,
         logger: LoggerType | None = None,
         request_timeout: float = 10.0,
     ):
         config = CONFIGS[env]
-        w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
+
+        logger = logger if logger is not None else get_logger()
+        w3 = make_web3(env, rpc_endpoints=rpc_endpoints, logger=logger)
         account = w3.eth.account.from_key(session_key)
 
         auth = AuthContext(
@@ -60,7 +62,7 @@ class HTTPClient:
         self._config = config
         self._subaccount_id = subaccount_id
 
-        self._logger = logger if logger is not None else get_logger()
+        self._logger = logger
         self._session = HTTPSession(request_timeout=request_timeout, logger=self._logger)
 
         self._public_api = PublicAPI(session=self._session, config=config)

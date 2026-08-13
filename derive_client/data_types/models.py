@@ -1,4 +1,4 @@
-"""Models used in the bridge module."""
+"""Typed models for on-chain data and client configuration."""
 
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
-    HttpUrl,
     RootModel,
     model_validator,
 )
@@ -57,7 +56,6 @@ class EnvConfig(BaseModel, frozen=True):
     base_url: str
     ws_address: str
     chain_id: int
-    rpc_endpoint: str
     ACTION_TYPEHASH: str
     DOMAIN_SEPARATOR: str
     contracts: DeriveContractAddresses
@@ -68,6 +66,7 @@ class ClientConfig(BaseModel):
     wallet: ChecksumAddress
     subaccount_id: int
     env: Environment
+    rpc_endpoints: tuple[str, ...] | None = None
 
 
 class WebSocketSessionConfig(BaseModel, frozen=True):
@@ -401,16 +400,6 @@ class TypedTransaction(BaseModel):
     # EIP-4844 (optional)
     maxFeePerBlobGas: int | None = None
     blobVersionedHashes: list[PHexBytes] | None = None
-
-
-class RPCEndpoints(BaseModel, frozen=True):
-    ETH: list[HttpUrl] = Field(default_factory=list)
-    OPTIMISM: list[HttpUrl] = Field(default_factory=list)
-    BASE: list[HttpUrl] = Field(default_factory=list)
-    ARBITRUM: list[HttpUrl] = Field(default_factory=list)
-    DERIVE: list[HttpUrl] = Field(default_factory=list)
-    MODE: list[HttpUrl] = Field(default_factory=list)
-    BLAST: list[HttpUrl] = Field(default_factory=list)
 
 
 class FeeHistory(BaseModel):

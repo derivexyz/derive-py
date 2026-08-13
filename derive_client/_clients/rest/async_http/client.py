@@ -4,11 +4,10 @@ import asyncio
 import contextlib
 from decimal import Decimal
 from pathlib import Path
-from typing import AsyncGenerator, AsyncIterator, cast
+from typing import AsyncGenerator, AsyncIterator, Sequence, cast
 
 from hexbytes import HexBytes
 from pydantic import ConfigDict, validate_call
-from web3 import Web3
 
 from derive_client._clients.rest.async_http.account import LightAccount
 from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
@@ -24,7 +23,7 @@ from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import AuthContext, load_client_config
-from derive_client._web3 import ContractRegistry, Deposits
+from derive_client._web3 import ContractRegistry, Deposits, make_web3
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
 from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
@@ -43,11 +42,14 @@ class AsyncHTTPClient:
         session_key: str,
         subaccount_id: int,
         env: Environment,
+        rpc_endpoints: str | Sequence[str] | None = None,
         logger: LoggerType | None = None,
         request_timeout: float = 10.0,
     ):
         config = CONFIGS[env]
-        w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
+
+        logger = logger if logger is not None else get_logger()
+        w3 = make_web3(env, rpc_endpoints=rpc_endpoints, logger=logger)
         account = w3.eth.account.from_key(session_key)
 
         auth = AuthContext(
@@ -62,7 +64,7 @@ class AsyncHTTPClient:
         self._config = config
         self._subaccount_id = subaccount_id
 
-        self._logger = logger if logger is not None else get_logger()
+        self._logger = logger
         self._session = AsyncHTTPSession(request_timeout=request_timeout, logger=self._logger)
 
         self._public_api = AsyncPublicAPI(session=self._session, config=config)
@@ -74,10 +76,9 @@ class AsyncHTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        sync_w3 = Web3(Web3.HTTPProvider(config.rpc_endpoint))
         network = "sepolia" if env == Environment.TEST else "ethereum"
-        self._contract_registry = ContractRegistry(w3=sync_w3, network=network)
-        self._deposits = Deposits(self._contract_registry, w3=sync_w3, logger=self._logger)
+        self._contract_registry = ContractRegistry(w3=w3, network=network)
+        self._deposits = Deposits(self._contract_registry, w3=w3, logger=self._logger)
 
     @classmethod
     def from_env(

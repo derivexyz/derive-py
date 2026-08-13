@@ -29,7 +29,6 @@ CONFIGS: dict[Environment, EnvConfig] = {
         base_url="https://testnet.api.derive.xyz/v3",
         ws_address="wss://testnet.api.derive.xyz/v3/ws",
         chain_id=SEPOLIA_CHAIN_ID,
-        rpc_endpoint="https://sepolia.drpc.org",
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
         DOMAIN_SEPARATOR="0x24d674cd5f2b9d564691c51e9d88f649b99246a2244dd74ce27b96578d773e85",
         contracts=DeriveContractAddresses(
@@ -48,10 +47,9 @@ CONFIGS: dict[Environment, EnvConfig] = {
             SPOT_VAULT=SPOT_VAULT,
         ),
     ),
-    Environment.PROD: EnvConfig(
+    Environment.PROD: EnvConfig(  # TODO: verify these addresses against the mainnet
         base_url="https://api.derive.xyz/v3",
         ws_address="wss://api.derive.xyz/v3/ws",
-        rpc_endpoint="https://957.rpc.thirdweb.com/",
         chain_id=ETHEREUM_MAINNET_CHAIN_ID,
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
         DOMAIN_SEPARATOR="0xda616dfabb88681b08e1592820a41d55ddc62d68de110e327ae99d734506fe19",
