@@ -77,7 +77,6 @@ async def test_public_margin_watch(client_admin_wallet):
     assert subscription_result.status["margin.watch"] == SUBSCRIPTION_OK
 
 
-@pytest.mark.skip(reason="Spec/deployment skew: OrderSnapshot bids and asks are array instead of object.")
 @pytest.mark.asyncio
 async def test_public_orderbook_group_depth_by_instrument_name(client_admin_wallet):
     subscription_result, data = await _wait_for_one(
