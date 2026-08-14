@@ -8,19 +8,25 @@ import pytest
 import requests
 
 from derive_client._clients.rest.http.session import HTTPSession, _is_retryable, request_timeout_override
+from derive_client.data_types import HTTPSessionConfig, LoggerType
 
 _LOGGER = logging.getLogger("derive_test")
 
 
-def _session(**kwargs) -> HTTPSession:
-    kwargs.setdefault("request_timeout", 10.0)
-    return HTTPSession(logger=_LOGGER, **kwargs)
+def _session(logger: LoggerType = _LOGGER, **kwargs) -> HTTPSession:
+    return HTTPSession(config=HTTPSessionConfig(**kwargs), logger=logger)
+
+
+def _isolated_logger(suffix: str) -> logging.Logger:
+    """Child logger so sessions leaked by other tests, swept by our gc.collect(), stay out of caplog."""
+
+    return logging.getLogger(f"{_LOGGER.name}.{suffix}")
 
 
 def test_public_request_retries_on_retryable_status(http_server):
     path = "/public/get_instruments"
     http_server.route(path, statuses=[503, 200])
-    session = _session()
+    session = _session(backoff_factor=0.0)
     assert session._send_request(http_server.url(path), b"{}") == b"{}"
     assert http_server.hits[path] == 2
 
@@ -43,8 +49,8 @@ def test_request_timeout_is_enforced(http_server):
 
 
 def test_underlying_session_is_closed_when_garbage_collected(caplog):
-    logger = logging.getLogger(f"{_LOGGER.name}.gc")
-    session = HTTPSession(request_timeout=10.0, logger=logger)
+    logger = _isolated_logger("gc")
+    session = _session(logger=logger)
     session.open()
 
     with caplog.at_level(logging.DEBUG, logger=logger.name):
@@ -55,8 +61,8 @@ def test_underlying_session_is_closed_when_garbage_collected(caplog):
 
 
 def test_explicit_close_detaches_the_finalizer(caplog):
-    logger = logging.getLogger(f"{_LOGGER.name}.detach")
-    session = HTTPSession(request_timeout=10.0, logger=logger)
+    logger = _isolated_logger("detach")
+    session = _session(logger=logger)
     session.open()
     session.close()
 
@@ -95,3 +101,14 @@ def test_timeout_override_does_not_leak_across_threads():
         thread.join()
 
     assert seen == [0.1]
+
+
+def test_retries_are_bounded_by_max_attempts(http_server):
+    path = "/public/get_instruments"
+    http_server.route(path, statuses=[503])
+    session = _session(max_attempts=2, backoff_factor=0.0)
+
+    with pytest.raises(requests.HTTPError):
+        session._send_request(http_server.url(path), b"{}")
+
+    assert http_server.hits[path] == 2

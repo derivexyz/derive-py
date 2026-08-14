@@ -10,7 +10,8 @@ from urllib.parse import urlsplit
 import requests
 from requests.adapters import HTTPAdapter
 
-from derive_client.data_types import LoggerType
+from derive_client.data_types import HTTPSessionConfig, LoggerType
+from derive_client.utils.logger import get_logger
 
 _PUBLIC_PATH_SEGMENT = "public"
 _RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
@@ -43,13 +44,13 @@ def _is_retryable(url: str) -> bool:
     return _PUBLIC_PATH_SEGMENT in urlsplit(url).path.split("/")
 
 
-def _backoff(attempt: int, retry_after: str | None = None) -> float:
+def _backoff(config: HTTPSessionConfig, attempt: int, retry_after: str | None = None) -> float:
     if retry_after is not None:
         try:
-            return min(float(retry_after), _BACKOFF_MAX)
+            return min(float(retry_after), config.backoff_max)
         except ValueError:
             pass  # HTTP-date form; fall back to exponential
-    return min(_BACKOFF_FACTOR * 2 ** (attempt - 1), _BACKOFF_MAX)
+    return min(config.backoff_factor * 2 ** (attempt - 1), config.backoff_max)
 
 
 def _close_on_gc(session: requests.Session, logger: LoggerType, name: str) -> None:
@@ -65,9 +66,9 @@ def _close_on_gc(session: requests.Session, logger: LoggerType, name: str) -> No
 class HTTPSession:
     """HTTP session."""
 
-    def __init__(self, request_timeout: float, logger: LoggerType):
-        self._request_timeout = request_timeout
-        self._logger = logger
+    def __init__(self, *, config: HTTPSessionConfig | None = None, logger: LoggerType | None = None):
+        self._config = config if config is not None else HTTPSessionConfig()
+        self._logger = logger if logger is not None else get_logger()
 
         self._requests_session: requests.Session | None = None
         self._finalizer: weakref.finalize | None = None
@@ -83,8 +84,8 @@ class HTTPSession:
         # Retries are handled in _send_request: urllib3 gates status retries on
         # allowed_methods, and every request here is a POST.
         adapter = HTTPAdapter(
-            pool_connections=10,
-            pool_maxsize=20,
+            pool_connections=self._config.pool_connections,
+            pool_maxsize=self._config.pool_maxsize,
             max_retries=0,
             pool_block=False,
         )
@@ -117,7 +118,7 @@ class HTTPSession:
         headers: dict[str, str] | None = None,
     ) -> bytes:
         session = self.open()
-        max_attempts = _MAX_ATTEMPTS if _is_retryable(url) else 1
+        max_attempts = self._config.max_attempts if _is_retryable(url) else 1
         attempt = 0
 
         while True:
@@ -130,21 +131,21 @@ class HTTPSession:
                 if is_last:
                     self._logger.error("HTTP request failed: %s -> %s", url, e)
                     raise
-                delay = _backoff(attempt)
+                delay = _backoff(self._config, attempt)
             else:
-                if response.status_code not in _RETRY_STATUSES or is_last:
+                if response.status_code not in self._config.retry_statuses or is_last:
                     if not response.ok:
                         self._logger.error("HTTP %d: %s -> %s", response.status_code, url, response.text[:512])
                     response.raise_for_status()
                     return response.content
-                delay = _backoff(attempt, response.headers.get("Retry-After"))
+                delay = _backoff(self._config, attempt, response.headers.get("Retry-After"))
 
             self._logger.debug("retrying %s in %.2fs (attempt %d/%d)", url, delay, attempt, max_attempts)
             time.sleep(delay)
 
     def _effective_timeout(self) -> float:
         override = _request_timeout_override.get()
-        return self._request_timeout if override is None else override
+        return self._config.request_timeout if override is None else override
 
     def __enter__(self):
         self.open()

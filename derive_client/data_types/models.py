@@ -69,6 +69,22 @@ class ClientConfig(BaseModel):
     rpc_endpoints: tuple[str, ...] | None = None
 
 
+class HTTPSessionConfig(BaseModel, frozen=True):
+    """Transport and retry settings for an HTTP session."""
+
+    # Per attempt, not total: a retried request can take up to
+    # max_attempts * request_timeout, plus backoff.
+    request_timeout: float = Field(default=10.0, gt=0)
+
+    max_attempts: int = Field(default=4, ge=1)
+    backoff_factor: float = Field(default=0.2, ge=0)
+    backoff_max: float = Field(default=10.0, gt=0)
+    retry_statuses: frozenset[int] = frozenset({429, 500, 502, 503, 504})
+
+    pool_connections: int = Field(default=10, ge=1)
+    pool_maxsize: int = Field(default=20, ge=1)
+
+
 class WebSocketSessionConfig(BaseModel, frozen=True):
     """Transport and reconnection settings for a WebSocket session."""
 
