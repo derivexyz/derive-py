@@ -12,8 +12,8 @@ from derive_client.data_types.generated_models import (
 
 
 @pytest.mark.asyncio
-async def test_position_transfer(client_owner_wallet, min_position_transfer):
-    subaccounts = {sa.id: sa for sa in await client_owner_wallet.fetch_subaccounts()}
+async def test_position_transfer(client_admin_wallet, min_position_transfer):
+    subaccounts = {sa.id: sa for sa in await client_admin_wallet.fetch_subaccounts()}
 
     subaccount_a = subaccounts.get(75723)
     subaccount_b = subaccounts.get(75726)

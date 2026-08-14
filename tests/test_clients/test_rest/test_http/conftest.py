@@ -1,34 +1,18 @@
-from pathlib import Path
-
 import pytest
 
 from derive_client._clients.rest.http.client import HTTPClient
 from derive_client.data_types.generated_models import Vault
-
-
-@pytest.fixture(scope="session")
-def client_owner_wallet():
-    """
-    Client connected to a wallet where the session key is the owner.
-    Full authority over the wallet is available, allowing owner-level operations.
-    """
-
-    client = HTTPClient.from_env(env_file=Path(".env.template"))
-    client.connect()
-    yield client
-    client.orders.cancel_all()
-    client.rfq.cancel_batch_rfqs()
-    client.rfq.cancel_batch_quotes()
-    client.disconnect()
+from tests.conftest import ENV_TEMPLATE
 
 
 @pytest.fixture(scope="session")
 def client_admin_wallet():
     """
-    Client connected to a wallet where the session key is registered as admin.
-    This wallet is NOT owned by the session key, so only admin-level operations are allowed.
+    Client connected to a wallet where the session key is the owner.
+    Full authority over the wallet is available, allowing owner-level operations.
     """
-    client = HTTPClient.from_env(env_file=Path(".env.template"))
+
+    client = HTTPClient.from_env(env_file=ENV_TEMPLATE)
     client.connect()
     yield client
     client.orders.cancel_all()
