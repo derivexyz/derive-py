@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import gc
 import logging
+import threading
 
 import pytest
 import requests
 
-from derive_client._clients.rest.http.session import HTTPSession, _is_retryable
+from derive_client._clients.rest.http.session import HTTPSession, _is_retryable, request_timeout_override
 
 _LOGGER = logging.getLogger("derive_test")
 
@@ -41,22 +42,25 @@ def test_request_timeout_is_enforced(http_server):
         session._send_request(http_server.url(path), b"{}")
 
 
-def test_underlying_session_is_closed_when_garbage_collected():
-    session = _session()
-    underlying = session.open()
+def test_underlying_session_is_closed_when_garbage_collected(caplog):
+    logger = logging.getLogger(f"{_LOGGER.name}.gc")
+    session = HTTPSession(request_timeout=10.0, logger=logger)
+    session.open()
 
-    del session
-    gc.collect()
+    with caplog.at_level(logging.DEBUG, logger=logger.name):
+        del session
+        gc.collect()
 
-    assert underlying.adapters == {}
+    assert len(caplog.records) == 1
 
 
 def test_explicit_close_detaches_the_finalizer(caplog):
-    session = _session()
+    logger = logging.getLogger(f"{_LOGGER.name}.detach")
+    session = HTTPSession(request_timeout=10.0, logger=logger)
     session.open()
     session.close()
 
-    with caplog.at_level(logging.DEBUG, logger=_LOGGER.name):
+    with caplog.at_level(logging.DEBUG, logger=logger.name):
         del session
         gc.collect()
 
@@ -66,3 +70,28 @@ def test_explicit_close_detaches_the_finalizer(caplog):
 def test_versioned_public_path_is_retryable():
     assert _is_retryable("https://api.derive.xyz/v3/public/get_instruments")
     assert not _is_retryable("https://api.derive.xyz/v3/private/order")
+
+
+def test_timeout_override_applies_only_within_the_block(http_server):
+    path = "/public/slow"
+    http_server.route(path, delay=0.3)
+    session = _session(request_timeout=0.1)
+
+    with request_timeout_override(2.0):
+        assert session._send_request(http_server.url(path), b"{}") == b"{}"
+
+    with pytest.raises(requests.Timeout):
+        session._send_request(http_server.url(path), b"{}")
+
+
+def test_timeout_override_does_not_leak_across_threads():
+    session = _session(request_timeout=0.1)
+    seen: list[float] = []
+
+    with request_timeout_override(2.0):
+        assert session._effective_timeout() == 2.0
+        thread = threading.Thread(target=lambda: seen.append(session._effective_timeout()))
+        thread.start()
+        thread.join()
+
+    assert seen == [0.1]
