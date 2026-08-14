@@ -15,6 +15,7 @@ class Route:
     statuses: list[int] = field(default_factory=lambda: [200])
     delay: float = 0.0
     body: bytes = b"{}"
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 class ServerState:
@@ -55,6 +56,8 @@ class _Handler(BaseHTTPRequestHandler):
         if route.delay:
             time.sleep(route.delay)
         self.send_response(status)
+        for name, value in route.headers.items():
+            self.send_header(name, value)
         self.send_header("Content-Length", str(len(route.body)))
         self.end_headers()
         self.wfile.write(route.body)

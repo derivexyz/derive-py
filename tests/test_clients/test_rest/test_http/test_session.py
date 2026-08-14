@@ -3,6 +3,7 @@ from __future__ import annotations
 import gc
 import logging
 import threading
+import time
 
 import pytest
 import requests
@@ -40,12 +41,33 @@ def test_private_request_is_never_retried(http_server):
     assert http_server.hits[path] == 1
 
 
+def test_non_retryable_status_is_not_retried(http_server):
+    path = "/public/get_instruments"
+    http_server.route(path, statuses=[400, 200])
+    session = _session(backoff_factor=0.0)
+    with pytest.raises(requests.HTTPError):
+        session._send_request(http_server.url(path), b"{}")
+    assert http_server.hits[path] == 1
+
+
 def test_request_timeout_is_enforced(http_server):
     path = "/public/slow"
     http_server.route(path, delay=1.0)
     session = _session(request_timeout=0.1)
     with pytest.raises(requests.Timeout):
         session._send_request(http_server.url(path), b"{}")
+
+
+def test_retry_after_is_honoured_and_capped(http_server):
+    path = "/public/get_instruments"
+    http_server.route(path, statuses=[429, 200], headers={"Retry-After": "600"})
+    session = _session(backoff_max=0.05)
+
+    started = time.monotonic()
+    assert session._send_request(http_server.url(path), b"{}") == b"{}"
+
+    assert time.monotonic() - started < 1.0
+    assert http_server.hits[path] == 2
 
 
 def test_underlying_session_is_closed_when_garbage_collected(caplog):

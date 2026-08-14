@@ -4,6 +4,7 @@ import contextlib
 import time
 import weakref
 from contextvars import ContextVar
+from importlib.metadata import PackageNotFoundError, version
 from typing import Iterator
 from urllib.parse import urlsplit
 
@@ -13,11 +14,14 @@ from requests.adapters import HTTPAdapter
 from derive_client.data_types import HTTPSessionConfig, LoggerType
 from derive_client.utils.logger import get_logger
 
+# Must match [project].name in pyproject.toml, or the version resolves to "unknown".
+_DIST_NAME = "derive-py"
 _PUBLIC_PATH_SEGMENT = "public"
-_RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
-_MAX_ATTEMPTS = 4
-_BACKOFF_FACTOR = 0.2
-_BACKOFF_MAX = 10.0
+
+try:
+    _USER_AGENT = f"{_DIST_NAME}/{version(_DIST_NAME)}"
+except PackageNotFoundError:  # source checkout, or the distribution is named differently
+    _USER_AGENT = f"{_DIST_NAME}/unknown"
 
 # Context-local override, set by client.timeout(). Task- and thread-scoped, so it
 # cannot leak across concurrent callers of a shared session.
@@ -44,15 +48,6 @@ def _is_retryable(url: str) -> bool:
     return _PUBLIC_PATH_SEGMENT in urlsplit(url).path.split("/")
 
 
-def _backoff(config: HTTPSessionConfig, attempt: int, retry_after: str | None = None) -> float:
-    if retry_after is not None:
-        try:
-            return min(float(retry_after), config.backoff_max)
-        except ValueError:
-            pass  # HTTP-date form; fall back to exponential
-    return min(config.backoff_factor * 2 ** (attempt - 1), config.backoff_max)
-
-
 def _close_on_gc(session: requests.Session, logger: LoggerType, name: str) -> None:
     """Close a session whose owner was collected without an explicit close()."""
 
@@ -64,7 +59,7 @@ def _close_on_gc(session: requests.Session, logger: LoggerType, name: str) -> No
 
 
 class HTTPSession:
-    """HTTP session."""
+    """HTTP session. Not thread-safe: use one session per thread."""
 
     def __init__(self, *, config: HTTPSessionConfig | None = None, logger: LoggerType | None = None):
         self._config = config if config is not None else HTTPSessionConfig()
@@ -80,6 +75,7 @@ class HTTPSession:
             return self._requests_session
 
         session = requests.Session()
+        session.headers["User-Agent"] = _USER_AGENT
 
         # Retries are handled in _send_request: urllib3 gates status retries on
         # allowed_methods, and every request here is a POST.
@@ -131,17 +127,26 @@ class HTTPSession:
                 if is_last:
                     self._logger.error("HTTP request failed: %s -> %s", url, e)
                     raise
-                delay = _backoff(self._config, attempt)
+                delay = self._backoff(attempt)
             else:
                 if response.status_code not in self._config.retry_statuses or is_last:
                     if not response.ok:
                         self._logger.error("HTTP %d: %s -> %s", response.status_code, url, response.text[:512])
                     response.raise_for_status()
                     return response.content
-                delay = _backoff(self._config, attempt, response.headers.get("Retry-After"))
+                delay = self._backoff(attempt, response.headers.get("Retry-After"))
 
             self._logger.debug("retrying %s in %.2fs (attempt %d/%d)", url, delay, attempt, max_attempts)
             time.sleep(delay)
+
+    def _backoff(self, attempt: int, retry_after: str | None = None) -> float:
+        if retry_after is not None:
+            try:
+                return min(float(retry_after), self._config.backoff_max)
+            except ValueError:
+                # HTTP-date form. Logged rather than parsed until we know the venue sends it.
+                self._logger.warning("Unhandled Retry-After format, falling back to backoff: %s", retry_after)
+        return min(self._config.backoff_factor * 2 ** (attempt - 1), self._config.backoff_max)
 
     def _effective_timeout(self) -> float:
         override = _request_timeout_override.get()

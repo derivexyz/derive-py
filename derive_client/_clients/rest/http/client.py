@@ -25,7 +25,15 @@ from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits, make_web3
 from derive_client._web3.deposits import DepositStep
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
+from derive_client.data_types import (
+    ChecksumAddress,
+    Environment,
+    GasPriority,
+    HTTPSessionConfig,
+    LoggerType,
+    MarginType,
+    RiskUniverseID,
+)
 from derive_client.utils.logger import get_logger
 
 
@@ -42,7 +50,7 @@ class HTTPClient:
         env: Environment,
         rpc_endpoints: str | Sequence[str] | None = None,
         logger: LoggerType | None = None,
-        request_timeout: float = 10.0,
+        session_config: HTTPSessionConfig | None = None,
     ):
         config = CONFIGS[env]
 
@@ -63,7 +71,10 @@ class HTTPClient:
         self._subaccount_id = subaccount_id
 
         self._logger = logger
-        self._session = HTTPSession(request_timeout=request_timeout, logger=self._logger)
+        self._session = HTTPSession(
+            config=session_config if session_config is not None else HTTPSessionConfig(),
+            logger=self._logger,
+        )
 
         self._public_api = PublicAPI(session=self._session, config=config)
         self._private_api = PrivateAPI(session=self._session, config=config, auth=auth)
