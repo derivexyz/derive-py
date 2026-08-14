@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 
 from derive_client.data_types import LoggerType
 
+_PUBLIC_PATH_SEGMENT = "public"
 _RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 _MAX_ATTEMPTS = 4
 _BACKOFF_FACTOR = 0.2
@@ -18,7 +19,7 @@ _BACKOFF_MAX = 10.0
 def _is_retryable(url: str) -> bool:
     """Only public reads are safe to replay."""
 
-    return "public" in urlsplit(url).path.split("/")
+    return _PUBLIC_PATH_SEGMENT in urlsplit(url).path.split("/")
 
 
 def _backoff(attempt: int, retry_after: str | None = None) -> float:
@@ -30,6 +31,16 @@ def _backoff(attempt: int, retry_after: str | None = None) -> float:
     return min(_BACKOFF_FACTOR * 2 ** (attempt - 1), _BACKOFF_MAX)
 
 
+def _close_on_gc(session: requests.Session, logger: LoggerType, name: str) -> None:
+    """Close a session whose owner was collected without an explicit close()."""
+
+    logger.debug("%s was garbage collected without explicit close(); closing session automatically", name)
+    try:
+        session.close()
+    except Exception:
+        logger.exception("Error closing session in finalizer")
+
+
 class HTTPSession:
     """HTTP session."""
 
@@ -38,7 +49,7 @@ class HTTPSession:
         self._logger = logger
 
         self._requests_session: requests.Session | None = None
-        self._finalizer = weakref.finalize(self, self._finalize)
+        self._finalizer: weakref.finalize | None = None
 
     def open(self) -> requests.Session:
         """Lazy session creation"""
@@ -61,10 +72,15 @@ class HTTPSession:
         session.mount("http://", adapter)
 
         self._requests_session = session
+        self._finalizer = weakref.finalize(self, _close_on_gc, session, self._logger, type(self).__name__)
         return self._requests_session
 
     def close(self):
         """Explicit cleanup"""
+
+        if self._finalizer is not None:
+            self._finalizer.detach()
+            self._finalizer = None
 
         if self._requests_session is None:
             return
@@ -104,16 +120,6 @@ class HTTPSession:
 
             self._logger.debug("retrying %s in %.2fs (attempt %d/%d)", url, delay, attempt, max_attempts)
             time.sleep(delay)
-
-    def _finalize(self):
-        if self._requests_session:
-            msg = "%s was garbage collected without explicit close(); closing session automatically"
-            self._logger.debug(msg, self.__class__.__name__)
-            try:
-                self._requests_session.close()
-            except Exception:
-                self._logger.exception("Error closing session in finalizer")
-            self._requests_session = None
 
     def __enter__(self):
         self.open()

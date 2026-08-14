@@ -44,13 +44,23 @@ def test_request_timeout_is_enforced(http_server):
 def test_underlying_session_is_closed_when_garbage_collected():
     session = _session()
     underlying = session.open()
-    closed: list[bool] = []
-    underlying.close = lambda: closed.append(True)  # type: ignore[method-assign]
 
     del session
     gc.collect()
 
-    assert closed == [True]
+    assert underlying.adapters == {}
+
+
+def test_explicit_close_detaches_the_finalizer(caplog):
+    session = _session()
+    session.open()
+    session.close()
+
+    with caplog.at_level(logging.DEBUG, logger=_LOGGER.name):
+        del session
+        gc.collect()
+
+    assert not caplog.records
 
 
 def test_versioned_public_path_is_retryable():
