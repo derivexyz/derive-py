@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "derive-py"
-version = "0.3.14"
+version = "0.1.0"
 description = "Python client for the Derive v3 API"
 authors = [
   "8baller <8baller@station.codes>",
