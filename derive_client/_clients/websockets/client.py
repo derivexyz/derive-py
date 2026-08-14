@@ -8,10 +8,9 @@ import contextlib
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
-from typing import AsyncIterator, Generator, Sequence, cast
+from typing import AsyncIterator, Generator, cast
 
 from hexbytes import HexBytes
-from pydantic import ConfigDict, validate_call
 
 from derive_client._clients.rest.async_http.account import LightAccount
 from derive_client._clients.rest.async_http.collateral import CollateralOperations
@@ -25,15 +24,15 @@ from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import (
-    AuthContext,
+    ClientConfig,
     UnsubscribeResult,
     load_client_config,
+    make_auth,
 )
 from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_client._clients.websockets.session import StateCallback, WebSocketSession
-from derive_client._web3 import ContractRegistry, Deposits, make_web3
+from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
-from derive_client.config import CONFIGS
 from derive_client.data_types import (
     ChecksumAddress,
     ConnectionState,
@@ -51,40 +50,24 @@ from derive_client.utils.logger import get_logger
 class WebSocketClient:
     """Asynchronous WebSocket client for real-time data and operations."""
 
-    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __init__(
         self,
+        client_config: ClientConfig,
         *,
-        wallet: ChecksumAddress | str,
-        session_key: str,
-        subaccount_id: int,
-        env: Environment,
-        rpc_endpoints: str | Sequence[str] | None = None,
         logger: LoggerType | None = None,
         session_config: WebSocketSessionConfig | None = None,
     ):
-        config = CONFIGS[env]
-
         logger = logger if logger is not None else get_logger()
-        w3 = make_web3(env, rpc_endpoints=rpc_endpoints, logger=logger)
-        account = w3.eth.account.from_key(session_key)
+        auth = make_auth(client_config, logger=logger)
 
-        auth = AuthContext(
-            w3=w3,
-            wallet=ChecksumAddress(wallet),
-            account=account,
-            config=config,
-        )
-
-        self._env = env
         self._auth = auth
-        self._config = config
-        self._subaccount_id = subaccount_id
+        self._config = auth.config
+        self._subaccount_id = client_config.subaccount_id
 
         self._logger = logger
         self._session = WebSocketSession(
-            url=config.ws_address,
-            config=session_config if session_config is not None else WebSocketSessionConfig(),
+            url=self._config.ws_address,
+            config=session_config,
             logger=self._logger,
             on_disconnect=self._handle_disconnect,
             on_reconnect=self._handle_reconnect,
@@ -100,17 +83,17 @@ class WebSocketClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        network = "sepolia" if env == Environment.TEST else "ethereum"
-        self._contract_registry = ContractRegistry(w3=w3, network=network)
-        self._deposits = Deposits(self._contract_registry, w3=w3, logger=self._logger)
+        network = "sepolia" if client_config.env == Environment.TEST else "ethereum"
+        self._contract_registry = ContractRegistry(w3=auth.w3, network=network)
+        self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
 
         self._logger.info(
             dedent(f"""
                         Initialized WebSocketClient for:
                             wallet:     {auth.wallet}
-                            subaccount: {subaccount_id}
+                            subaccount: {client_config.subaccount_id}
                             signer:     {auth.account.address}
-                            environment {env.value} """)
+                            environment {client_config.env.value} """)
         )
 
     @classmethod
@@ -121,8 +104,7 @@ class WebSocketClient:
     ) -> WebSocketClient:
         """Create WebSocketClient from environment configuration."""
 
-        config = load_client_config(session_key_path=session_key_path, env_file=env_file)
-        return cls(**config.model_dump())
+        return cls(load_client_config(session_key_path=session_key_path, env_file=env_file))
 
     async def connect(self, *, on_state_change: StateCallback | None = None) -> None:
         """
