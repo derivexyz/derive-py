@@ -380,8 +380,9 @@ class FailoverProvider(BaseProvider):
             except Exception as exc:
                 if not _is_retryable_exception(exc):
                     raise
-                self._mark_failed(index, repr(exc))
-                failures[uri] = repr(exc)
+                reason = _describe(exc)
+                self._mark_failed(index, reason)
+                failures[uri] = reason
                 continue
 
             error = response.get("error")

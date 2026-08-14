@@ -37,16 +37,7 @@ HISTORY_ROW_CAP = 1000
 
 
 class HistoryOperations:
-    """Settled historical records for a single subaccount or for a whole wallet.
-
-    Methods return the generated result model rather than an unwrapped list, so
-    that pagination envelopes (`count`, `num_pages`) are not discarded.
-
-    The API spells its time window `start_timestamp`/`end_timestamp` on some
-    endpoints and `from_timestamp`/`to_timestamp` on others; this class accepts
-    `start_timestamp`/`end_timestamp` throughout and maps to whichever the
-    endpoint expects. All timestamps are unix milliseconds.
-    """
+    """Settled historical records for a single subaccount or for a whole wallet."""
 
     def __init__(
         self,
