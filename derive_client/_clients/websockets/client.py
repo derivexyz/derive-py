@@ -24,7 +24,6 @@ from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
 from derive_client._clients.utils import (
-    ClientConfig,
     UnsubscribeResult,
     load_client_config,
     make_auth,
@@ -35,6 +34,7 @@ from derive_client._web3 import ContractRegistry, Deposits
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.data_types import (
     ChecksumAddress,
+    ClientConfig,
     ConnectionState,
     Environment,
     GasPriority,

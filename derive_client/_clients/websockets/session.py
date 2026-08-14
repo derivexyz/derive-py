@@ -30,6 +30,7 @@ from derive_client._clients.utils import (
     decoder_for,
     encode_rpc_frame,
 )
+from derive_client.config import USER_AGENT
 from derive_client.data_types import ConnectionState, LoggerType, WebSocketSessionConfig
 from derive_client.exceptions import DeriveJSONRPCError, RequestAbandoned
 from derive_client.utils.logger import get_logger
@@ -384,6 +385,7 @@ class WebSocketSession:
         try:
             ws = await connect(
                 self._url,
+                user_agent_header=USER_AGENT,
                 max_size=self._config.max_size,
                 open_timeout=self._config.open_timeout,
                 close_timeout=self._config.close_timeout,
