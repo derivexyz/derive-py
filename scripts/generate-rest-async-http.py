@@ -7,6 +7,9 @@ import libcst.matchers as matchers
 
 PACKAGE_DIR = Path(__file__).parent.parent / "derive_client"
 
+EXCLUDED_SOURCE_MODULES = {"session.py", "client.py", "api.py", "__init__.py"}
+EXCLUDED_TEST_MODULES = {"conftest.py", "test_session.py", "__init__.py"}
+
 # Modules who's methods should be converted to async
 ASYNC_OPERATION_MODULES = {
     "account",
@@ -586,10 +589,8 @@ def generate_async_client():
     source_dir = PACKAGE_DIR / "_clients" / "rest" / "http"
     target_dir = source_dir.parent / "async_http"
 
-    excluded = ["session.py", "client.py", "api.py", "__init__.py"]
-
     for py_file in source_dir.glob("*.py"):
-        if py_file.name in excluded:
+        if py_file.name in EXCLUDED_SOURCE_MODULES:
             continue
 
         source = py_file.read_text()
@@ -605,10 +606,8 @@ def generate_async_tests():
     source_dir = PACKAGE_DIR.parent / "tests" / "test_clients" / "test_rest" / "test_http"
     target_dir = source_dir.parent / "test_async_http"
 
-    excluded = ["conftest.py", "__init__.py"]
-
     for py_file in source_dir.glob("*.py"):
-        if py_file.name in excluded:
+        if py_file.name in EXCLUDED_TEST_MODULES:
             continue
 
         source = py_file.read_text()
