@@ -17,7 +17,7 @@ from derive_client._clients.rest.http.mmp import MMPOperations
 from derive_client._clients.rest.http.orders import OrderOperations
 from derive_client._clients.rest.http.positions import PositionOperations
 from derive_client._clients.rest.http.rfq import RFQOperations
-from derive_client._clients.rest.http.session import HTTPSession
+from derive_client._clients.rest.http.session import HTTPSession, request_timeout_override
 from derive_client._clients.rest.http.subaccount import Subaccount
 from derive_client._clients.rest.http.system import SystemOperations
 from derive_client._clients.rest.http.vaults import VaultOperations
@@ -274,14 +274,10 @@ class HTTPClient:
 
     @contextlib.contextmanager
     def timeout(self, seconds: float) -> Generator[None, None, None]:
-        """Temporarily overwrite client's HTTPSession's request_timeout."""
+        """Temporarily override the request timeout for calls in this context."""
 
-        prev = self._session._request_timeout
-        try:
-            self._session._request_timeout = float(seconds)
+        with request_timeout_override(seconds):
             yield
-        finally:
-            self._session._request_timeout = prev
 
     def __enter__(self):
         self.connect()

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import time
 import weakref
+from contextvars import ContextVar
+from typing import Iterator
 from urllib.parse import urlsplit
 
 import requests
@@ -14,6 +17,24 @@ _RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 _MAX_ATTEMPTS = 4
 _BACKOFF_FACTOR = 0.2
 _BACKOFF_MAX = 10.0
+
+# Context-local override, set by client.timeout(). Task- and thread-scoped, so it
+# cannot leak across concurrent callers of a shared session.
+_request_timeout_override: ContextVar[float | None] = ContextVar("_request_timeout_override", default=None)
+
+
+@contextlib.contextmanager
+def request_timeout_override(seconds: float) -> Iterator[None]:
+    """Override the request timeout for the current context."""
+
+    if seconds <= 0:
+        raise ValueError("timeout must be positive")
+
+    token = _request_timeout_override.set(float(seconds))
+    try:
+        yield
+    finally:
+        _request_timeout_override.reset(token)
 
 
 def _is_retryable(url: str) -> bool:
@@ -104,7 +125,7 @@ class HTTPSession:
             is_last = attempt >= max_attempts
 
             try:
-                response = session.post(url, data=data, headers=headers, timeout=self._request_timeout)
+                response = session.post(url, data=data, headers=headers, timeout=self._effective_timeout())
             except (requests.ConnectionError, requests.Timeout) as e:
                 if is_last:
                     self._logger.error("HTTP request failed: %s -> %s", url, e)
@@ -120,6 +141,10 @@ class HTTPSession:
 
             self._logger.debug("retrying %s in %.2fs (attempt %d/%d)", url, delay, attempt, max_attempts)
             time.sleep(delay)
+
+    def _effective_timeout(self) -> float:
+        override = _request_timeout_override.get()
+        return self._request_timeout if override is None else override
 
     def __enter__(self):
         self.open()
