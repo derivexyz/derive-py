@@ -12,10 +12,12 @@ from .module_data import ModuleData
 class WithdrawModuleData(ModuleData):
     """Withdrawal to L1.
 
-    The exchange forces `recipient` to equal the signer; it is not
-    independently authoritative. Signing with a session key sends funds to
-    the session key's own address. `amount` is in the asset's native ERC-20
-    decimals, with no additional scaling.
+    `recipient` is the L1 address paid out, and defaults to the subaccount's
+    owner wallet. It is independent of the signer: a session key signing this
+    action does NOT redirect funds to itself. A non-owner signer may only pay
+    out to an address on the owner's whitelisted_recipients, unless the key
+    holds Admin. `amount` is in the asset's native ERC-20 decimals, with no
+    additional scaling.
     """
 
     protocol_asset: str  # address, for to_abi_encoded
