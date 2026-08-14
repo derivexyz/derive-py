@@ -1,11 +1,33 @@
 from __future__ import annotations
 
+import time
 import weakref
+from urllib.parse import urlsplit
 
 import requests
-from requests.adapters import HTTPAdapter, Retry
+from requests.adapters import HTTPAdapter
 
 from derive_client.data_types import LoggerType
+
+_RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
+_MAX_ATTEMPTS = 4
+_BACKOFF_FACTOR = 0.2
+_BACKOFF_MAX = 10.0
+
+
+def _is_retryable(url: str) -> bool:
+    """Only public reads are safe to replay."""
+
+    return "public" in urlsplit(url).path.split("/")
+
+
+def _backoff(attempt: int, retry_after: str | None = None) -> float:
+    if retry_after is not None:
+        try:
+            return min(float(retry_after), _BACKOFF_MAX)
+        except ValueError:
+            pass  # HTTP-date form; fall back to exponential
+    return min(_BACKOFF_FACTOR * 2 ** (attempt - 1), _BACKOFF_MAX)
 
 
 class HTTPSession:
@@ -26,17 +48,12 @@ class HTTPSession:
 
         session = requests.Session()
 
-        retry = Retry(
-            total=3,
-            backoff_factor=0.2,
-            status_forcelist=(429, 500, 502, 503, 504),
-            allowed_methods=frozenset(["GET", "HEAD", "OPTIONS"]),
-        )
-
+        # Retries are handled in _send_request: urllib3 gates status retries on
+        # allowed_methods, and every request here is a POST.
         adapter = HTTPAdapter(
             pool_connections=10,
             pool_maxsize=20,
-            max_retries=retry,
+            max_retries=0,
             pool_block=False,
         )
 
@@ -60,20 +77,33 @@ class HTTPSession:
         url: str,
         data: bytes,
         *,
-        headers: dict | None = None,
+        headers: dict[str, str] | None = None,
     ) -> bytes:
         session = self.open()
+        max_attempts = _MAX_ATTEMPTS if _is_retryable(url) else 1
+        attempt = 0
 
-        timeout = self._request_timeout
+        while True:
+            attempt += 1
+            is_last = attempt >= max_attempts
 
-        try:
-            response = session.post(url, data=data, headers=headers, timeout=timeout)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            self._logger.error("HTTP request failed: %s -> %s", url, e)
-            raise
+            try:
+                response = session.post(url, data=data, headers=headers, timeout=self._request_timeout)
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if is_last:
+                    self._logger.error("HTTP request failed: %s -> %s", url, e)
+                    raise
+                delay = _backoff(attempt)
+            else:
+                if response.status_code not in _RETRY_STATUSES or is_last:
+                    if not response.ok:
+                        self._logger.error("HTTP %d: %s -> %s", response.status_code, url, response.text[:512])
+                    response.raise_for_status()
+                    return response.content
+                delay = _backoff(attempt, response.headers.get("Retry-After"))
 
-        return response.content
+            self._logger.debug("retrying %s in %.2fs (attempt %d/%d)", url, delay, attempt, max_attempts)
+            time.sleep(delay)
 
     def _finalize(self):
         if self._requests_session:

@@ -6,7 +6,7 @@ import logging
 import pytest
 import requests
 
-from derive_client._clients.rest.http.session import HTTPSession
+from derive_client._clients.rest.http.session import HTTPSession, _is_retryable
 
 _LOGGER = logging.getLogger("derive_test")
 
@@ -51,3 +51,8 @@ def test_underlying_session_is_closed_when_garbage_collected():
     gc.collect()
 
     assert closed == [True]
+
+
+def test_versioned_public_path_is_retryable():
+    assert _is_retryable("https://api.derive.xyz/v3/public/get_instruments")
+    assert not _is_retryable("https://api.derive.xyz/v3/private/order")
