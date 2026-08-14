@@ -8,7 +8,7 @@ import time
 import pytest
 import requests
 
-from derive_client._clients.rest.http.session import HTTPSession, _is_retryable, request_timeout_override
+from derive_client._clients.rest.http.session import USER_AGENT, HTTPSession, _is_retryable, request_timeout_override
 from derive_client.data_types import HTTPSessionConfig, LoggerType
 
 _LOGGER = logging.getLogger("derive_test")
@@ -134,3 +134,7 @@ def test_retries_are_bounded_by_max_attempts(http_server):
         session._send_request(http_server.url(path), b"{}")
 
     assert http_server.hits[path] == 2
+
+
+def test_user_agent_reports_a_resolved_version():
+    assert "unknown" not in USER_AGENT

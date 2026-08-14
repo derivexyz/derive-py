@@ -1,5 +1,7 @@
 """Pure constants without dependencies."""
 
+import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Final
 
@@ -34,3 +36,14 @@ ETHEREUM_MAINNET_CHAIN_ID = 1
 SEPOLIA_CHAIN_ID = 11155111
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+DIST_NAME = "derive-py"
+
+try:
+    _VERSION = version(DIST_NAME)
+except PackageNotFoundError:  # source checkout without an install
+    _VERSION = "unknown"
+
+_PY_VERSION = ".".join(str(part) for part in sys.version_info[:3])
+
+USER_AGENT = f"{DIST_NAME}/{_VERSION} (Python {_PY_VERSION}; {sys.platform})"

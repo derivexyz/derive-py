@@ -148,6 +148,7 @@ class WebSocketSession:
 
     def __init__(
         self,
+        *,
         url: str,
         config: WebSocketSessionConfig | None = None,
         logger: LoggerType | None = None,

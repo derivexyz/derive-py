@@ -11,6 +11,7 @@ from .constants import (
     SEPOLIA_CHAIN_ID,
     UINT32_MAX,
     UINT64_MAX,
+    USER_AGENT,
 )
 from .contracts import CONFIGS
 from .rpc import DEFAULT_RPC_ENDPOINTS, resolve_rpc_endpoints
@@ -30,5 +31,6 @@ __all__ = [
     "SEPOLIA_CHAIN_ID",
     "UINT32_MAX",
     "UINT64_MAX",
+    "USER_AGENT",
     "resolve_rpc_endpoints",
 ]

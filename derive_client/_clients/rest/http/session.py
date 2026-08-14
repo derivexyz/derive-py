@@ -4,24 +4,17 @@ import contextlib
 import time
 import weakref
 from contextvars import ContextVar
-from importlib.metadata import PackageNotFoundError, version
 from typing import Iterator
 from urllib.parse import urlsplit
 
 import requests
 from requests.adapters import HTTPAdapter
 
+from derive_client.config.constants import USER_AGENT
 from derive_client.data_types import HTTPSessionConfig, LoggerType
 from derive_client.utils.logger import get_logger
 
-# Must match [project].name in pyproject.toml, or the version resolves to "unknown".
-_DIST_NAME = "derive-py"
 _PUBLIC_PATH_SEGMENT = "public"
-
-try:
-    _USER_AGENT = f"{_DIST_NAME}/{version(_DIST_NAME)}"
-except PackageNotFoundError:  # source checkout, or the distribution is named differently
-    _USER_AGENT = f"{_DIST_NAME}/unknown"
 
 # Context-local override, set by client.timeout(). Task- and thread-scoped, so it
 # cannot leak across concurrent callers of a shared session.
@@ -75,7 +68,7 @@ class HTTPSession:
             return self._requests_session
 
         session = requests.Session()
-        session.headers["User-Agent"] = _USER_AGENT
+        session.headers["User-Agent"] = USER_AGENT
 
         # Retries are handled in _send_request: urllib3 gates status retries on
         # allowed_methods, and every request here is a POST.
