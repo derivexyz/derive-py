@@ -69,8 +69,8 @@ class ClientConfig(BaseModel):
     rpc_endpoints: tuple[str, ...] | None = None
 
 
-class HTTPSessionConfig(BaseModel, frozen=True):
-    """Transport and retry settings for an HTTP session."""
+class _HTTPSessionConfigBase(BaseModel, frozen=True):
+    """Retry settings shared by the synchronous and asynchronous HTTP sessions."""
 
     # Per attempt, not total: a retried request can take up to
     # max_attempts * request_timeout, plus backoff.
@@ -81,8 +81,30 @@ class HTTPSessionConfig(BaseModel, frozen=True):
     backoff_max: float = Field(default=10.0, gt=0)
     retry_statuses: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 
+
+class HTTPSessionConfig(_HTTPSessionConfigBase, frozen=True):
+    """Transport and retry settings for a synchronous HTTP session.
+
+    `request_timeout` bounds connect and between-bytes time, not total elapsed:
+    requests passes one scalar to both.
+    """
+
     pool_connections: int = Field(default=10, ge=1)
+    # Size of the idle-connection cache, not a concurrency cap: over this many
+    # in-flight requests, urllib3 opens extra connections and discards them.
     pool_maxsize: int = Field(default=20, ge=1)
+
+
+class AsyncHTTPSessionConfig(_HTTPSessionConfigBase, frozen=True):
+    """Transport and retry settings for an asynchronous HTTP session.
+
+    `request_timeout` is a wall-clock bound on the whole request, unlike the
+    synchronous session's scalar.
+    """
+
+    limit: int = Field(default=100, ge=1)
+    limit_per_host: int = Field(default=10, ge=1)
+    keepalive_timeout: float = Field(default=30.0, gt=0)
 
 
 class WebSocketSessionConfig(BaseModel, frozen=True):

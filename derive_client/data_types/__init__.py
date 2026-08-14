@@ -20,6 +20,7 @@ from .generated_models import (
     OrderType,
 )
 from .models import (
+    AsyncHTTPSessionConfig,
     ChecksumAddress,
     ClientConfig,
     DeriveContractAddresses,
@@ -45,6 +46,7 @@ LoggerType = Logger | LoggerAdapter
 
 __all__ = [
     "AssetType",
+    "AsyncHTTPSessionConfig",
     "ChecksumAddress",
     "ClientConfig",
     "ConnectionState",
