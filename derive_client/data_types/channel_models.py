@@ -80,9 +80,7 @@ class MarginWatchResult(Struct):
     valuation_timestamp: int
 
 
-class OrderSnapshot(Struct):
-    amount: str
-    price: str
+OrderSnapshot: TypeAlias = tuple[str, str]
 
 
 class OrderbookSnapshot(Struct):
