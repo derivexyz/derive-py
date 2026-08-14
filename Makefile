@@ -75,7 +75,7 @@ docs: clean-docs
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
 
-
+.PHONY: release
 release:
 	$(eval current_version := $(shell poetry run tbump current-version))
 	@echo "Current version is $(current_version)"
@@ -124,15 +124,24 @@ download-abis:
 	@echo "Downloading ABIs..."
 	poetry run python scripts/download-abis.py
 
+.PHONY: codegen-all
 codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
+.PHONY: typecheck
 typecheck:
 	poetry run pyright derive_py tests examples benchmarks
 
+.PHONY: deptry
+deptry:
+	poetry run deptry derive_py
+
+.PHONY: check_diff
 check_diff:
 	@git diff --exit-code
 
+.PHONY: demo
 demo:
 	poetry run bash scripts/demos/all.sh
 
+.PHONY: all
 all: download-abis codegen-all fmt lint typecheck tests docs
