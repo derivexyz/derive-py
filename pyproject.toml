@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Python client for the Derive v3 API"
 authors = [
   "8baller <8baller@station.codes>",
-  "Zarathustra <zarathutra_git@pm.me>",
+  "Zarathustra <zarathustra_git@pm.me>",
 ]
 readme = "README.md"
 packages = [{ include = "derive_py" }]
