@@ -6,6 +6,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Mapping, Optional, TypeAlias, TypeVar
@@ -46,6 +47,7 @@ from derive_client.data_types.generated_models import (
     PaginatedVaultRequestHistory,
     PricedLegParamsAndResponse,
     RPCError,
+    SessionKey,
     VaultActionResponse,
     VaultRequestId,
 )
@@ -236,15 +238,33 @@ def make_auth(client_config: ClientConfig, *, logger: LoggerType) -> AuthContext
 
     env_config = CONFIGS[client_config.env]
     account = Account.from_key(client_config.session_key.get_secret_value())
-
-    if account.address == client_config.wallet:
-        logger.warning(
-            "Session key derives the owner address %s. Use a session key rather than the owner key.",
-            client_config.wallet,
-        )
-
     w3 = make_web3(client_config.env, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
+
     return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=env_config)
+
+
+def log_session_key_status(
+    session_key: SessionKey | None,
+    *,
+    signer: str,
+    wallet: str,
+    logger: LoggerType,
+) -> None:
+    """Report whether a session key is registered, and how long it remains valid."""
+
+    if session_key is None:
+        logger.warning(f"Session key {signer} is not registered for wallet {wallet}")
+        return
+
+    expiry = datetime.fromtimestamp(int(session_key.expiry_sec), tz=UTC)
+    remaining = expiry - datetime.now(tz=UTC)
+
+    if remaining <= timedelta(0):
+        logger.warning(f"Session key {signer} expired on {expiry:%Y-%m-%d %H:%M UTC}")
+        return
+
+    hours = int(remaining.total_seconds() // 3600)
+    logger.info(f"Session key {signer} valid for {hours}h, until {expiry:%Y-%m-%d %H:%M UTC}")
 
 
 def try_cast_response(response: bytes, response_schema: type[T]) -> T:

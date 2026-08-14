@@ -8,7 +8,7 @@ import msgspec
 
 from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_client._clients.rest.http.history import HistoryOperations
-from derive_client._clients.utils import AuthContext, unset_if_none
+from derive_client._clients.utils import AuthContext, log_session_key_status, unset_if_none
 from derive_client._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
 from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
 from derive_client.data_types.generated_models import (
@@ -90,20 +90,17 @@ class LightAccount:
         """
 
         params = GetAccountRequest(wallet=auth.wallet)
-        result = private_api.rpc.get_account(params)
-        state = result
+        state = private_api.rpc.get_account(params)
         logger.debug(f"LightAccount validated: {state.wallet}")
 
-        # Check if the current signer is in the list of valid session keys
-        session_keys_params = SessionKeysRequest(wallet=auth.wallet)
-        session_keys_result = private_api.rpc.session_keys(session_keys_params)
-
-        valid_signers = {key.public_session_key: key for key in session_keys_result.public_session_keys}
-        signer_address = auth.account.address  # type: ignore[attr-defined]
-        if signer_address not in valid_signers:
-            logger.warning(f"Session key {signer_address} is not registered for wallet {auth.wallet}")
+        signer = auth.account.address
+        if signer == auth.wallet:  # v3 does not require registration for the owner.
+            logger.debug(f"Signing as wallet owner {auth.wallet}")
         else:
-            logger.debug(f"Session key validated: {signer_address}")
+            session_keys_params = SessionKeysRequest(wallet=auth.wallet)
+            session_keys_response = private_api.rpc.session_keys(session_keys_params)
+            registered = {key.public_session_key: key for key in session_keys_response.public_session_keys}
+            log_session_key_status(registered.get(signer), signer=signer, wallet=auth.wallet, logger=logger)
 
         return cls(
             auth=auth,
