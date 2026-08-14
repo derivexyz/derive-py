@@ -1,80 +1,92 @@
 """
-Websocket subscriptions: callback handler over one socket.
+04 - Websocket subscriptions: two public channels over one socket.
 
-Callback-only, on purpose -- derive-ts's version also demonstrates an
-async-iterator style (stream()) as a second consumption pattern. This
-client doesn't have that, deliberately: it existed as an early pass, but
-was dropped in favor of callback-only after feedback that request/callback
-matches how traders actually think about subscriptions more than iterating
-a stream does. It could be added later as a purely ADDITIVE method
-alongside this one if there's real demand -- not urgent, and not something
-that needs to ride this migration's breaking-changes window, since it
-wouldn't be a breaking change either way.
+Subscriptions are callback-based. You hand each channel a handler, and the
+client decodes every message into a typed payload before calling it.
 
-Uses ticker_slim rather than derive-ts's orderbook channel -- the orderbook
-one is marked skipped in this client's own tests right now
-("v3 migration: OrderSnapshot bids and asks are array instead of object"),
-so it's not something to build an example around yet. ticker_slim also
-continues naturally from 03-market-data.py: there you fetched a ticker
-snapshot once over REST, here the same data gets pushed to you over time.
+    ticker_slim  the same TickerSlimSnapshot 03-market-data.py fetched once
+                 over REST, pushed at a fixed interval instead
+    orderbook    aggregated bids and asks, each level a (price, amount) pair
+                 of decimal strings, with group and depth controlling price
+                 aggregation and how many levels come back
 
-No unsubscribe() call here -- not because the shape is unconfirmed, but
-because it genuinely isn't user-facing yet. It exists on the internal
-websocket session (derive_py/_clients/websockets/session.py), not on
-client.public_channels/private_channels. disconnect() below tears down
-the whole socket, which ends every subscription on it implicitly, so this
-example doesn't need it regardless -- but a real per-channel unsubscribe()
-on the public API is a gap worth closing in its own PR, alongside a
-broader look at the channel-method naming (verbose, explicit names like
-ticker_slim_interval_by_instrument_name work, but something like a
-per-channel SubscriptionSpec might be worth considering instead of one
-method per channel shape). Not attempting either here.
+Both run over one connection: the client multiplexes them and routes each
+message to its own handler. If the socket drops, the client reconnects and
+resubscribes every channel, so a handler keeps receiving without help.
+
+Two things about handlers that the code cannot show you:
+
+    They run on the receive loop, in arrival order per channel. A slow
+    handler applies backpressure to the socket instead of racing the next
+    message, so blocking work in one callback stalls every channel. Hand
+    anything slow to a queue or a task.
+    Exceptions raised inside a handler are caught and logged, never
+    propagated. A bug in your callback fails quietly rather than stopping
+    the process.
+
+There is no per-channel unsubscribe() on the public API yet. disconnect()
+ends every subscription on the socket, which is all this needs.
+
+Prerequisites: none beyond network access. Copy .env.template to .env first.
 
 Run:
     python examples/04-subscribe.py
 """
 
 import asyncio
-from pathlib import Path
 
 from derive_py import WebSocketClient
+from derive_py.data_types.channel_models import OrderbookSnapshot, TickerSlimPayload
 
 INSTRUMENT = "ETH-PERP"
-UPDATES_TO_SHOW = 10
+UPDATES_TO_SHOW = 5
 TIMEOUT_SEC = 30
 
 
-async def main():
-    env_file = Path(__file__).parent.parent / ".env.template"
-    client = WebSocketClient.from_env(env_file=env_file)
+async def main() -> None:
+    client = WebSocketClient.from_env()
+    log = client.logger
     await client.connect()
 
     updates = 0
     done = asyncio.Event()
 
-    def on_ticker(payload):
+    def on_ticker(payload: TickerSlimPayload) -> None:
         nonlocal updates
         ticker = payload.instrument_ticker
-        print(f"  index=${ticker.index_price} mark=${ticker.mark_price} t={payload.timestamp}")
+        log.info(f"ticker index=${ticker.index_price} mark=${ticker.mark_price} t={payload.timestamp}")
         updates += 1
         if updates >= UPDATES_TO_SHOW:
             done.set()
 
-    subscription_result = await client.public_channels.ticker_slim_interval_by_instrument_name(
-        instrument_name=INSTRUMENT,
-        interval=1000,
-        callback=on_ticker,
-    )
-    print(f"Subscribed: {subscription_result.status}")
+    def on_book(book: OrderbookSnapshot) -> None:
+        bid_price, bid_amount = book.bids[0] if book.bids else ("-", "-")
+        ask_price, ask_amount = book.asks[0] if book.asks else ("-", "-")
+        log.info(
+            f"book   {bid_amount} @ ${bid_price} | {ask_amount} @ ${ask_price}"
+            f" ({len(book.bids)} bid / {len(book.asks)} ask levels)"
+        )
 
     try:
-        await asyncio.wait_for(done.wait(), timeout=TIMEOUT_SEC)
-    except asyncio.TimeoutError:
-        print(f"No {UPDATES_TO_SHOW} updates within {TIMEOUT_SEC}s -- quiet market, moving on.")
+        ticker_subscription = await client.public_channels.ticker_slim_interval_by_instrument_name(
+            instrument_name=INSTRUMENT,
+            interval=1000,
+            callback=on_ticker,
+        )
+        book_subscription = await client.public_channels.orderbook_group_depth_by_instrument_name(
+            instrument_name=INSTRUMENT,
+            group=1,
+            depth=10,
+            callback=on_book,
+        )
+        log.info(f"subscribed: {ticker_subscription.status | book_subscription.status}")
 
-    # No unsubscribe() yet.
-    # disconnect() ends the subscription along with everything else on this socket.
-    await client.disconnect()
+        try:
+            await asyncio.wait_for(done.wait(), timeout=TIMEOUT_SEC)
+        except asyncio.TimeoutError:
+            log.warning(f"Only {updates} ticker updates in {TIMEOUT_SEC}s. Quiet market, moving on.")
+    finally:
+        await client.disconnect()
 
 
 if __name__ == "__main__":
