@@ -1,8 +1,11 @@
 [tool.poetry]
-name = "derive-client"
+name = "derive-py"
 version = "0.3.14"
-description = ""
-authors = ["8baller <8baller@station.codes>"]
+description = "Python client for the Derive v3 API"
+authors = [
+  "8baller <8baller@station.codes>",
+  "Zarathustra <zarathutra_git@pm.me>",
+]
 readme = "README.md"
 packages = [{ include = "derive_client" }]
 
@@ -24,7 +27,6 @@ web3 = "^7.14.0"
 
 [tool.poetry.scripts]
 drv = "derive_client.cli:cli"
-fetch-drv-abis = "derive_client.utils.abi:download_prod_address_abis"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "9.0.2"
