@@ -29,8 +29,8 @@ from pathlib import Path
 
 import msgspec
 
-from derive_client import HTTPClient
-from derive_client.data_types.generated_models import AssetType
+from derive_py import HTTPClient
+from derive_py.data_types.generated_models import AssetType
 
 env_file = Path(__file__).parent.parent / ".env.template"
 client = HTTPClient.from_env(env_file=env_file)

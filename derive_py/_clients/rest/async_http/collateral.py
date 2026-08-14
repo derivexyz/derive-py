@@ -5,9 +5,9 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from derive_client._web3.action_signing import TransferSpotExternalModuleData, TransferSpotModuleData
-from derive_client.data_types import ChecksumAddress
-from derive_client.data_types.generated_models import (
+from derive_py._web3.action_signing import TransferSpotExternalModuleData, TransferSpotModuleData
+from derive_py.data_types import ChecksumAddress
+from derive_py.data_types.generated_models import (
     AssetType,
     GetCollateralsRequest,
     PrivateGetCollateralsResponse,

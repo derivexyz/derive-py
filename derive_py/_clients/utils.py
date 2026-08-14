@@ -19,16 +19,16 @@ from hexbytes import HexBytes
 from pydantic import BaseModel, SecretStr
 from web3 import Web3
 
-from derive_client._web3 import make_web3
-from derive_client._web3.action_signing import (
+from derive_py._web3 import make_web3
+from derive_py._web3.action_signing import (
     ModuleData,
     SignedAction,
     get_action_nonce,
     sign_rest_auth_header,
     sign_ws_login,
 )
-from derive_client.config import CONFIGS
-from derive_client.data_types import (
+from derive_py.config import CONFIGS
+from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
     EnvConfig,
@@ -37,7 +37,7 @@ from derive_client.data_types import (
     PositionTransfer,
     RiskUniverseID,
 )
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     BatchStatus,
     GetAllInstrumentsResponse,
@@ -51,7 +51,7 @@ from derive_client.data_types.generated_models import (
     VaultActionResponse,
     VaultRequestId,
 )
-from derive_client.exceptions import (
+from derive_py.exceptions import (
     DeriveJSONRPCError,
     SettlementFailed,
     SettlementTimeout,
@@ -62,9 +62,9 @@ from derive_client.exceptions import (
 if TYPE_CHECKING:
     from websockets import Data
 
-    from derive_client import AsyncHTTPClient, HTTPClient, WebSocketClient
-    from derive_client._clients.rest.async_http.markets import MarketOperations as AsyncMarketOperations
-    from derive_client._clients.rest.http.markets import MarketOperations
+    from derive_py import AsyncHTTPClient, HTTPClient, WebSocketClient
+    from derive_py._clients.rest.async_http.markets import MarketOperations as AsyncMarketOperations
+    from derive_py._clients.rest.http.markets import MarketOperations
 
 
 T = TypeVar("T")

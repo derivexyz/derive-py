@@ -32,7 +32,7 @@ import asyncio
 from decimal import Decimal
 from pathlib import Path
 
-from derive_client import WebSocketClient
+from derive_py import WebSocketClient
 
 DEPOSIT_AMOUNT = Decimal("10")  # in the vault's deposit asset, usually USDC
 

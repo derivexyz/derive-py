@@ -1,6 +1,6 @@
 # VaultAction
 
-::: derive_client.data_types.enums.VaultAction
+::: derive_py.data_types.enums.VaultAction
     options:
       show_root_heading: false
       heading_level: 2

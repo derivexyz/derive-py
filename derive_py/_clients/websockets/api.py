@@ -3,9 +3,9 @@
 from enum import Enum
 from typing import Awaitable, Callable, Literal, TypeVar
 
-from derive_client._clients.utils import SubscriptionResult, decode_result
-from derive_client._clients.websockets.session import WebSocketSession
-from derive_client.data_types.channel_models import (
+from derive_py._clients.utils import SubscriptionResult, decode_result
+from derive_py._clients.websockets.session import WebSocketSession
+from derive_py.data_types.channel_models import (
     AuctionResult,
     BalanceUpdate,
     BestQuoteChannelResult,
@@ -18,7 +18,7 @@ from derive_client.data_types.channel_models import (
     SpotFeedPayload,
     TickerSlimPayload,
 )
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
     Asset,

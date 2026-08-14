@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from typing import TypeVar
 
-from derive_client._web3.deposits import DepositStep
+from derive_py._web3.deposits import DepositStep
 
 T = TypeVar("T")
 

@@ -6,8 +6,8 @@ from decimal import Decimal
 
 import rich_click as click
 
-from derive_client._clients.rest.http.client import HTTPClient
-from derive_client.data_types import Direction, OrderType
+from derive_py._clients.rest.http.client import HTTPClient
+from derive_py.data_types import Direction, OrderType
 
 from ._columns import ORDER_COLUMNS, TRADE_COLUMNS
 from ._utils import console, print_series, print_table, struct_to_series, structs_to_dataframe

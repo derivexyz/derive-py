@@ -72,7 +72,7 @@ New to Derive? Follow this path:
 
 ## Community & Support
 
-- **GitHub**: [8ball030/derive_client](https://github.com/8ball030/derive_client)
+- **GitHub**: [8ball030/derive_py](https://github.com/8ball030/derive_py)
 - **Issues**: Report bugs or request features
 - **Derive Platform**: [derive.xyz](https://derive.xyz)
 

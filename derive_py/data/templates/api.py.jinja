@@ -6,16 +6,16 @@ from typing import Any, Awaitable, Callable, List, Literal, TypeVar
 import msgspec
 
 {% if client_type == 'http' %}
-from derive_client._clients.rest{% if is_async %}.async_http{% else %}.http{% endif %}.session import {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}
-from derive_client.config import PUBLIC_HEADERS
-from derive_client.data_types import EnvConfig
-from derive_client._clients.utils import decode_envelope, decode_result, AuthContext, encode_request
-from derive_client._clients.rest.endpoints import PublicEndpoints, PrivateEndpoints
+from derive_py._clients.rest{% if is_async %}.async_http{% else %}.http{% endif %}.session import {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}
+from derive_py.config import PUBLIC_HEADERS
+from derive_py.data_types import EnvConfig
+from derive_py._clients.utils import decode_envelope, decode_result, AuthContext, encode_request
+from derive_py._clients.rest.endpoints import PublicEndpoints, PrivateEndpoints
 {% else %}
-from derive_client._clients.websockets.session import WebSocketSession
-from derive_client._clients.utils import SubscriptionResult, decode_envelope, decode_result, encode_request
+from derive_py._clients.websockets.session import WebSocketSession
+from derive_py._clients.utils import SubscriptionResult, decode_envelope, decode_result, encode_request
 {% endif %}
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
 {% for schema in rpc_schema_imports -%}
     {% if schema in rpc_import_aliases -%}
     {{ schema }} as {{ rpc_import_aliases[schema] }},
@@ -25,7 +25,7 @@ from derive_client.data_types.generated_models import (
 {% endfor %}
 )
 {% if client_type == 'websocket' and channel_schema_imports %}
-from derive_client.data_types.channel_models import (
+from derive_py.data_types.channel_models import (
 {% for schema in channel_schema_imports -%}
     {% if schema in channel_import_aliases -%}
     {{ schema }} as {{ channel_import_aliases[schema] }},

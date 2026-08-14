@@ -1,6 +1,6 @@
 # AsyncHTTPClient
 
-::: derive_client._clients.rest.async_http.client.AsyncHTTPClient
+::: derive_py._clients.rest.async_http.client.AsyncHTTPClient
     options:
       show_root_heading: false
       heading_level: 2

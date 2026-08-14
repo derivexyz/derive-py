@@ -20,7 +20,7 @@ snapshot once over REST, here the same data gets pushed to you over time.
 
 No unsubscribe() call here -- not because the shape is unconfirmed, but
 because it genuinely isn't user-facing yet. It exists on the internal
-websocket session (derive_client/_clients/websockets/session.py), not on
+websocket session (derive_py/_clients/websockets/session.py), not on
 client.public_channels/private_channels. disconnect() below tears down
 the whole socket, which ends every subscription on it implicitly, so this
 example doesn't need it regardless -- but a real per-channel unsubscribe()
@@ -37,7 +37,7 @@ Run:
 import asyncio
 from pathlib import Path
 
-from derive_client import WebSocketClient
+from derive_py import WebSocketClient
 
 INSTRUMENT = "ETH-PERP"
 UPDATES_TO_SHOW = 10

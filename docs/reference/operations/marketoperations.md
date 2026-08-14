@@ -3,7 +3,7 @@
 !!! info
     Access via `client.market` property.
 
-::: derive_client._clients.rest.http.markets.MarketOperations
+::: derive_py._clients.rest.http.markets.MarketOperations
     options:
       show_root_heading: false
       heading_level: 2

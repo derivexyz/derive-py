@@ -11,11 +11,11 @@ from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxParams
 
-from derive_client._web3.abi import ContractRegistry
-from derive_client._web3.erc20 import ensure_sufficient_balance, prepare_approve
-from derive_client._web3.tx import prepare_transaction, sign_transaction, submit_transaction
-from derive_client._web3.tx import wait_for_finality as _wait_for_finality
-from derive_client.data_types import (
+from derive_py._web3.abi import ContractRegistry
+from derive_py._web3.erc20 import ensure_sufficient_balance, prepare_approve
+from derive_py._web3.tx import prepare_transaction, sign_transaction, submit_transaction
+from derive_py._web3.tx import wait_for_finality as _wait_for_finality
+from derive_py.data_types import (
     ChecksumAddress,
     GasPriority,
     LoggerType,
@@ -24,7 +24,7 @@ from derive_client.data_types import (
     TxHash,
     TypedTxReceipt,
 )
-from derive_client.data_types.generated_models import RiskUniverse
+from derive_py.data_types.generated_models import RiskUniverse
 
 
 @dataclass(frozen=True)

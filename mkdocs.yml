@@ -1,8 +1,8 @@
 site_name: Derive Client
 site_description:
 docs_dir: docs
-site_url: https://8ball030.github.io/derive_client/
-repo_url: https://github.com/8ball030/derive_client
+site_url: https://8ball030.github.io/derive_py/
+repo_url: https://github.com/8ball030/derive_py
 
 nav:
   - Home: index.md
@@ -120,7 +120,7 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/8ball030/derive_client
+      link: https://github.com/8ball030/derive_py
       name: Github
     - icon: material/email
       link: "mailto:8ball030@gmail.com"

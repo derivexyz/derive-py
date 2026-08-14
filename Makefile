@@ -61,12 +61,12 @@ tests:
 
 .PHONY: fmt
 fmt:
-	poetry run ruff format tests derive_client examples benchmarks scripts
-	poetry run ruff check tests derive_client examples benchmarks scripts --fix
+	poetry run ruff format tests derive_py examples benchmarks scripts
+	poetry run ruff check tests derive_py examples benchmarks scripts --fix
 
 .PHONY: lint
 lint:
-	poetry run ruff check tests derive_client examples benchmarks scripts
+	poetry run ruff check tests derive_py examples benchmarks scripts
 
 
 .PHONY: docs
@@ -91,14 +91,14 @@ generate-models:
 	poetry run python scripts/patch_spec.py specs/openapi.json
 	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
-	poetry run ruff format derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
-	poetry run ruff check --fix derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
+	poetry run ruff format derive_py/data_types/generated_models.py derive_py/data_types/channel_models.py
+	poetry run ruff check --fix derive_py/data_types/generated_models.py derive_py/data_types/channel_models.py
 
 .PHONY: generate-api
 generate-api:
 	python scripts/generate-api.py
-	poetry run ruff format derive_client/_clients/
-	poetry run ruff check --fix derive_client/_clients/
+	poetry run ruff format derive_py/_clients/
+	poetry run ruff check --fix derive_py/_clients/
 
 .PHONY: generate-rest-async-http
 generate-rest-async-http:
@@ -127,7 +127,7 @@ download-abis:
 codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
 typecheck:
-	poetry run pyright derive_client tests examples benchmarks
+	poetry run pyright derive_py tests examples benchmarks
 
 check_diff:
 	@git diff --exit-code

@@ -10,9 +10,9 @@ from urllib.parse import urlsplit
 import requests
 from requests.adapters import HTTPAdapter
 
-from derive_client.config.constants import USER_AGENT
-from derive_client.data_types import HTTPSessionConfig, LoggerType
-from derive_client.utils.logger import get_logger
+from derive_py.config.constants import USER_AGENT
+from derive_py.data_types import HTTPSessionConfig, LoggerType
+from derive_py.utils.logger import get_logger
 
 _PUBLIC_PATH_SEGMENT = "public"
 

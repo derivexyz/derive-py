@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from derive_client.data_types import FeeEstimate
-    from derive_client.data_types.generated_models import GetTransactionResult, RPCError, VaultActionResponse
+    from derive_py.data_types import FeeEstimate
+    from derive_py.data_types.generated_models import GetTransactionResult, RPCError, VaultActionResponse
 
 
 class NotConnectedError(RuntimeError):

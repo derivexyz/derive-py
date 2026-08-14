@@ -1,4 +1,4 @@
-"""Enums and Models used in the derive_client module"""
+"""Enums and Models used in the derive_py module"""
 
 from logging import Logger, LoggerAdapter
 

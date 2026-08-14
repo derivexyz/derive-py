@@ -1,11 +1,11 @@
 """Auto-generated API classes"""
 
-from derive_client._clients.rest.async_http.session import AsyncHTTPSession
-from derive_client._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
-from derive_client._clients.utils import AuthContext, decode_envelope, decode_result, encode_request
-from derive_client.config import PUBLIC_HEADERS
-from derive_client.data_types import EnvConfig
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.async_http.session import AsyncHTTPSession
+from derive_py._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
+from derive_py._clients.utils import AuthContext, decode_envelope, decode_result, encode_request
+from derive_py.config import PUBLIC_HEADERS
+from derive_py.data_types import EnvConfig
+from derive_py.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
     Asset,

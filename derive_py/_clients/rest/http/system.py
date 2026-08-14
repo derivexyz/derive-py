@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from derive_client._clients.rest.http.api import PublicAPI
-from derive_client.data_types import LoggerType
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.http.api import PublicAPI
+from derive_py.data_types import LoggerType
+from derive_py.data_types.generated_models import (
     GetTransactionParams,
     GetTransactionResult,
     RateLimitResult,

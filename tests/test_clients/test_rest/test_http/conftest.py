@@ -1,7 +1,7 @@
 import pytest
 
-from derive_client._clients.rest.http.client import HTTPClient
-from derive_client.data_types.generated_models import Vault
+from derive_py._clients.rest.http.client import HTTPClient
+from derive_py.data_types.generated_models import Vault
 from tests.conftest import ENV_TEMPLATE
 
 

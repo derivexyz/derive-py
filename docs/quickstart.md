@@ -12,8 +12,8 @@ DERIVE_ENV=TEST
 Setup client, check market data and place an order.
 
 ```python
-from derive_client import HTTPClient
-from derive_client.data_types import D, Direction, OrderType
+from derive_py import HTTPClient
+from derive_py.data_types import D, Direction, OrderType
 
 # Initialize client
 client = HTTPClient.from_env()
@@ -37,8 +37,8 @@ The fastest way to learn is by running the [examples](examples.md):
 
 ```bash
 # Clone the repo (examples are not included in the package)
-git clone git@github.com:8ball030/derive_client.git
-cd derive_client
+git clone git@github.com:8ball030/derive_py.git
+cd derive_py
 
 # Install editable with pip
 pip install -e .

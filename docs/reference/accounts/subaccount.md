@@ -1,6 +1,6 @@
 # Subaccount
 
-::: derive_client._clients.rest.http.subaccount.Subaccount
+::: derive_py._clients.rest.http.subaccount.Subaccount
     options:
       show_root_heading: false
       heading_level: 2

@@ -1,6 +1,6 @@
 # ChecksumAddress
 
-::: derive_client.data_types.models.ChecksumAddress
+::: derive_py.data_types.models.ChecksumAddress
     options:
       show_root_heading: false
       heading_level: 2

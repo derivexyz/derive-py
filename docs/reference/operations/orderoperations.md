@@ -3,7 +3,7 @@
 !!! info
     Access via `client.order` property.
 
-::: derive_client._clients.rest.http.orders.OrderOperations
+::: derive_py._clients.rest.http.orders.OrderOperations
     options:
       show_root_heading: false
       heading_level: 2

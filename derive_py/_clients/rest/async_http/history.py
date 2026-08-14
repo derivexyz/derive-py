@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from derive_client._clients.utils import unset_if_none
-from derive_client.data_types import ChecksumAddress
-from derive_client.data_types.generated_models import (
+from derive_py._clients.utils import unset_if_none
+from derive_py.data_types import ChecksumAddress
+from derive_py.data_types.generated_models import (
     DepositHistoryResult,
     GetDepositHistoryRequest,
     GetErc20TransferHistoryRequest,
@@ -26,8 +26,8 @@ from derive_client.data_types.generated_models import (
 )
 
 if TYPE_CHECKING:
-    from derive_client._clients.rest.async_http.account import LightAccount
-    from derive_client._clients.rest.async_http.api import AsyncPrivateAPI
+    from derive_py._clients.rest.async_http.account import LightAccount
+    from derive_py._clients.rest.async_http.api import AsyncPrivateAPI
 
     from .subaccount import Subaccount
 

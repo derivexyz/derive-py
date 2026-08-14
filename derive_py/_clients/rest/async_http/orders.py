@@ -5,10 +5,10 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from derive_client._clients.utils import unset_if_none
-from derive_client._web3.action_signing import TradeModuleData
-from derive_client.config import INT64_MAX
-from derive_client.data_types.generated_models import (
+from derive_py._clients.utils import unset_if_none
+from derive_py._web3.action_signing import TradeModuleData
+from derive_py.config import INT64_MAX
+from derive_py.data_types.generated_models import (
     CancelAllRequest,
     CancelByInstrumentRequest,
     CancelByInstrumentResponse,

@@ -1,6 +1,6 @@
 # Wei
 
-::: derive_client.data_types.models.Wei
+::: derive_py.data_types.models.Wei
     options:
       show_root_heading: false
       heading_level: 2

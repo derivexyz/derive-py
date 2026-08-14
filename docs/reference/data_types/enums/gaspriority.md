@@ -1,6 +1,6 @@
 # GasPriority
 
-::: derive_client.data_types.enums.GasPriority
+::: derive_py.data_types.enums.GasPriority
     options:
       show_root_heading: false
       heading_level: 2

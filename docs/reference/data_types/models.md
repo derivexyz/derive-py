@@ -1,6 +1,6 @@
 # Models
 
-This section contains all data model classes used in the derive_client.
+This section contains all data model classes used in the derive_py.
 
 ## Available Models
 

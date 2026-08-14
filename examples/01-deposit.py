@@ -33,8 +33,8 @@ Run:
 from decimal import Decimal as D
 from pathlib import Path
 
-from derive_client import HTTPClient
-from derive_client.data_types import MarginType, RiskUniverseID
+from derive_py import HTTPClient
+from derive_py.data_types import MarginType, RiskUniverseID
 
 env_file = Path(__file__).parent.parent / ".env.template"
 client = HTTPClient.from_env(env_file=env_file)

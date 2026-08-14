@@ -13,8 +13,8 @@ import time
 import requests
 from web3 import Web3
 
-from derive_client.config import ABI_DATA_DIR
-from derive_client.utils.logger import get_logger
+from derive_py.config import ABI_DATA_DIR
+from derive_py.utils.logger import get_logger
 
 TIMEOUT = 10
 REQUEST_DELAY = 0.5

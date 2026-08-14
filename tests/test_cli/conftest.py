@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from derive_client.cli import cli as drv
+from derive_py.cli import cli as drv
 from tests.conftest import ENV_TEMPLATE
 
 

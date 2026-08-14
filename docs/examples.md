@@ -7,14 +7,14 @@ The best way to learn Derive is by running the example scripts. All examples are
 The examples use `.env.template` with pre-configured testnet credentials - you can run them immediately without setup!
 
 ```bash
-git clone git@github.com:8ball030/derive_client.git
-cd derive_client
+git clone git@github.com:8ball030/derive_py.git
+cd derive_py
 python examples/01_quickstart.py
 ```
 
 ## Example Scripts
 
-### [01_quickstart.py](https://github.com/8ball030/derive_client/blob/main/examples/01_quickstart.py)
+### [01_quickstart.py](https://github.com/8ball030/derive_py/blob/main/examples/01_quickstart.py)
 
 **Your first trade in 5 minutes**
 
@@ -28,7 +28,7 @@ Learn how to:
 
 ---
 
-### [02_market_data.py](https://github.com/8ball030/derive_client/blob/main/examples/02_market_data.py)
+### [02_market_data.py](https://github.com/8ball030/derive_py/blob/main/examples/02_market_data.py)
 
 **Real-time market data**
 
@@ -41,7 +41,7 @@ Learn how to:
 
 ---
 
-### [03_collateral_management.py](https://github.com/8ball030/derive_client/blob/main/examples/03_collateral_management.py)
+### [03_collateral_management.py](https://github.com/8ball030/derive_py/blob/main/examples/03_collateral_management.py)
 
 **Manage your collateral**
 
@@ -55,7 +55,7 @@ Learn how to:
 
 ---
 
-### [04_trading_basics.py](https://github.com/8ball030/derive_client/blob/main/examples/04_trading_basics.py)
+### [04_trading_basics.py](https://github.com/8ball030/derive_py/blob/main/examples/04_trading_basics.py)
 
 **Advanced order types and strategies**
 
@@ -69,7 +69,7 @@ Learn how to:
 
 ---
 
-### [05_position_transfer.py](https://github.com/8ball030/derive_client/blob/main/examples/05_position_transfer.py)
+### [05_position_transfer.py](https://github.com/8ball030/derive_py/blob/main/examples/05_position_transfer.py)
 
 **Transfer positions between subaccounts**
 
@@ -83,7 +83,7 @@ Learn how to:
 
 ---
 
-### [06_bridging.py](https://github.com/8ball030/derive_client/blob/main/examples/06_bridging.py)
+### [06_bridging.py](https://github.com/8ball030/derive_py/blob/main/examples/06_bridging.py)
 
 **Bridge assets to Derive L2**
 
@@ -114,4 +114,4 @@ DERIVE_ENV=PROD               # TEST or PROD
 
 - **Need conceptual background?** Read the [Concepts](concepts/account-model.md) guides
 - **Want API details?** See the [API Reference](reference/SUMMARY.md)
-- **Have questions?** Check [GitHub Issues](https://github.com/8ball030/derive_client/issues)
+- **Have questions?** Check [GitHub Issues](https://github.com/8ball030/derive_py/issues)

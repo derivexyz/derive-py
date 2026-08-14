@@ -43,8 +43,8 @@ from pathlib import Path
 
 from eth_account import Account
 
-from derive_client import HTTPClient
-from derive_client.data_types import OffchainScope, ProtocolScope
+from derive_py import HTTPClient
+from derive_py.data_types import OffchainScope, ProtocolScope
 
 LABEL = "example-session-key"
 KEY_LIFETIME_SEC = 24 * 60 * 60  # the KEY's lifetime, not the signature's

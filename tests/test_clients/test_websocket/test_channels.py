@@ -4,16 +4,16 @@ import msgspec
 import pytest
 import pytest_asyncio
 
-from derive_client.data_types.channel_models import (
+from derive_py.data_types.channel_models import (
     OrderbookSnapshot,
     SpotFeedPayload,
     TickerSlimPayload,
 )
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     BatchStatus,
 )
-from derive_client.exceptions import DeriveJSONRPCError
+from derive_py.exceptions import DeriveJSONRPCError
 
 TIMEOUT = 5
 SUBSCRIPTION_OK = "ok"

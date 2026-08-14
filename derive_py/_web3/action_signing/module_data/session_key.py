@@ -5,7 +5,7 @@ from typing import ClassVar
 from eth_abi.abi import encode
 from web3 import Web3
 
-from derive_client.data_types import ProtocolScope
+from derive_py.data_types import ProtocolScope
 
 from .module_data import ModuleData
 

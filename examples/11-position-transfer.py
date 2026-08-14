@@ -24,9 +24,9 @@ Run:
 from decimal import Decimal
 from pathlib import Path
 
-from derive_client import HTTPClient
-from derive_client.data_types import PositionTransfer, RiskUniverseID
-from derive_client.data_types.generated_models import Direction
+from derive_py import HTTPClient
+from derive_py.data_types import PositionTransfer, RiskUniverseID
+from derive_py.data_types.generated_models import Direction
 
 
 def format_positions(positions) -> str:

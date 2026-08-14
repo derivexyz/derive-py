@@ -7,7 +7,7 @@ from typing import Any, TypeAlias
 
 from msgspec import UNSET, Struct, UnsetType, field
 
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     BatchStatus,
     DailyTradingStatistics,
     Direction,

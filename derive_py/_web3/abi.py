@@ -10,8 +10,8 @@ from eth_typing import ChecksumAddress as EthChecksumAddress
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from derive_client.config import ABI_DATA_DIR
-from derive_client.data_types import ChecksumAddress
+from derive_py.config import ABI_DATA_DIR
+from derive_py.data_types import ChecksumAddress
 
 
 def _abi_dir(network: str) -> Path:

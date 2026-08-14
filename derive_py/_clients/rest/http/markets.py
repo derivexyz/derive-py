@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from derive_client._clients.rest.http.api import PublicAPI
-from derive_client._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type, unset_if_none
-from derive_client.config import INT64_MAX
-from derive_client.data_types import LoggerType, RiskUniverseID
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.http.api import PublicAPI
+from derive_py._clients.utils import fetch_all_pages_of_instrument_type, infer_instrument_type, unset_if_none
+from derive_py.config import INT64_MAX
+from derive_py.data_types import LoggerType, RiskUniverseID
+from derive_py.data_types.generated_models import (
     Asset,
     AssetType,
     BatchStatus,

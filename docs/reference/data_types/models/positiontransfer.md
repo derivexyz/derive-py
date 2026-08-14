@@ -1,6 +1,6 @@
 # PositionTransfer
 
-::: derive_client.data_types.models.PositionTransfer
+::: derive_py.data_types.models.PositionTransfer
     options:
       show_root_heading: false
       heading_level: 2

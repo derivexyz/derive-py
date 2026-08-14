@@ -25,8 +25,8 @@ import asyncio
 from decimal import Decimal
 from pathlib import Path
 
-from derive_client import WebSocketClient
-from derive_client.data_types.generated_models import Direction, OrderType, TimeInForce
+from derive_py import WebSocketClient
+from derive_py.data_types.generated_models import Direction, OrderType, TimeInForce
 
 INSTRUMENT = "ETH-PERP"
 

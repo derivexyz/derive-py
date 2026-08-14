@@ -1,4 +1,4 @@
-"""Enums used in the derive_client module."""
+"""Enums used in the derive_py module."""
 
 from enum import Enum, IntEnum, StrEnum
 

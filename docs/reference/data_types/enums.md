@@ -1,6 +1,6 @@
 # Enums
 
-This section contains all enumeration types used in the derive_client.
+This section contains all enumeration types used in the derive_py.
 
 ## Available Enums
 

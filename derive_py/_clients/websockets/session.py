@@ -19,7 +19,7 @@ from websockets import Data
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed
 
-from derive_client._clients.utils import (
+from derive_py._clients.utils import (
     JSONRPCEnvelope,
     RequestParams,
     SubscriptionParams,
@@ -30,13 +30,13 @@ from derive_client._clients.utils import (
     decoder_for,
     encode_rpc_frame,
 )
-from derive_client.config import USER_AGENT
-from derive_client.data_types import ConnectionState, LoggerType, WebSocketSessionConfig
-from derive_client.exceptions import DeriveJSONRPCError, RequestAbandoned
-from derive_client.utils.logger import get_logger
+from derive_py.config import USER_AGENT
+from derive_py.data_types import ConnectionState, LoggerType, WebSocketSessionConfig
+from derive_py.exceptions import DeriveJSONRPCError, RequestAbandoned
+from derive_py.utils.logger import get_logger
 
 if TYPE_CHECKING:
-    from derive_client._clients.websockets.api import Handler, MessageT
+    from derive_py._clients.websockets.api import Handler, MessageT
 
 LifecycleCallback = Callable[[], None] | Callable[[], Awaitable[None]]
 StateCallback = Callable[[ConnectionState], None] | Callable[[ConnectionState], Awaitable[None]]

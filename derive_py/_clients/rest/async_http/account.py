@@ -6,12 +6,12 @@ from typing import Optional
 
 import msgspec
 
-from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
-from derive_client._clients.rest.async_http.history import HistoryOperations
-from derive_client._clients.utils import AuthContext, log_session_key_status, unset_if_none
-from derive_client._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
-from derive_client.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
+from derive_py._clients.rest.async_http.history import HistoryOperations
+from derive_py._clients.utils import AuthContext, log_session_key_status, unset_if_none
+from derive_py._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
+from derive_py.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
+from derive_py.data_types.generated_models import (
     EditSessionKeyRequest,
     GetAccountRequest,
     GetAllPortfoliosRequest,

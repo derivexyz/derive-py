@@ -9,27 +9,27 @@ from typing import Optional, cast
 
 from hexbytes import HexBytes
 
-from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
-from derive_client._clients.rest.async_http.collateral import CollateralOperations
-from derive_client._clients.rest.async_http.history import HistoryOperations
-from derive_client._clients.rest.async_http.markets import MarketOperations
-from derive_client._clients.rest.async_http.mmp import MMPOperations
-from derive_client._clients.rest.async_http.orders import OrderOperations
-from derive_client._clients.rest.async_http.positions import PositionOperations
-from derive_client._clients.rest.async_http.rfq import RFQOperations
-from derive_client._clients.rest.async_http.system import SystemOperations
-from derive_client._clients.rest.async_http.vaults import VaultOperations
-from derive_client._clients.utils import AuthContext
-from derive_client._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
-from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
-from derive_client._web3.deposits import Deposits, resolve_collateral
-from derive_client.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
+from derive_py._clients.rest.async_http.collateral import CollateralOperations
+from derive_py._clients.rest.async_http.history import HistoryOperations
+from derive_py._clients.rest.async_http.markets import MarketOperations
+from derive_py._clients.rest.async_http.mmp import MMPOperations
+from derive_py._clients.rest.async_http.orders import OrderOperations
+from derive_py._clients.rest.async_http.positions import PositionOperations
+from derive_py._clients.rest.async_http.rfq import RFQOperations
+from derive_py._clients.rest.async_http.system import SystemOperations
+from derive_py._clients.rest.async_http.vaults import VaultOperations
+from derive_py._clients.utils import AuthContext
+from derive_py._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
+from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
+from derive_py._web3.deposits import Deposits, resolve_collateral
+from derive_py.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
+from derive_py.data_types.generated_models import (
     GetSubaccountRequest,
     PrivateWithdrawRequest,
     PrivateWithdrawResponse,
 )
-from derive_client.data_types.generated_models import Subaccount as SubaccountState
+from derive_py.data_types.generated_models import Subaccount as SubaccountState
 
 
 @functools.total_ordering

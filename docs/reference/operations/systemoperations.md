@@ -3,7 +3,7 @@
 !!! info
     Access via `client.system` property.
 
-::: derive_client._clients.rest.http.system.SystemOperations
+::: derive_py._clients.rest.http.system.SystemOperations
     options:
       show_root_heading: false
       heading_level: 2

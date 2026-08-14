@@ -11,7 +11,7 @@ import pytest
 from dotenv import dotenv_values
 from pytest_asyncio import is_async_test
 
-from derive_client.data_types import PositionTransfer
+from derive_py.data_types import PositionTransfer
 
 REPO_ROOT = Path(__file__).parent.parent
 ENV_TEMPLATE = REPO_ROOT / ".env.template"

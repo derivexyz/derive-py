@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from urllib.parse import urlparse
 
-from derive_client.data_types import Environment
+from derive_py.data_types import Environment
 
 DEFAULT_RPC_ENDPOINTS: dict[Environment, tuple[str, ...]] = {
     # Order matters: index 0 is the sticky head and serves every request until

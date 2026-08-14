@@ -1,6 +1,6 @@
 # FeeHistory
 
-::: derive_client.data_types.models.FeeHistory
+::: derive_py.data_types.models.FeeHistory
     options:
       show_root_heading: false
       heading_level: 2

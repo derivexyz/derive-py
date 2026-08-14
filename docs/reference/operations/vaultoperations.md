@@ -3,7 +3,7 @@
 !!! info
     Access via `client.vault` property.
 
-::: derive_client._clients.rest.http.vaults.VaultOperations
+::: derive_py._clients.rest.http.vaults.VaultOperations
     options:
       show_root_heading: false
       heading_level: 2

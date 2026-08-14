@@ -3,7 +3,7 @@
 !!! info
     Access via `client.position` property.
 
-::: derive_client._clients.rest.http.positions.PositionOperations
+::: derive_py._clients.rest.http.positions.PositionOperations
     options:
       show_root_heading: false
       heading_level: 2

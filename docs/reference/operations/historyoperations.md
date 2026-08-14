@@ -3,7 +3,7 @@
 !!! info
     Access via `client.history` property.
 
-::: derive_client._clients.rest.http.history.HistoryOperations
+::: derive_py._clients.rest.http.history.HistoryOperations
     options:
       show_root_heading: false
       heading_level: 2

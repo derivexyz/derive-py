@@ -5,8 +5,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from derive_client._clients.utils import unset_if_none
-from derive_client.data_types.generated_models import (
+from derive_py._clients.utils import unset_if_none
+from derive_py.data_types.generated_models import (
     MmpConfigResult,
     MmpScopeRequest,
     SetMmpConfigRequest,

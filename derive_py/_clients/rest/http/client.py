@@ -7,23 +7,23 @@ from typing import Generator, Iterator, cast
 
 from hexbytes import HexBytes
 
-from derive_client._clients.rest.http.account import LightAccount
-from derive_client._clients.rest.http.api import PrivateAPI, PublicAPI
-from derive_client._clients.rest.http.collateral import CollateralOperations
-from derive_client._clients.rest.http.history import HistoryOperations
-from derive_client._clients.rest.http.markets import MarketOperations
-from derive_client._clients.rest.http.mmp import MMPOperations
-from derive_client._clients.rest.http.orders import OrderOperations
-from derive_client._clients.rest.http.positions import PositionOperations
-from derive_client._clients.rest.http.rfq import RFQOperations
-from derive_client._clients.rest.http.session import HTTPSession, request_timeout_override
-from derive_client._clients.rest.http.subaccount import Subaccount
-from derive_client._clients.rest.http.system import SystemOperations
-from derive_client._clients.rest.http.vaults import VaultOperations
-from derive_client._clients.utils import load_client_config, make_auth
-from derive_client._web3 import ContractRegistry, Deposits
-from derive_client._web3.deposits import DepositStep
-from derive_client.data_types import (
+from derive_py._clients.rest.http.account import LightAccount
+from derive_py._clients.rest.http.api import PrivateAPI, PublicAPI
+from derive_py._clients.rest.http.collateral import CollateralOperations
+from derive_py._clients.rest.http.history import HistoryOperations
+from derive_py._clients.rest.http.markets import MarketOperations
+from derive_py._clients.rest.http.mmp import MMPOperations
+from derive_py._clients.rest.http.orders import OrderOperations
+from derive_py._clients.rest.http.positions import PositionOperations
+from derive_py._clients.rest.http.rfq import RFQOperations
+from derive_py._clients.rest.http.session import HTTPSession, request_timeout_override
+from derive_py._clients.rest.http.subaccount import Subaccount
+from derive_py._clients.rest.http.system import SystemOperations
+from derive_py._clients.rest.http.vaults import VaultOperations
+from derive_py._clients.utils import load_client_config, make_auth
+from derive_py._web3 import ContractRegistry, Deposits
+from derive_py._web3.deposits import DepositStep
+from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
     Environment,
@@ -33,7 +33,7 @@ from derive_client.data_types import (
     MarginType,
     RiskUniverseID,
 )
-from derive_client.utils.logger import get_logger
+from derive_py.utils.logger import get_logger
 
 
 class HTTPClient:

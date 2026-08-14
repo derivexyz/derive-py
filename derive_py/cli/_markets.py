@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Sequence
 
 import rich_click as click
 
-from derive_client._clients.utils import iter_instrument_pages
-from derive_client.data_types import DeriveJSONRPCErrorCode, RiskUniverseID
-from derive_client.data_types.generated_models import AssetType
-from derive_client.exceptions import DeriveJSONRPCError
+from derive_py._clients.utils import iter_instrument_pages
+from derive_py.data_types import DeriveJSONRPCErrorCode, RiskUniverseID
+from derive_py.data_types.generated_models import AssetType
+from derive_py.exceptions import DeriveJSONRPCError
 
 from ._columns import (
     ASSET_COLUMNS,
@@ -35,7 +35,7 @@ from ._utils import (
 )
 
 if TYPE_CHECKING:
-    from derive_client.data_types.generated_models import Instrument
+    from derive_py.data_types.generated_models import Instrument
 
 
 def _collect_instruments(

@@ -17,7 +17,7 @@ from decimal import Decimal
 import msgspec
 import pytest
 
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     MultipleVaultRequestsResponse,
     PaginatedVaultActionHistory,
     PaginatedVaultRequestHistory,

@@ -33,9 +33,9 @@ from web3.providers.base import BaseProvider
 from web3.providers.rpc.utils import ExceptionRetryConfiguration
 from web3.types import RPCEndpoint, RPCError, RPCResponse
 
-from derive_client.config import CONFIGS, resolve_rpc_endpoints
-from derive_client.data_types import Environment, LoggerType
-from derive_client.exceptions import AllEndpointsFailed, ChainIdMismatch
+from derive_py.config import CONFIGS, resolve_rpc_endpoints
+from derive_py.data_types import Environment, LoggerType
+from derive_py.exceptions import AllEndpointsFailed, ChainIdMismatch
 
 # What a JSON-RPC param actually is at this boundary. bytes is included
 # deliberately: web3 formats eth_sendRawTransaction to hex before it reaches a

@@ -4,7 +4,7 @@
 
 Trade options, perpetuals, and spot with full self-custody through smart contract wallets.
 
-[Full Documentation](https://8ball030.github.io/derive_client/)
+[Full Documentation](https://8ball030.github.io/derive_py/)
 
 ## CLI Tool Demo
 
@@ -32,8 +32,8 @@ DERIVE_ENV=TEST
 Setup client, check market data and place an order.
 
 ```python
-from derive_client import HTTPClient
-from derive_client.data_types import D, Direction, OrderType
+from derive_py import HTTPClient
+from derive_py.data_types import D, Direction, OrderType
 
 # Initialize client
 client = HTTPClient.from_env()
@@ -57,8 +57,8 @@ The fastest way to learn is by running the [examples](/examples/):
 
 ```bash
 # Clone the repo (examples are not included in the package)
-git clone git@github.com:8ball030/derive_client.git
-cd derive_client
+git clone git@github.com:8ball030/derive_py.git
+cd derive_py
 
 # Install editable with pip
 pip install -e .
@@ -98,7 +98,7 @@ See [authentication.md](docs/concepts/authentication.md) for a more detailed exp
 
 ## Documentation
 
-📖 **[Full Documentation](https://8ball030.github.io/derive_client/)**
+📖 **[Full Documentation](https://8ball030.github.io/derive_py/)**
 
 - **[Concepts](docs/concepts/)** - Account model, authentication, bridging, clients
 - **[API Reference](docs/reference/)** - Public API documentation
@@ -109,8 +109,8 @@ See [authentication.md](docs/concepts/authentication.md) for a more detailed exp
 ### From Source (for development)
 
 ```bash
-git clone git@github.com:8ball030/derive_client.git
-cd derive_client
+git clone git@github.com:8ball030/derive_py.git
+cd derive_py
 
 # Install and spawn the virtual environment
 make install

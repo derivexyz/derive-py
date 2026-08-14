@@ -6,8 +6,8 @@ from typing import ClassVar, Optional
 from eth_abi.abi import encode
 from web3 import Web3
 
-from derive_client.config.constants import ZERO_ADDRESS
-from derive_client.data_types import VaultAction
+from derive_py.config.constants import ZERO_ADDRESS
+from derive_py.data_types import VaultAction
 
 from ..utils import format_units, scale_vault_amount, to_bytes32, to_uint
 from .module_data import ModuleData

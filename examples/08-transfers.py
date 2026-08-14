@@ -28,10 +28,10 @@ from pathlib import Path
 
 from more_itertools import last, partition
 
-from derive_client import HTTPClient
-from derive_client._clients.utils import wait_for_settlement
-from derive_client.data_types import RiskUniverseID
-from derive_client.exceptions import SettlementFailed, SettlementTimeout
+from derive_py import HTTPClient
+from derive_py._clients.utils import wait_for_settlement
+from derive_py.data_types import RiskUniverseID
+from derive_py.exceptions import SettlementFailed, SettlementTimeout
 
 
 def usdc_balance(subaccount) -> Decimal:

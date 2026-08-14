@@ -1,6 +1,6 @@
 # LightAccount
 
-::: derive_client._clients.rest.http.account.LightAccount
+::: derive_py._clients.rest.http.account.LightAccount
     options:
       show_root_heading: false
       heading_level: 2

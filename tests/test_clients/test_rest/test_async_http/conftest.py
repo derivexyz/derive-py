@@ -1,8 +1,8 @@
 import pytest
 import pytest_asyncio
 
-from derive_client._clients.rest.async_http.client import AsyncHTTPClient
-from derive_client.data_types.generated_models import Vault
+from derive_py._clients.rest.async_http.client import AsyncHTTPClient
+from derive_py.data_types.generated_models import Vault
 from tests.conftest import ENV_TEMPLATE
 
 

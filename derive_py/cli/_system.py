@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import rich_click as click
 
-from derive_client.data_types.generated_models import RateLimitInfo
+from derive_py.data_types.generated_models import RateLimitInfo
 
 from ._utils import console, print_series, struct_to_series
 

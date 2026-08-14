@@ -1,4 +1,4 @@
-"""derive_client CLI package."""
+"""derive_py CLI package."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import rich_click as click
 
-from derive_client._clients.rest.http.client import HTTPClient
+from derive_py._clients.rest.http.client import HTTPClient
 
 from ._account import account
 from ._collateral import collateral

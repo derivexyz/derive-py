@@ -641,7 +641,7 @@ def add_imports(module: cst.Module, imports_to_add: set[str]) -> cst.Module:
         body=[
             cst.ImportFrom(
                 module=cst.Attribute(
-                    value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("data_types")),
+                    value=cst.Attribute(value=cst.Name("derive_py"), attr=cst.Name("data_types")),
                     attr=cst.Name("generated_models"),
                 ),
                 names=import_names,

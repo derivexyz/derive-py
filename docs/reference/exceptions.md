@@ -2,7 +2,7 @@
 
 ## NotConnectedError
 
-::: derive_client.exceptions.NotConnectedError
+::: derive_py.exceptions.NotConnectedError
     options:
       show_root_heading: false
       heading_level: 3
@@ -12,7 +12,7 @@
 
 ## DeriveJSONRPCError
 
-::: derive_client.exceptions.DeriveJSONRPCError
+::: derive_py.exceptions.DeriveJSONRPCError
     options:
       show_root_heading: false
       heading_level: 3
@@ -22,7 +22,7 @@
 
 ## EthereumJSONRPCException
 
-::: derive_client.exceptions.EthereumJSONRPCException
+::: derive_py.exceptions.EthereumJSONRPCException
     options:
       show_root_heading: false
       heading_level: 3
@@ -32,7 +32,7 @@
 
 ## DeriveJSONRPCException
 
-::: derive_client.exceptions.DeriveJSONRPCException
+::: derive_py.exceptions.DeriveJSONRPCException
     options:
       show_root_heading: false
       heading_level: 3
@@ -42,7 +42,7 @@
 
 ## RequestAbandoned
 
-::: derive_client.exceptions.RequestAbandoned
+::: derive_py.exceptions.RequestAbandoned
     options:
       show_root_heading: false
       heading_level: 3
@@ -52,7 +52,7 @@
 
 ## InsufficientNativeBalance
 
-::: derive_client.exceptions.InsufficientNativeBalance
+::: derive_py.exceptions.InsufficientNativeBalance
     options:
       show_root_heading: false
       heading_level: 3
@@ -62,7 +62,7 @@
 
 ## InsufficientTokenBalance
 
-::: derive_client.exceptions.InsufficientTokenBalance
+::: derive_py.exceptions.InsufficientTokenBalance
     options:
       show_root_heading: false
       heading_level: 3
@@ -72,7 +72,7 @@
 
 ## TxReceiptMissing
 
-::: derive_client.exceptions.TxReceiptMissing
+::: derive_py.exceptions.TxReceiptMissing
     options:
       show_root_heading: false
       heading_level: 3
@@ -82,7 +82,7 @@
 
 ## FinalityTimeout
 
-::: derive_client.exceptions.FinalityTimeout
+::: derive_py.exceptions.FinalityTimeout
     options:
       show_root_heading: false
       heading_level: 3
@@ -92,7 +92,7 @@
 
 ## TxPendingTimeout
 
-::: derive_client.exceptions.TxPendingTimeout
+::: derive_py.exceptions.TxPendingTimeout
     options:
       show_root_heading: false
       heading_level: 3
@@ -102,7 +102,7 @@
 
 ## TransactionDropped
 
-::: derive_client.exceptions.TransactionDropped
+::: derive_py.exceptions.TransactionDropped
     options:
       show_root_heading: false
       heading_level: 3
@@ -112,7 +112,7 @@
 
 ## SettlementError
 
-::: derive_client.exceptions.SettlementError
+::: derive_py.exceptions.SettlementError
     options:
       show_root_heading: false
       heading_level: 3
@@ -122,7 +122,7 @@
 
 ## SettlementFailed
 
-::: derive_client.exceptions.SettlementFailed
+::: derive_py.exceptions.SettlementFailed
     options:
       show_root_heading: false
       heading_level: 3
@@ -132,7 +132,7 @@
 
 ## SettlementTimeout
 
-::: derive_client.exceptions.SettlementTimeout
+::: derive_py.exceptions.SettlementTimeout
     options:
       show_root_heading: false
       heading_level: 3
@@ -142,7 +142,7 @@
 
 ## VaultRequestError
 
-::: derive_client.exceptions.VaultRequestError
+::: derive_py.exceptions.VaultRequestError
     options:
       show_root_heading: false
       heading_level: 3
@@ -152,7 +152,7 @@
 
 ## VaultRequestFailed
 
-::: derive_client.exceptions.VaultRequestFailed
+::: derive_py.exceptions.VaultRequestFailed
     options:
       show_root_heading: false
       heading_level: 3
@@ -162,7 +162,7 @@
 
 ## VaultRequestTimeout
 
-::: derive_client.exceptions.VaultRequestTimeout
+::: derive_py.exceptions.VaultRequestTimeout
     options:
       show_root_heading: false
       heading_level: 3
@@ -172,7 +172,7 @@
 
 ## ChainIdMismatch
 
-::: derive_client.exceptions.ChainIdMismatch
+::: derive_py.exceptions.ChainIdMismatch
     options:
       show_root_heading: false
       heading_level: 3
@@ -182,7 +182,7 @@
 
 ## AllEndpointsFailed
 
-::: derive_client.exceptions.AllEndpointsFailed
+::: derive_py.exceptions.AllEndpointsFailed
     options:
       show_root_heading: false
       heading_level: 3

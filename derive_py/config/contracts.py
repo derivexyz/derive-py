@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from derive_client.data_types import ChecksumAddress, DeriveContractAddresses, EnvConfig, Environment
+from derive_py.data_types import ChecksumAddress, DeriveContractAddresses, EnvConfig, Environment
 
 from .constants import ETHEREUM_MAINNET_CHAIN_ID, SEPOLIA_CHAIN_ID
 
@@ -17,7 +17,7 @@ VAULT_MODULE = ChecksumAddress("0x2885c174ebf5524aED9c721d60c12b1537685186")
 LIQUIDATION_MODULE = ChecksumAddress("0x66d23e59DaEEF13904eFA2D4B8658aeD05f59a92")
 CREATE_SESSION_KEY_MODULE = ChecksumAddress("0xe330CF64ff6EbF41699aad344Cb21d78db1D2bb6")
 
-# V3 contract addresses, verified against derive_client/data/abis/sepolia/contracts.json
+# V3 contract addresses, verified against derive_py/data/abis/sepolia/contracts.json
 ACTION_MANAGER = ChecksumAddress("0x1b4f369b585D40a27F66775844FC265151f278A4")
 VAPP = ChecksumAddress("0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393")
 WITHDRAWAL_OUTBOX = ChecksumAddress("0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988")

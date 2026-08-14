@@ -1,6 +1,6 @@
 # OffchainScope
 
-::: derive_client.data_types.enums.OffchainScope
+::: derive_py.data_types.enums.OffchainScope
     options:
       show_root_heading: false
       heading_level: 2

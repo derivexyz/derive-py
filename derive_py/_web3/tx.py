@@ -11,9 +11,9 @@ from web3.contract.contract import ContractFunction
 from web3.exceptions import TransactionNotFound
 from web3.types import TxParams
 
-from derive_client._web3.provider import pinned_provider, provider_generation
-from derive_client.config import GAS_FEE_BUFFER, MIN_PRIORITY_FEE
-from derive_client.data_types import (
+from derive_py._web3.provider import pinned_provider, provider_generation
+from derive_py.config import GAS_FEE_BUFFER, MIN_PRIORITY_FEE
+from derive_py.data_types import (
     ChecksumAddress,
     FeeEstimate,
     FeeEstimates,
@@ -26,7 +26,7 @@ from derive_client.data_types import (
     TypedTxReceipt,
     Wei,
 )
-from derive_client.exceptions import (
+from derive_py.exceptions import (
     FinalityTimeout,
     InsufficientNativeBalance,
     TransactionDropped,
@@ -96,7 +96,7 @@ def prepare_transaction(
 ) -> TxParams:
     """Build, fee-estimate, balance-check and simulate a contract call.
     Returns the unsigned tx dict as-is (web3.py's own TxParams shape) --
-    deliberately not re-wrapped in a derive_client type, since it's unconfirmed
+    deliberately not re-wrapped in a derive_py type, since it's unconfirmed
     whether TypedTransaction's fields match a pre-sign build_transaction()
     output. (It IS confirmed to match the post-mine get_transaction()
     response -- see wait_for_finality below, which uses it there.)

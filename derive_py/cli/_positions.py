@@ -6,8 +6,8 @@ from decimal import Decimal
 
 import rich_click as click
 
-from derive_client.data_types import PositionTransfer
-from derive_client.data_types.generated_models import Direction, RFQStatus
+from derive_py.data_types import PositionTransfer
+from derive_py.data_types.generated_models import Direction, RFQStatus
 
 from ._columns import OPEN_POSITION_COLUMNS
 from ._utils import console, print_table, structs_to_dataframe

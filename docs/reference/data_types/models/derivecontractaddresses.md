@@ -1,6 +1,6 @@
 # DeriveContractAddresses
 
-::: derive_client.data_types.models.DeriveContractAddresses
+::: derive_py.data_types.models.DeriveContractAddresses
     options:
       show_root_heading: false
       heading_level: 2

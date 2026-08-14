@@ -7,7 +7,7 @@ import mkdocs_gen_files
 nav = mkdocs_gen_files.Nav()
 
 REPO_ROOT = Path(__file__).parent.parent
-PACKAGE_DIR = REPO_ROOT / "derive_client"
+PACKAGE_DIR = REPO_ROOT / "derive_py"
 
 for path in sorted(PACKAGE_DIR.rglob("*.py")):
     module_path = path.relative_to(REPO_ROOT).with_suffix("")

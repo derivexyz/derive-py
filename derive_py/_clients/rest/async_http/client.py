@@ -8,23 +8,23 @@ from typing import AsyncGenerator, AsyncIterator, cast
 
 from hexbytes import HexBytes
 
-from derive_client._clients.rest.async_http.account import LightAccount
-from derive_client._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
-from derive_client._clients.rest.async_http.collateral import CollateralOperations
-from derive_client._clients.rest.async_http.history import HistoryOperations
-from derive_client._clients.rest.async_http.markets import MarketOperations
-from derive_client._clients.rest.async_http.mmp import MMPOperations
-from derive_client._clients.rest.async_http.orders import OrderOperations
-from derive_client._clients.rest.async_http.positions import PositionOperations
-from derive_client._clients.rest.async_http.rfq import RFQOperations
-from derive_client._clients.rest.async_http.session import AsyncHTTPSession, request_timeout_override
-from derive_client._clients.rest.async_http.subaccount import Subaccount
-from derive_client._clients.rest.async_http.system import SystemOperations
-from derive_client._clients.rest.async_http.vaults import VaultOperations
-from derive_client._clients.utils import load_client_config, make_auth
-from derive_client._web3 import ContractRegistry, Deposits
-from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
-from derive_client.data_types import (
+from derive_py._clients.rest.async_http.account import LightAccount
+from derive_py._clients.rest.async_http.api import AsyncPrivateAPI, AsyncPublicAPI
+from derive_py._clients.rest.async_http.collateral import CollateralOperations
+from derive_py._clients.rest.async_http.history import HistoryOperations
+from derive_py._clients.rest.async_http.markets import MarketOperations
+from derive_py._clients.rest.async_http.mmp import MMPOperations
+from derive_py._clients.rest.async_http.orders import OrderOperations
+from derive_py._clients.rest.async_http.positions import PositionOperations
+from derive_py._clients.rest.async_http.rfq import RFQOperations
+from derive_py._clients.rest.async_http.session import AsyncHTTPSession, request_timeout_override
+from derive_py._clients.rest.async_http.subaccount import Subaccount
+from derive_py._clients.rest.async_http.system import SystemOperations
+from derive_py._clients.rest.async_http.vaults import VaultOperations
+from derive_py._clients.utils import load_client_config, make_auth
+from derive_py._web3 import ContractRegistry, Deposits
+from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
+from derive_py.data_types import (
     AsyncHTTPSessionConfig,
     ChecksumAddress,
     ClientConfig,
@@ -34,8 +34,8 @@ from derive_client.data_types import (
     MarginType,
     RiskUniverseID,
 )
-from derive_client.exceptions import NotConnectedError
-from derive_client.utils.logger import get_logger
+from derive_py.exceptions import NotConnectedError
+from derive_py.utils.logger import get_logger
 
 
 class AsyncHTTPClient:

@@ -3,7 +3,7 @@
 !!! info
     Access via `client.collateral` property.
 
-::: derive_client._clients.rest.http.collateral.CollateralOperations
+::: derive_py._clients.rest.http.collateral.CollateralOperations
     options:
       show_root_heading: false
       heading_level: 2

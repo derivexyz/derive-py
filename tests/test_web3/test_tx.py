@@ -5,11 +5,11 @@ import json
 import pytest
 from web3 import Web3
 
-from derive_client._web3.provider import FailoverProvider
-from derive_client._web3.tx import prepare_transaction
-from derive_client.config import ABI_DATA_DIR
-from derive_client.config import SEPOLIA_CHAIN_ID as CHAIN_ID
-from derive_client.data_types import ChecksumAddress, GasPriority
+from derive_py._web3.provider import FailoverProvider
+from derive_py._web3.tx import prepare_transaction
+from derive_py.config import ABI_DATA_DIR
+from derive_py.config import SEPOLIA_CHAIN_ID as CHAIN_ID
+from derive_py.data_types import ChecksumAddress, GasPriority
 
 from .conftest import FakeProvider, ok, static_handler
 

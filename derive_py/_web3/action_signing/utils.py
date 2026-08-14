@@ -5,7 +5,7 @@ from decimal import Decimal
 from eth_account.messages import encode_defunct
 from web3 import AsyncWeb3, Web3
 
-from derive_client.config.constants import MAX_INT_256, MIN_INT_256, VAULT_PRECISION_DECIMALS
+from derive_py.config.constants import MAX_INT_256, MIN_INT_256, VAULT_PRECISION_DECIMALS
 
 
 def decimal_to_big_int(value: Decimal) -> int:
