@@ -6,17 +6,19 @@ Two things make withdrawals unlike every other signed action:
     The amount is signed in the ERC-20's NATIVE decimals (USDC has 6), not
     the protocol's usual e18 fixed point. It is resolved from the
     subaccount's own risk universe, so you never pass it.
-    The payout address is fixed by the action, not chosen freely. The client
-    signs your wallet address as the recipient, and the amount leaves the
-    subaccount regardless, so this is not a call to make casually.
+    The payout goes to the recipient signed into the action, which defaults
+    to the subaccount's owner wallet and is independent of who signs. A
+    session key does not redirect funds to itself, and a non-owner signer may
+    only pay out to an address on the owner's whitelisted_recipients unless
+    the key holds Admin.
 
-TODO: resolve where the payout actually lands before this ships. The client
-signs recipient=auth.wallet (subaccount.py:296), while WithdrawModuleData's
-own docstring states the exchange forces recipient to equal the SIGNER, which
-is the session key's address whenever a session key is configured. Those two
-cannot both be true, and the difference is where your money goes. The
-shipped .env signs with a session key distinct from the wallet, so a single
-testnet run settles it.
+TODO: the client always signs the owner wallet and omits the request's
+optional recipient field, so paying out to a whitelisted address is not
+reachable. Thread recipient through subaccount.withdraw().
+
+public/withdraw_debug returns the typed data and hashes the exchange would
+compute for these same parameters, which is how to check your signing
+without spending anything.
 
 Withdrawal is asynchronous. Submitting returns an op_uuid immediately and
 settlement (Batching, Executing, Proving, Settling, Settled) follows later,
