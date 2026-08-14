@@ -71,10 +71,7 @@ class HTTPClient:
         self._subaccount_id = subaccount_id
 
         self._logger = logger
-        self._session = HTTPSession(
-            config=session_config if session_config is not None else HTTPSessionConfig(),
-            logger=self._logger,
-        )
+        self._session = HTTPSession(config=session_config, logger=self._logger)
 
         self._public_api = PublicAPI(session=self._session, config=config)
         self._private_api = PrivateAPI(session=self._session, config=config, auth=auth)

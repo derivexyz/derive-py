@@ -33,6 +33,24 @@ class AssetType(StrEnum):
     erc20 = 'erc20'
 
 
+class AuctionBidEvent(Struct):
+    amounts_liquidated: dict[str, str]
+    cash_received: str
+    discount_pnl: str
+    percent_liquidated: str
+    positions_realized_pnl: dict[str, str]
+    positions_realized_pnl_excl_fees: dict[str, str]
+    realized_pnl: str
+    realized_pnl_excl_fees: str
+    timestamp: int
+    tx_hash: str
+
+
+class AuctionType(StrEnum):
+    solvent = 'solvent'
+    insolvent = 'insolvent'
+
+
 class BatchStatus(StrEnum):
     Batching = 'Batching'
     Executing = 'Executing'
@@ -409,6 +427,14 @@ class GetInterestRateHistoryRequest(Struct):
 class GetLatestSignedFeedsRequest(Struct):
     currency: str | UnsetType = UNSET
     expiry: int | UnsetType = UNSET
+
+
+class GetLiquidationHistoryRequest(Struct):
+    end_timestamp: int | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
 
 
 class GetLiveBurnRequestsRequest(Struct):
@@ -1728,6 +1754,17 @@ class AssetUniverse(Struct):
     risk_universe_name: str | None | UnsetType = UNSET
 
 
+class AuctionHistory(Struct):
+    auction_id: str
+    auction_type: AuctionType
+    bids: list[AuctionBidEvent]
+    fee: str
+    start_timestamp: int
+    subaccount_id: int
+    tx_hash: str
+    end_timestamp: int | None | UnsetType = UNSET
+
+
 class BurnSharesRequest(Struct):
     nonce: int
     request_id: VaultRequestId
@@ -1886,6 +1923,11 @@ class InterestRateCandle(Struct):
 
 class InterestRateHistoryResult(Struct):
     interest_rate_history: list[InterestRateCandle]
+
+
+class LiquidationHistoryResult(Struct):
+    auctions: list[AuctionHistory]
+    pagination: Pagination
 
 
 class MintSharesRequest(Struct):

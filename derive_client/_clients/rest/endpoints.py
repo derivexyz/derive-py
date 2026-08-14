@@ -41,6 +41,7 @@ class PublicEndpoints:
     get_vault_action_history = Endpoint("public", "get_vault_action_history")
     get_vault_performance_history = Endpoint("public", "get_vault_performance_history")
     get_vaults = Endpoint("public", "get_vaults")
+    get_liquidation_history = Endpoint("public", "get_liquidation_history")
     withdraw_debug = Endpoint("public", "withdraw_debug")
     get_onchain_action_history = Endpoint("public", "get_onchain_action_history")
     get_pending_deposits = Endpoint("public", "get_pending_deposits")

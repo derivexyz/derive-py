@@ -73,6 +73,7 @@ from derive_client.data_types.generated_models import (
     GetInterestRateHistoryRequest,
     GetLatestSignedFeedsRequest,
     GetLatestSignedFeedsResponse,
+    GetLiquidationHistoryRequest,
     GetLiveBurnRequestsRequest,
     GetLiveMintRequestsRequest,
     GetLiveVaultRequestsRequest,
@@ -114,6 +115,7 @@ from derive_client.data_types.generated_models import (
     Instrument,
     InterestHistoryResult,
     InterestRateHistoryResult,
+    LiquidationHistoryResult,
     MintSharesRequest,
     MmpConfigResult,
     MmpScopeRequest,
@@ -361,6 +363,25 @@ class PublicRPC:
         method = "public/get_vaults"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, VaultsResponse)
+
+        return result
+
+    async def get_liquidation_history(
+        self,
+        params: GetLiquidationHistoryRequest,
+    ) -> LiquidationHistoryResult:
+        """
+        Returns a paginated history of liquidation auctions, newest first, for a single
+        subaccount or across all of them, optionally bounded by a start/end timestamp
+        window over the auction start. Each entry gives the auctioned subaccount,
+        whether the auction was solvent or insolvent, the fee charged at start, the
+        start and end timestamps, and the bids that filled it with the fraction of the
+        account each absorbed and the cash it moved.
+        """
+
+        method = "public/get_liquidation_history"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, LiquidationHistoryResult)
 
         return result
 
