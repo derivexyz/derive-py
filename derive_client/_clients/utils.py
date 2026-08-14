@@ -12,11 +12,13 @@ from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Mapping, Optional
 
 import msgspec
 from dotenv import load_dotenv
+from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 from web3 import Web3
 
+from derive_client._web3 import make_web3
 from derive_client._web3.action_signing import (
     ModuleData,
     SignedAction,
@@ -24,11 +26,13 @@ from derive_client._web3.action_signing import (
     sign_rest_auth_header,
     sign_ws_login,
 )
+from derive_client.config import CONFIGS
 from derive_client.data_types import (
     ChecksumAddress,
     ClientConfig,
     EnvConfig,
     Environment,
+    LoggerType,
     PositionTransfer,
     RiskUniverseID,
 )
@@ -227,6 +231,22 @@ class AuthContext:
         return action
 
 
+def make_auth(client_config: ClientConfig, *, logger: LoggerType) -> AuthContext:
+    """Build the auth context, deriving the session account from the key."""
+
+    env_config = CONFIGS[client_config.env]
+    account = Account.from_key(client_config.session_key.get_secret_value())
+
+    if account.address == client_config.wallet:
+        logger.warning(
+            "Session key derives the owner address %s. Use a session key rather than the owner key.",
+            client_config.wallet,
+        )
+
+    w3 = make_web3(client_config.env, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
+    return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=env_config)
+
+
 def try_cast_response(response: bytes, response_schema: type[T]) -> T:
     try:
         return msgspec.json.decode(response, type=response_schema)
@@ -406,7 +426,7 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     rpc_endpoints = tuple(part.strip() for part in raw_endpoints.split(",") if part.strip()) if raw_endpoints else None
 
     return ClientConfig(
-        session_key=session_key,
+        session_key=SecretStr(session_key),
         wallet=wallet_checksum,
         subaccount_id=subaccount_id,
         env=env,
