@@ -18,7 +18,7 @@ from derive_client._clients.rest.async_http.mmp import MMPOperations
 from derive_client._clients.rest.async_http.orders import OrderOperations
 from derive_client._clients.rest.async_http.positions import PositionOperations
 from derive_client._clients.rest.async_http.rfq import RFQOperations
-from derive_client._clients.rest.async_http.session import AsyncHTTPSession, _request_timeout_override
+from derive_client._clients.rest.async_http.session import AsyncHTTPSession, request_timeout_override
 from derive_client._clients.rest.async_http.subaccount import Subaccount
 from derive_client._clients.rest.async_http.system import SystemOperations
 from derive_client._clients.rest.async_http.vaults import VaultOperations
@@ -26,7 +26,15 @@ from derive_client._clients.utils import AuthContext, load_client_config
 from derive_client._web3 import ContractRegistry, Deposits, make_web3
 from derive_client._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
 from derive_client.config import CONFIGS
-from derive_client.data_types import ChecksumAddress, Environment, GasPriority, LoggerType, MarginType, RiskUniverseID
+from derive_client.data_types import (
+    AsyncHTTPSessionConfig,
+    ChecksumAddress,
+    Environment,
+    GasPriority,
+    LoggerType,
+    MarginType,
+    RiskUniverseID,
+)
 from derive_client.exceptions import NotConnectedError
 from derive_client.utils.logger import get_logger
 
@@ -44,7 +52,7 @@ class AsyncHTTPClient:
         env: Environment,
         rpc_endpoints: str | Sequence[str] | None = None,
         logger: LoggerType | None = None,
-        request_timeout: float = 10.0,
+        session_config: AsyncHTTPSessionConfig | None = None,
     ):
         config = CONFIGS[env]
 
@@ -65,7 +73,7 @@ class AsyncHTTPClient:
         self._subaccount_id = subaccount_id
 
         self._logger = logger
-        self._session = AsyncHTTPSession(request_timeout=request_timeout, logger=self._logger)
+        self._session = AsyncHTTPSession(config=session_config, logger=self._logger)
 
         self._public_api = AsyncPublicAPI(session=self._session, config=config)
         self._private_api = AsyncPrivateAPI(session=self._session, config=config, auth=auth)
@@ -277,13 +285,9 @@ class AsyncHTTPClient:
 
     @contextlib.asynccontextmanager
     async def timeout(self, seconds: float) -> AsyncGenerator[None, None]:
-        """Temporarily overwrite client's AsyncHTTPSession's request_timeout."""
-
-        token = _request_timeout_override.set(float(seconds))
-        try:
+        """Temporarily override the request timeout for calls in this context."""
+        with request_timeout_override(seconds):
             yield
-        finally:
-            _request_timeout_override.reset(token)
 
     async def __aenter__(self):
         await self.connect()
