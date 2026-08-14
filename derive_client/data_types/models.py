@@ -19,6 +19,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     RootModel,
+    SecretStr,
     model_validator,
 )
 from pydantic_core import core_schema
@@ -62,7 +63,7 @@ class EnvConfig(BaseModel, frozen=True):
 
 
 class ClientConfig(BaseModel):
-    session_key: str
+    session_key: SecretStr
     wallet: ChecksumAddress
     subaccount_id: int
     env: Environment
