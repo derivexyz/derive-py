@@ -16,9 +16,9 @@ from decimal import Decimal
 import pytest
 from web3 import Account
 
-from derive_client._web3.action_signing import SignedAction, TradeModuleData
-from derive_client.config.contracts import CONFIGS
-from derive_client.data_types import Environment
+from derive_py._web3.action_signing import SignedAction, TradeModuleData
+from derive_py.config.contracts import CONFIGS
+from derive_py.data_types import Environment
 from tests.conftest import env_template_value
 
 from . import expected

@@ -14,10 +14,10 @@ from decimal import Decimal
 
 import pytest
 
-from derive_client import WebSocketClient
-from derive_client.data_types import ConnectionState
-from derive_client.data_types.channel_models import TickerSlimPayload
-from derive_client.data_types.generated_models import Direction
+from derive_py import WebSocketClient
+from derive_py.data_types import ConnectionState
+from derive_py.data_types.channel_models import TickerSlimPayload
+from derive_py.data_types.generated_models import Direction
 
 INTERVAL = 1000
 PUBLIC_CHANNEL = f"ticker_slim.ETH-PERP.{INTERVAL}"

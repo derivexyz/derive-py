@@ -1,6 +1,6 @@
 """Tests for the `system` command group."""
 
-from derive_client.cli import cli as drv
+from derive_py.cli import cli as drv
 
 
 def test_system_time(runner):

@@ -15,8 +15,8 @@ from contextlib import asynccontextmanager
 import pytest
 from websockets.asyncio.server import serve
 
-from derive_client._clients.websockets.session import WebSocketSession
-from derive_client.data_types import WebSocketSessionConfig
+from derive_py._clients.websockets.session import WebSocketSession
+from derive_py.data_types import WebSocketSessionConfig
 
 CHANNEL = "test.channel"
 OTHER = "other.channel"

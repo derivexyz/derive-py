@@ -1,6 +1,6 @@
 """Tests for the `account` command group."""
 
-from derive_client.cli import cli as drv
+from derive_py.cli import cli as drv
 
 
 def test_account_get(runner):

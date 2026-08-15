@@ -1,9 +1,9 @@
 import pytest
 from web3 import Web3
 
-from derive_client._web3.provider import FailoverProvider, _describe
-from derive_client.config import CONFIGS, DEFAULT_RPC_ENDPOINTS, resolve_rpc_endpoints
-from derive_client.data_types import Environment, GasPriority
+from derive_py._web3.provider import FailoverProvider, _describe
+from derive_py.config import CONFIGS, DEFAULT_RPC_ENDPOINTS, resolve_rpc_endpoints
+from derive_py.data_types import Environment, GasPriority
 
 
 def test_defaults_when_no_override():

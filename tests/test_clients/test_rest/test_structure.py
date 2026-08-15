@@ -4,8 +4,8 @@ Sense checks for REST client structure.
 
 import inspect
 
-from derive_client._clients.rest.async_http.client import AsyncHTTPClient
-from derive_client._clients.rest.http.client import HTTPClient
+from derive_py._clients.rest.async_http.client import AsyncHTTPClient
+from derive_py._clients.rest.http.client import HTTPClient
 
 
 def test_clients_properties():

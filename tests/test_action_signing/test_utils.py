@@ -8,7 +8,7 @@ from decimal import Decimal
 
 import pytest
 
-from derive_client._web3.action_signing.utils import (
+from derive_py._web3.action_signing.utils import (
     MAX_INT_256,
     decimal_to_big_int,
     get_action_nonce,

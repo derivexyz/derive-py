@@ -8,12 +8,12 @@ import aiohttp
 import pytest
 import pytest_asyncio
 
-from derive_client._clients.rest.async_http.session import (
+from derive_py._clients.rest.async_http.session import (
     AsyncHTTPSession,
     _is_retryable,
     request_timeout_override,
 )
-from derive_client.data_types import AsyncHTTPSessionConfig
+from derive_py.data_types import AsyncHTTPSessionConfig
 
 _LOGGER = logging.getLogger("derive_test")
 
