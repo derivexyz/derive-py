@@ -144,4 +144,4 @@ demo:
 	poetry run bash scripts/demos/all.sh
 
 .PHONY: all
-all: download-abis codegen-all fmt lint typecheck tests docs
+all: download-abis codegen-all fmt lint deptry typecheck tests docs
