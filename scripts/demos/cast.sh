@@ -35,7 +35,7 @@ fi
 
 # ensure output file does not exist
 if [ -f "$OUTPUT_FILE" ]; then
-  echo "Error: Output file '$OUTPUT_FILE' already exists. Removing it..."
+  echo "Output file '$OUTPUT_FILE' exists, replacing it."
   rm -f "$OUTPUT_FILE"
 fi
 
@@ -43,20 +43,20 @@ fi
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+# agg will not create the directory it writes into, and tmp.cast must not be
+# left behind when a recording fails.
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+trap 'rm -f tmp.cast' EXIT
+
 # Record the session using asciinema
 echo "Recording demo to $OUTPUT_FILE..."
 stty cols 120 rows 45
 asciinema rec -c "$DEMO_SCRIPT" tmp.cast --overwrite
 stty sane
 
-agg tmp.cast $OUTPUT_FILE
-
-rm tmp.cast
-
-
 # We now convert to a gif
 echo "Converting demo to gif..."
-
+agg tmp.cast "$OUTPUT_FILE"
 
 # Notify completion
 gum format "Recording complete! Demo saved to $OUTPUT_FILE."
