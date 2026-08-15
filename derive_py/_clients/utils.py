@@ -7,7 +7,6 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Mapping, Optional, TypeAlias, TypeVar
 
@@ -16,7 +15,7 @@ from dotenv import load_dotenv
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from hexbytes import HexBytes
-from pydantic import BaseModel, SecretStr
+from pydantic import SecretStr
 from web3 import Web3
 
 from derive_py._web3 import make_web3
@@ -275,43 +274,6 @@ def try_cast_response(response: bytes, response_schema: type[T]) -> T:
         rpc_error = RPCError(**message["error"])
         raise DeriveJSONRPCError(message_id=message.get("id", ""), rpc_error=rpc_error)
     raise ValueError(f"Failed to decode response data: {response}")
-
-
-class RateLimitConfig(BaseModel, frozen=True):
-    name: str
-    matching_tps: int
-    per_instrument_tps: int
-    non_matching_tps: int
-    connections_per_ip: int
-    burst_multiplier: int
-    burst_reset_seconds: int
-
-
-class RateLimitProfile(StrEnum):
-    TRADER = "trader"
-    MARKET_MAKER = "market_maker"
-
-
-RATE_LIMIT: dict[RateLimitProfile, RateLimitConfig] = {
-    RateLimitProfile.TRADER: RateLimitConfig(
-        name="Trader",
-        matching_tps=1,
-        per_instrument_tps=1,
-        non_matching_tps=5,
-        connections_per_ip=4,
-        burst_multiplier=5,
-        burst_reset_seconds=5,
-    ),
-    RateLimitProfile.MARKET_MAKER: RateLimitConfig(
-        name="Market Maker",
-        matching_tps=500,
-        per_instrument_tps=10,
-        non_matching_tps=500,
-        connections_per_ip=64,
-        burst_multiplier=5,
-        burst_reset_seconds=5,
-    ),
-}
 
 
 def encode_rpc_frame(request_id: int | str, method: str, params: RequestParams) -> bytes:

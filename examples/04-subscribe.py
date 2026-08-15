@@ -11,8 +11,15 @@ client decodes every message into a typed payload before calling it.
                  aggregation and how many levels come back
 
 Both run over one connection: the client multiplexes them and routes each
-message to its own handler. If the socket drops, the client reconnects and
-resubscribes every channel, so a handler keeps receiving without help.
+message to its own handler.
+
+If the socket drops, the client reconnects and resubscribes every channel,
+so a handler keeps receiving without help. What it does not do is tell you
+there was a gap, unless you ask. connect() takes on_state_change, and it is
+the only way to learn the stream broke: the subscriptions come back, the
+messages sent while the socket was gone do not, and a handler that resumes
+mid-stream cannot tell the difference. Anything you have assembled from the
+stream is stale at that point and has to be re-read.
 
 Two things about handlers that the code cannot show you:
 
@@ -24,9 +31,6 @@ Two things about handlers that the code cannot show you:
     propagated. A bug in your callback fails quietly rather than stopping
     the process.
 
-There is no per-channel unsubscribe() on the public API yet. disconnect()
-ends every subscription on the socket, which is all this needs.
-
 Prerequisites: none beyond network access. Copy .env.template to .env first.
 
 Run:
@@ -36,6 +40,7 @@ Run:
 import asyncio
 
 from derive_py import WebSocketClient
+from derive_py.data_types import ConnectionState
 from derive_py.data_types.channel_models import OrderbookSnapshot, TickerSlimPayload
 
 INSTRUMENT = "ETH-PERP"
@@ -46,17 +51,33 @@ TIMEOUT_SEC = 30
 async def main() -> None:
     client = WebSocketClient.from_env()
     log = client.logger
-    await client.connect()
 
-    updates = 0
+    states: list[ConnectionState] = []
+    tickers: list[TickerSlimPayload] = []
     done = asyncio.Event()
 
+    def on_state_change(state: ConnectionState) -> None:
+        """The only signal that the stream broke.
+
+        Without it a drop is invisible: the client reconnects, resubscribes,
+        and the handlers below simply resume, leaving a hole where the
+        messages sent during the outage should have been.
+        """
+
+        states.append(state)
+        log.info(f"connection: {state}")
+
+        if state is ConnectionState.CONNECTED and ConnectionState.RECONNECTING in states:
+            # Subscriptions are back. The missed messages are not. Re-read
+            # anything built from the stream, over REST, before trusting it:
+            # an order book, a position, a set of open orders.
+            log.warning("reconnected: everything built from the stream is stale until re-read")
+
     def on_ticker(payload: TickerSlimPayload) -> None:
-        nonlocal updates
         ticker = payload.instrument_ticker
         log.info(f"ticker index=${ticker.index_price} mark=${ticker.mark_price} t={payload.timestamp}")
-        updates += 1
-        if updates >= UPDATES_TO_SHOW:
+        tickers.append(payload)
+        if len(tickers) >= UPDATES_TO_SHOW:
             done.set()
 
     def on_book(book: OrderbookSnapshot) -> None:
@@ -66,6 +87,11 @@ async def main() -> None:
             f"book   {bid_amount} @ ${bid_price} | {ask_amount} @ ${ask_price}"
             f" ({len(book.bids)} bid / {len(book.asks)} ask levels)"
         )
+
+    # Pass the callback here, before anything is subscribed, so no transition
+    # can happen unobserved. It is also settable afterwards via the property
+    # of the same name.
+    await client.connect(on_state_change=on_state_change)
 
     try:
         ticker_subscription = await client.public_channels.ticker_slim_interval_by_instrument_name(
@@ -84,7 +110,7 @@ async def main() -> None:
         try:
             await asyncio.wait_for(done.wait(), timeout=TIMEOUT_SEC)
         except asyncio.TimeoutError:
-            log.warning(f"Only {updates} ticker updates in {TIMEOUT_SEC}s. Quiet market, moving on.")
+            log.warning(f"Only {len(tickers)} ticker updates in {TIMEOUT_SEC}s. Quiet market, moving on.")
     finally:
         await client.disconnect()
 
