@@ -2,7 +2,7 @@
 
 import pytest
 
-from derive_client.cli import cli as drv
+from derive_py.cli import cli as drv
 
 
 @pytest.mark.parametrize(

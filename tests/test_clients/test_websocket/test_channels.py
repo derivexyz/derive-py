@@ -4,16 +4,16 @@ import msgspec
 import pytest
 import pytest_asyncio
 
-from derive_client.data_types.channel_models import (
+from derive_py.data_types.channel_models import (
     OrderbookSnapshot,
     SpotFeedPayload,
     TickerSlimPayload,
 )
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     BatchStatus,
 )
-from derive_client.exceptions import DeriveJSONRPCError
+from derive_py.exceptions import DeriveJSONRPCError
 
 TIMEOUT = 5
 SUBSCRIPTION_OK = "ok"
@@ -77,7 +77,6 @@ async def test_public_margin_watch(client_admin_wallet):
     assert subscription_result.status["margin.watch"] == SUBSCRIPTION_OK
 
 
-@pytest.mark.skip(reason="Spec/deployment skew: OrderSnapshot bids and asks are array instead of object.")
 @pytest.mark.asyncio
 async def test_public_orderbook_group_depth_by_instrument_name(client_admin_wallet):
     subscription_result, data = await _wait_for_one(

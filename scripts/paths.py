@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 SPECS_DIR = REPO_ROOT / "specs"
-DERIVE_CLIENT_DIR = REPO_ROOT / "derive_client"
+DERIVE_CLIENT_DIR = REPO_ROOT / "derive_py"
 
 # ---------------------------------------------------------------------------
 # Source specs. Fetched via the curl commands documented in `make

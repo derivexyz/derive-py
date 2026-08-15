@@ -50,8 +50,8 @@ from typing import Any
 import requests
 from web3 import Web3
 
-from derive_client._clients.utils import load_client_config
-from derive_client._web3.action_signing import (
+from derive_py._clients.utils import load_client_config
+from derive_py._web3.action_signing import (
     ModuleData,
     RFQExecuteModuleData,
     RFQQuoteDetails,
@@ -71,10 +71,10 @@ from derive_client._web3.action_signing import (
     WithdrawModuleData,
     get_action_nonce,
 )
-from derive_client._web3.action_signing.utils import sign_rest_auth_header
-from derive_client.config.constants import PUBLIC_HEADERS
-from derive_client.config.contracts import CONFIGS
-from derive_client.data_types import ProtocolScope
+from derive_py._web3.action_signing.utils import sign_rest_auth_header
+from derive_py.config.constants import PUBLIC_HEADERS
+from derive_py.config.contracts import CONFIGS
+from derive_py.data_types import ProtocolScope
 
 EXPECTED_PATH = Path(__file__).parent.parent / "tests" / "test_action_signing" / "expected.py"
 
