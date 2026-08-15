@@ -1,7 +1,7 @@
-#! /usr/env bash
-export DEMO_PROJECT_NAME="fun_hackathon"
-export AGENT_NAME="fun_agent"
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-bash scripts/demos/cast.sh derive_demo.gif scripts/demo.sh
+# Overwrites the gif the README embeds. cast.sh removes an existing output
+# file before recording, so re-running is the whole update procedure.
+bash scripts/demos/cast.sh .github/assets/cli_demo.gif scripts/demo.sh

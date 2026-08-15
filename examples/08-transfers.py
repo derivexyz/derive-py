@@ -1,224 +1,175 @@
 """
-08 -- Spot transfers: moving USDC between subaccounts and to other wallets.
+08 - Spot transfers: between your own subaccounts, and out to another owner.
 
-Shows the two spot-transfer flows:
-  1. transfer_spot          -- between two of YOUR OWN subaccounts. Free.
-  2. transfer_spot_external -- to ANOTHER owner's wallet. The recipient
-                                must be whitelisted first
-                                (update_whitelisted_recipients), and a fee
-                                is charged.
+Two flows, both EIP-712 signed actions, both acknowledged immediately and
+settled asynchronously:
 
-Both are EIP-712 signed actions: transfer_spot()/transfer_spot_external()
-encode the transfer, sign it locally with your key, and the exchange
-verifies that signature -- it never holds your key and cannot move funds
-you didn't sign for.
+    transfer_spot           between two subaccounts of the same owner. Free.
+    transfer_spot_external  to a subaccount belonging to a DIFFERENT owner.
+                            The recipient must be whitelisted first, and a
+                            fee is always charged.
 
-Prerequisites: a funded account with at least two subaccounts for step 1
-(see 01-deposit.py). For step 2, set RECIPIENT to another owner's wallet,
-and optionally RECIPIENT_SUBACCOUNT_ID to one of their existing
-subaccounts (omitted -> the exchange creates them a new one, which costs
-an extra fee).
+The external transfer here pays out to your session key's own EOA. That
+address is distinct from the owner wallet but you already hold the key for
+it, which makes it a usable stand-in for someone else's wallet without
+needing a second party. If your session key IS the owner wallet, there is no
+second address to send to and this example stops after the internal transfer.
+
+The FALLBACK risk universe holds collateral that could not be applied to its
+intended target. It trades nothing, so it is a valid transfer SOURCE and
+never a valid target:
+https://v3.docs.derive.xyz/trading/managers-and-risk-universes
+
+max_fee_usd on the external transfer is a cap signed into the action, not a
+target. The exchange charges its own fee and the request fails rather than
+exceed the cap.
+
+Prerequisites: two non-fallback subaccounts, one holding enough USDC, and a
+subaccount belonging to the session key EOA (see RECIPIENT_SUBACCOUNT_ID).
+See 01-deposit.py. Copy .env.template to .env first.
 
 Run:
-    RECIPIENT=0x... python examples/08-transfers.py
+    python examples/08-transfers.py
 """
 
+import os
 from decimal import Decimal
-from pathlib import Path
 
-from more_itertools import last, partition
+from derive_py import HTTPClient, wait_for_settlement
+from derive_py.data_types import RiskUniverseID
+from derive_py.exceptions import SettlementFailed, SettlementTimeout
 
-from derive_client import HTTPClient
-from derive_client._clients.utils import wait_for_settlement
-from derive_client.data_types import RiskUniverseID
-from derive_client.exceptions import SettlementFailed, SettlementTimeout
+ASSET = "USDC"
+
+INTERNAL_AMOUNT = Decimal("1")
+EXTERNAL_AMOUNT = Decimal("5")  # must clear the risk universe's min_deposit_usd
+EXTERNAL_MAX_FEE_USD = Decimal("5")
+
+# Pre-created on Sepolia for this .env.template's session key wallet. An
+# owner-authenticated client cannot enumerate another wallet's subaccounts, so
+# this cannot be discovered. Running against a different wallet needs its own
+# id here, created via the new_subaccount_manager path shown below.
+RECIPIENT_SUBACCOUNT_ID = 75736
+
+# Realistic. Off-chain balances often move before L1 confirms, so a timeout
+# here is not a failure. The example test suite shortens this.
+SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "30"))
+
+client = HTTPClient.from_env()
+log = client.logger
 
 
-def usdc_balance(subaccount) -> Decimal:
-    collateral = next((c for c in subaccount.state.collaterals if c.asset_name == "USDC"), None)
+def balance(subaccount) -> Decimal:
+    collateral = next((c for c in subaccount.state.collaterals if c.asset_name == ASSET), None)
     return Decimal(collateral.amount) if collateral else Decimal("0")
 
 
-def is_fallback(subaccount) -> bool:
-    return subaccount.risk_universe_id is RiskUniverseID.FALLBACK
+def settle(op_uuid: str, what: str) -> bool:
+    """Wait for an acknowledged action to settle. False means still in flight."""
+
+    log.info(f"{what} acked (op {op_uuid}), waiting for settlement")
+    try:
+        log.info(f"  settled: {wait_for_settlement(client, op_uuid=op_uuid, timeout=SETTLEMENT_TIMEOUT_SEC).status}")
+        return True
+    except SettlementFailed as e:
+        raise SystemExit(f"{what} failed: {e}") from e
+    except SettlementTimeout as e:
+        # Not a failure. Off-chain balances may already reflect the move
+        # before L1 confirms; poll again later with the same op_uuid.
+        log.warning(f"  still pending: {e}")
+        return False
 
 
-# Timeout for transaction settlement
-# Funds may already be moved between subaccounts prior to this,
-# but the L1 settlement may not yet be confirmed.
-TIMEOUT_SEC = 30
-AMOUNT_USDC = Decimal("1")
+# -- 1. Internal transfer: subaccount to subaccount, one owner --------------
 
-env_file = Path(__file__).parent.parent / ".env.template"
-client = HTTPClient.from_env(env_file=env_file)
+subaccounts = sorted(client.fetch_subaccounts(), key=balance, reverse=True)
+tradable = [s for s in subaccounts if s.risk_universe_id is not RiskUniverseID.FALLBACK]
+stranded = [s for s in subaccounts if s.risk_universe_id is RiskUniverseID.FALLBACK]
 
+if not tradable:
+    raise SystemExit("Need at least one non-fallback subaccount to receive a transfer.")
 
-# -- 1. Internal transfer: subaccount -> subaccount, same owner ------------
-subaccounts = client.fetch_subaccounts()
-
-# The FALLBACK risk universe holds orphaned collateral for recovery.
-# It is a source-only construct: it must never be a transfer target.
-# https://v3.docs.derive.xyz/trading/managers-and-risk-universes
-regular_subaccounts, fallback_subaccounts = partition(is_fallback, subaccounts)
-regular_subaccounts = sorted(regular_subaccounts, key=usdc_balance, reverse=True)
-fallback_subaccounts = sorted(fallback_subaccounts, key=usdc_balance, reverse=True)
-
-if not regular_subaccounts:
-    raise SystemExit("Need at least one non-fallback subaccount to act as transfer target.")
-
-# Robinhood move: pull from richest move to poorest
-# Prefer recovering stranded funds from the richest fallback subaccount.
-richest_fallback = fallback_subaccounts[0] if fallback_subaccounts else None
-if richest_fallback and usdc_balance(richest_fallback) >= AMOUNT_USDC:
-    print(f"Recovering funds from fallback subaccount #{richest_fallback.id} as source")
-    source_sub = richest_fallback
-elif regular_subaccounts and usdc_balance(regular_subaccounts[0]) >= AMOUNT_USDC:
-    source_sub = regular_subaccounts[0]
-    print(f"Using regular subaccount #{source_sub.id} as source")
+# Prefer a fallback subaccount as the source: that recovers collateral
+# stranded there. Otherwise the richest tradable one.
+if stranded and balance(stranded[0]) >= INTERNAL_AMOUNT:
+    source = stranded[0]
+    log.info(f"recovering stranded collateral from fallback subaccount #{source.id}")
+elif balance(subaccounts[0]) >= INTERNAL_AMOUNT:
+    source = subaccounts[0]
 else:
-    raise SystemExit(
-        f"GAME OVER: No subaccount has at least {AMOUNT_USDC} USDC to transfer. "
-        "Go back to level 1 (01-deposit.py) and try again."
-    )
+    raise SystemExit(f"No subaccount holds {INTERNAL_AMOUNT} {ASSET}. Run 01-deposit.py first.")
 
-# Target: poorest remaining non-fallback subaccount.
-target_sub = last((sa for sa in regular_subaccounts if sa.id != source_sub.id), None)
-if not target_sub:
-    raise SystemExit("Need a second non-fallback subaccount, distinct from the source, as target.")
+# Poorest tradable subaccount as the target, which a fallback never may be.
+target = min((s for s in tradable if s.id != source.id), key=balance, default=None)
+if target is None:
+    raise SystemExit("Need a second non-fallback subaccount to receive the transfer.")
 
-print("USDC Balance before:")
-print(f"  source subaccount #{source_sub.id}: {usdc_balance(source_sub):.4f}")
-print(f"  target subaccount #{target_sub.id}: {usdc_balance(target_sub):.4f}")
-
-# Moves between existing subaccounts are free
-internal = source_sub.collateral.transfer_spot(
-    amount=AMOUNT_USDC,
-    asset_name="USDC",
-    to_subaccount_id=target_sub.id,
+log.info(
+    f"before:\n"
+    f"  source #{source.id}: {balance(source):.4f} {ASSET}\n"
+    f"  target #{target.id}: {balance(target):.4f} {ASSET}"
 )
 
-# ACKed immediately, settled asynchronously by the exchange
-print(f"transfer_spot acked (op {internal.op_uuid}); waiting for settlement...")
-try:
-    tx_result = wait_for_settlement(client, op_uuid=internal.op_uuid, timeout=TIMEOUT_SEC)
-    print(f"Settled: {tx_result.status}")
-except SettlementFailed as e:
-    print(f"Transfer failed: {e}")
-    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
-    raise SystemExit(1)
-except SettlementTimeout as e:
-    # Not a failure: still in flight. Subaccount balances may already reflect
-    # the move before L1 settlement confirms. Poll again with the same op_uuid.
-    print(f"Still pending: {e}")
-    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
+internal = source.collateral.transfer_spot(
+    amount=INTERNAL_AMOUNT,
+    asset_name=ASSET,
+    to_subaccount_id=target.id,
+)
+settle(internal.op_uuid, "transfer_spot")
+
+# .state is cached from construction, so refresh before reading balances.
+log.info(
+    f"after:\n"
+    f"  source #{source.id}: {balance(source.refresh()):.4f} {ASSET}\n"
+    f"  target #{target.id}: {balance(target.refresh()):.4f} {ASSET}"
+)
 
 
-# Use this to refresh state, .state is cached from construction otherwise
-source_sub.refresh()
-target_sub.refresh()
+# -- 2. External transfer: to a wallet you do not own -----------------------
 
-print("USDC Balance after (may have changed before/without L1 settlement confirmation):")
-print(f"  source subaccount #{source_sub.id}: {usdc_balance(source_sub):.4f}")
-print(f"  target subaccount #{target_sub.id}: {usdc_balance(target_sub):.4f}")
+recipient = client._auth.signer  # session key EOA
+if recipient == client._auth.wallet:
+    # Environment fact, not a failure: everything above ran.
+    log.info("the session key is the owner wallet, so there is no second address to transfer to")
+    raise SystemExit(0)
 
-
-# -- 2. External transfer: to a wallet you do NOT own -----------------------
-#
-# Sends to a subaccount belonging to your SESSION KEY's own EOA -- a
-# convenient stand-in for "someone else's wallet" for this example,
-# since the session key is a distinct address from the owner wallet but
-# still available to sign with.
-#
-# Targets an EXISTING subaccount (RECIPIENT_SUBACCOUNT_ID below) rather
-# than creating a new one on every run. To create a subaccount for a
-# recipient instead, set new_subaccount_manager to the target risk
-# manager id and leave to_subaccount_id=0 (default).
-# This charges an additional subaccount-creation fee.
-#
-#   source_sub.collateral.transfer_spot_external(
-#       amount=AMOUNT_USDC,
-#       asset_name="USDC",
-#       recipient_address=recipient_address,
-#       max_fee_usd=MAX_FEE_USD,
-#       new_subaccount_manager=1,  # e.g. PRIME's standard margin manager
-#   )
-#
-# Not run here, so repeated runs of this example don't mint a fresh
-# subaccount each time.
-
-AMOUNT_USDC = Decimal("5")  # Must clear the risk universe's min_deposit_usd.
-MAX_FEE_USD = Decimal("5")  # fee cap, not a target
-
-# Pre-created once on Sepolia for this .env.template's session key wallet.
-# If you're running against a different wallet, this id won't exist for
-# you -- create one first via the new_subaccount_manager path above, note
-# the resulting subaccount id, then hardcode it here.
-RECIPIENT_SUBACCOUNT_ID = 75736
-
-recipient_address = client._auth.signer  # session key EOA
-owner_address = client._auth.wallet
-if recipient_address == owner_address:
-    print(
-        "Session key address equals owner wallet address, can't use it as "
-        "an external recipient (external transfers require a distinct wallet)."
-    )
-    raise SystemExit(1)
-
-subaccounts = sorted(client.fetch_subaccounts(), key=usdc_balance, reverse=True)
-source_sub = subaccounts[0]
-
-if usdc_balance(source_sub) < AMOUNT_USDC + MAX_FEE_USD:
-    print(f"Source subaccount #{source_sub.id} has less than {AMOUNT_USDC} USDC plus max fee {MAX_FEE_USD}.")
-    raise SystemExit(1)
+source = subaccounts[0].refresh()
+if balance(source) < EXTERNAL_AMOUNT + EXTERNAL_MAX_FEE_USD:
+    raise SystemExit(f"Subaccount #{source.id} cannot cover {EXTERNAL_AMOUNT} {ASSET} plus the fee cap.")
 
 # External transfers only pay out to pre-approved wallets. Whitelisting is
-# itself a signed action that settles asynchronously, so skip it when the
-# recipient is already listed rather than re-submitting on every run.
-account_state = client.account.get()
-if recipient_address in account_state.whitelisted_recipients:
-    print(f"{recipient_address} is already whitelisted")
+# itself a signed action, so skip it when the recipient is already listed.
+if recipient in client.account.get().whitelisted_recipients:
+    log.info(f"{recipient} is already whitelisted")
 else:
-    print(f"Whitelisting {recipient_address}")
-    whitelist = client.account.update_whitelisted_recipients(add=[recipient_address], remove=[])
-    print(f"Whitelist update acked (op {whitelist.op_uuid}); waiting for settlement...")
-    try:
-        wait_for_settlement(client, op_uuid=whitelist.op_uuid, timeout=TIMEOUT_SEC)
-    except SettlementFailed as e:
-        print(f"Whitelisting failed, external transfer cannot proceed: {e}")
-        raise SystemExit(1)
-    except SettlementTimeout:
-        print(
-            "Whitelisting still pending: proceeding without L1 settlement. The "
-            "exchange accepts the transfer against off-chain state, which already "
-            "reflects the whitelist, so it will very likely go through. Fine for an "
-            "example against testnet; do not copy this into anything moving real funds."
-        )
+    whitelist = client.account.update_whitelisted_recipients(add=[recipient], remove=[])
+    if not settle(whitelist.op_uuid, "update_whitelisted_recipients"):
+        # The exchange accepts the transfer against off-chain state, which
+        # already reflects the whitelist, so this very likely goes through.
+        # Acceptable on testnet. Do not copy into anything moving real funds.
+        log.warning("whitelisting has not settled on L1; proceeding against off-chain state")
 
-# Unlike internal moves, external transfers ALWAYS charge a fee (1 USD
-# standard, plus a subaccount-creation fee when one is created), so
-# max_fee_usd is mandatory; a signed CAP on what the exchange may
-# deduct, not a target: the request fails rather than overpay.
-external = source_sub.collateral.transfer_spot_external(
-    amount=AMOUNT_USDC,
-    asset_name="USDC",
-    recipient_address=recipient_address,
-    max_fee_usd=MAX_FEE_USD,
+# Targets an existing subaccount rather than minting one per run. To create one
+# for the recipient instead, leave to_subaccount_id at its default and pass the
+# target risk manager id, which charges a subaccount-creation fee:
+#
+#   source.collateral.transfer_spot_external(
+#       amount=EXTERNAL_AMOUNT,
+#       asset_name=ASSET,
+#       recipient_address=recipient,
+#       max_fee_usd=EXTERNAL_MAX_FEE_USD,
+#       new_subaccount_manager=1,  # PRIME's standard margin manager
+#   )
+external = source.collateral.transfer_spot_external(
+    amount=EXTERNAL_AMOUNT,
+    asset_name=ASSET,
+    recipient_address=recipient,
     to_subaccount_id=RECIPIENT_SUBACCOUNT_ID,
+    max_fee_usd=EXTERNAL_MAX_FEE_USD,
 )
+settle(external.op_uuid, "transfer_spot_external")
 
-print(f"transfer_spot_external acked (op {external.op_uuid}); waiting for settlement...")
-try:
-    tx_result = wait_for_settlement(client, op_uuid=external.op_uuid, timeout=TIMEOUT_SEC)
-    print(f"Settled: {tx_result.status}")
-except SettlementFailed as e:
-    print(f"External transfer failed: {e}")
-    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
-    raise SystemExit(1)
-except SettlementTimeout as e:
-    print(f"Still pending: {e}")
-    print(f"  last status: {e.tx_result.status if e.tx_result else 'unknown'}")
-
-# Owner's client can't check the recipient subaccount's balance directly
-# (it operates on the owner wallet, not the session key wallet). A
-# second HTTPClient authenticated as the session key could confirm it,
-# omitted here to keep the example focused.
+# The recipient's balance is not readable from here: this client is
+# authenticated as the owner wallet, not as the session key. A second
+# HTTPClient authenticated as the session key could confirm it.
+log.info(f"source #{source.id} now holds {balance(source.refresh()):.4f} {ASSET}")

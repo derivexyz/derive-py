@@ -1,6 +1,6 @@
 """Tests for Market module."""
 
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     Asset,
     AssetType,
     Currency,

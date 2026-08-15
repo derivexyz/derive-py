@@ -32,8 +32,7 @@ clean-build:
 .PHONY: clean-docs
 clean-docs:
 	rm -fr site
-	rm -rf docs/reference
-	rm -rf docs/internal
+	rm -fr docs/reference
 
 .PHONY: clean-pyc
 clean-pyc:
@@ -61,21 +60,21 @@ tests:
 
 .PHONY: fmt
 fmt:
-	poetry run ruff format tests derive_client examples benchmarks scripts
-	poetry run ruff check tests derive_client examples benchmarks scripts --fix
+	poetry run ruff format tests derive_py examples benchmarks scripts
+	poetry run ruff check tests derive_py examples benchmarks scripts --fix
 
 .PHONY: lint
 lint:
-	poetry run ruff check tests derive_client examples benchmarks scripts
+	poetry run ruff check tests derive_py examples benchmarks scripts
 
 
 .PHONY: docs
 docs: clean-docs
-	poetry run python scripts/generate-internal-pages.py
+	poetry run python scripts/sync-readme.py
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
 
-
+.PHONY: release
 release:
 	$(eval current_version := $(shell poetry run tbump current-version))
 	@echo "Current version is $(current_version)"
@@ -91,14 +90,14 @@ generate-models:
 	poetry run python scripts/patch_spec.py specs/openapi.json
 	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
-	poetry run ruff format derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
-	poetry run ruff check --fix derive_client/data_types/generated_models.py derive_client/data_types/channel_models.py
+	poetry run ruff format derive_py/data_types/generated_models.py derive_py/data_types/channel_models.py
+	poetry run ruff check --fix derive_py/data_types/generated_models.py derive_py/data_types/channel_models.py
 
 .PHONY: generate-api
 generate-api:
 	python scripts/generate-api.py
-	poetry run ruff format derive_client/_clients/
-	poetry run ruff check --fix derive_client/_clients/
+	poetry run ruff format derive_py/_clients/
+	poetry run ruff check --fix derive_py/_clients/
 
 .PHONY: generate-rest-async-http
 generate-rest-async-http:
@@ -113,6 +112,7 @@ sync-ws-tests:
 		--exclude='__init__.py' \
 		--exclude='conftest.py' \
 		--exclude='test_api.py' \
+		--exclude='test_session.py' \
 		--exclude='__pycache__/' \
 		tests/test_clients/test_rest/test_async_http/ \
 		tests/test_clients/test_websocket/
@@ -123,15 +123,24 @@ download-abis:
 	@echo "Downloading ABIs..."
 	poetry run python scripts/download-abis.py
 
+.PHONY: codegen-all
 codegen-all: generate-models generate-api generate-rest-async-http sync-ws-tests fmt lint
 
+.PHONY: typecheck
 typecheck:
-	poetry run pyright derive_client tests examples benchmarks
+	poetry run pyright derive_py tests examples benchmarks
 
+.PHONY: deptry
+deptry:
+	poetry run deptry derive_py
+
+.PHONY: check_diff
 check_diff:
 	@git diff --exit-code
 
+.PHONY: demo
 demo:
 	poetry run bash scripts/demos/all.sh
 
-all: download-abis codegen-all fmt lint typecheck tests docs
+.PHONY: all
+all: download-abis codegen-all fmt lint deptry typecheck docs tests

@@ -1,19 +1,15 @@
 """Tests for RFQ module."""
 
-import time
 from decimal import Decimal
 
 import pytest
 
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     CancelBatchRfqsResponse,
     Direction,
     LegUnpricedParams,
-    LiquidityRole,
     PricedLegParamsAndResponse,
-    Quote,
-    QuoteExecuteResponse,
     QuoteGetResponse,
     QuotePollResponse,
     Rfq,
@@ -21,7 +17,6 @@ from derive_client.data_types.generated_models import (
     RFQGetResponse,
     RFQPollResponse,
 )
-from tests.conftest import assert_api_calls
 
 
 def _resolve_currency(client) -> str:
@@ -127,21 +122,21 @@ async def _create_rfq(client) -> Rfq:
 
 
 @pytest.mark.asyncio
-async def test_rfq_send_rfq(client_owner_wallet):
-    rfq = await _create_rfq(client_owner_wallet)
+async def test_rfq_send_rfq(client_admin_wallet):
+    rfq = await _create_rfq(client_admin_wallet)
     assert isinstance(rfq, Rfq)
 
 
 @pytest.mark.asyncio
-async def test_rfq_get_rfqs(client_owner_wallet):
-    rfqs = await client_owner_wallet.rfq.get_rfqs()
+async def test_rfq_get_rfqs(client_admin_wallet):
+    rfqs = await client_admin_wallet.rfq.get_rfqs()
     assert isinstance(rfqs, RFQGetResponse)
 
 
 @pytest.mark.asyncio
-async def test_rfq_cancel_rfq(client_owner_wallet):
-    rfq = await _create_rfq(client_owner_wallet)
-    result = await client_owner_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
+async def test_rfq_cancel_rfq(client_admin_wallet):
+    rfq = await _create_rfq(client_admin_wallet)
+    result = await client_admin_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
     assert isinstance(result, str)
 
 
@@ -160,82 +155,19 @@ async def test_rfq_poll_rfqs(client_admin_wallet):
 
 
 @pytest.mark.asyncio
-async def test_rfq_get_quotes(client_owner_wallet):
-    quotes = await client_owner_wallet.rfq.get_quotes()
+async def test_rfq_get_quotes(client_admin_wallet):
+    quotes = await client_admin_wallet.rfq.get_quotes()
     assert isinstance(quotes, QuoteGetResponse)
 
 
 @pytest.mark.asyncio
-async def test_rfq_poll_quotes(client_owner_wallet):
-    quotes = await client_owner_wallet.rfq.poll_quotes()
+async def test_rfq_poll_quotes(client_admin_wallet):
+    quotes = await client_admin_wallet.rfq.poll_quotes()
     assert isinstance(quotes, QuotePollResponse)
 
 
 @pytest.mark.asyncio
-async def test_rfq_get_best_quote(client_owner_wallet):
-    unpriced_legs = await _create_unpriced_legs(client_owner_wallet)
-    best_quote = await client_owner_wallet.rfq.get_best_quote(legs=unpriced_legs)
+async def test_rfq_get_best_quote(client_admin_wallet):
+    unpriced_legs = await _create_unpriced_legs(client_admin_wallet)
+    best_quote = await client_admin_wallet.rfq.get_best_quote(legs=unpriced_legs)
     assert isinstance(best_quote, RfqGetBestQuoteResponse)
-
-
-@pytest.mark.skip("Need to configure second wallet properly.")
-@pytest.mark.asyncio
-async def test_rfq_full_lifecycle(client_admin_wallet, client_owner_wallet):
-    # Derive RPC 11007: Self-crossing disallowed: use two wallets
-
-    # Only admin as authorization as RFQ maker
-    # hence: owner wallet sends RFQ and admin wallet quotes
-    taker = client_owner_wallet
-    maker = client_admin_wallet
-
-    taker_direction = Direction.buy
-    maker_direction = Direction.sell
-
-    unpriced_legs = await _create_unpriced_legs(taker)
-    label = "test_rfq"
-    rfq = await taker.rfq.send_rfq(legs=unpriced_legs, label=label)
-
-    # was INT64_MAX — an absolute epoch timestamp astronomically past v3's
-    # 120-day-from-now ceiling (RPC 11011), same bug class as
-    # get_default_signature_expiry_sec's old 1-year default.
-    signature_expiry_sec = int(time.time()) + 3600
-    max_fee = Decimal("1000")
-
-    priced_legs = await _create_priced_legs(maker, rfq)
-
-    # Quote direction:
-    # buy means trading each leg at its direction
-    # sell means trading each leg in the opposite direction.
-    utc_now_s = int(time.time())
-    with assert_api_calls(maker, expected=1):
-        sent_quote = await maker.rfq.send_quote(
-            direction=maker_direction,
-            legs=priced_legs,
-            max_fee=max_fee,
-            rfq_id=rfq.rfq_id,
-            signature_expiry_sec=utc_now_s + 330,
-        )
-
-    assert isinstance(sent_quote, Quote)
-    assert rfq.rfq_id == sent_quote.rfq_id
-
-    # best_quote = taker.rfq.get_best_quote(legs=unpriced_legs, direction=maker_direction)
-    quotes = await taker.rfq.poll_quotes(rfq_id=rfq.rfq_id)
-    quote = quotes.quotes[0]
-
-    assert quote.subaccount_id == maker.active_subaccount.id
-    assert quote.liquidity_role == LiquidityRole.maker
-    assert quote.direction == maker_direction
-
-    with assert_api_calls(taker, expected=1):
-        executed_quote = await taker.rfq.execute_quote(
-            direction=taker_direction,
-            legs=quote.legs,
-            max_fee=max_fee,
-            quote_id=quote.quote_id,
-            rfq_id=rfq.rfq_id,
-            signature_expiry_sec=signature_expiry_sec,
-        )
-
-    assert isinstance(executed_quote, QuoteExecuteResponse)
-    assert executed_quote.liquidity_role == LiquidityRole.taker

@@ -2640,6 +2640,42 @@
         }
       }
     },
+    "/public/get_liquidation_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "public/get_liquidation_history",
+        "operationId": "public_get_liquidation_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidationHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated history of liquidation auctions, newest first, for a single subaccount or across all of them, optionally bounded by a start/end timestamp window over the auction start. Each entry gives the auctioned subaccount, whether the auction was solvent or insolvent, the fee charged at start, the start and end timestamps, and the bids that filled it with the fraction of the account each absorbed and the cash it moved.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiquidationHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/get_mmp_config": {
       "post": {
         "tags": [
@@ -4245,6 +4281,140 @@
             ]
           }
         }
+      },
+      "AuctionBidEvent": {
+        "description": "One executed bid within an auction. Amounts are decimal strings.",
+        "type": "object",
+        "required": [
+          "amounts_liquidated",
+          "cash_received",
+          "discount_pnl",
+          "percent_liquidated",
+          "positions_realized_pnl",
+          "positions_realized_pnl_excl_fees",
+          "realized_pnl",
+          "realized_pnl_excl_fees",
+          "timestamp",
+          "tx_hash"
+        ],
+        "properties": {
+          "amounts_liquidated": {
+            "description": "Amounts of each asset that were closed. Always empty — see the module TODO; the protocol event does not carry the per-asset breakdown.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "cash_received": {
+            "description": "Cash the liquidated account received for the slice: what the bidder paid in the solvent phase, and negative in the insolvent phase, where the security module pays the bidder instead.",
+            "type": "string"
+          },
+          "discount_pnl": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "percent_liquidated": {
+            "description": "Fraction of the account this bid took; \"1\" is the whole account.",
+            "type": "string"
+          },
+          "positions_realized_pnl": {
+            "description": "Always empty — see the module TODO.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "positions_realized_pnl_excl_fees": {
+            "description": "Always empty — see the module TODO.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "realized_pnl": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "realized_pnl_excl_fees": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "timestamp": {
+            "description": "When the sequencer applied the bid, unix ms.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "tx_hash": {
+            "description": "Settling L1 transaction; empty until the bid's batch settles.",
+            "type": "string"
+          }
+        }
+      },
+      "AuctionHistory": {
+        "description": "One auction phase and the bids that filled it.",
+        "type": "object",
+        "required": [
+          "auction_id",
+          "auction_type",
+          "bids",
+          "fee",
+          "start_timestamp",
+          "subaccount_id",
+          "tx_hash"
+        ],
+        "properties": {
+          "auction_id": {
+            "description": "`{subaccount_id}-{start_time_sec}` — see the module docs.",
+            "type": "string"
+          },
+          "auction_type": {
+            "$ref": "#/components/schemas/AuctionType"
+          },
+          "bids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuctionBidEvent"
+            }
+          },
+          "end_timestamp": {
+            "description": "When the auction ended, unix ms; `null` while still live.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "fee": {
+            "description": "Liquidation fee charged at auction start; \"0\" for a phase opened by conversion to insolvent.",
+            "type": "string"
+          },
+          "start_timestamp": {
+            "description": "Auction/phase clock start, unix ms.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "description": "The liquidated (auctioned) subaccount.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "tx_hash": {
+            "description": "Settling L1 transaction of the op that opened the auction; empty until that batch settles.",
+            "type": "string"
+          }
+        }
+      },
+      "AuctionType": {
+        "description": "Which phase of the auction this entry describes.",
+        "type": "string",
+        "enum": [
+          "solvent",
+          "insolvent"
+        ]
       },
       "BatchStatus": {
         "description": "Batch lifecycle status — the single source of lifecycle truth for every operation in the batch (individual ops carry no status of their own). Each stage has a healthy variant and a corresponding `...Error` variant meaning that stage failed. Serialized as the variant name (string) in API responses.",
@@ -6290,6 +6460,61 @@
           }
         }
       },
+      "GetLiquidationHistoryRequest": {
+        "description": "Parameters for `public/get_liquidation_history`. Omit `subaccount_id` to span every account. `[start_timestamp, end_timestamp]` is a unix-millisecond window over the auction *start*.",
+        "type": "object",
+        "properties": {
+          "end_timestamp": {
+            "description": "End of the window, unix milliseconds (default: unbounded).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "page": {
+            "description": "Page number, 1-based (default 1).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "page_size": {
+            "description": "Results per page (default 100, max 1000).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "start_timestamp": {
+            "description": "Start of the window, unix milliseconds (default 0).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "GetLiveBurnRequestsRequest": {
         "type": "object",
         "required": [
@@ -7614,6 +7839,24 @@
           "total_borrow_cap": {
             "description": "Borrow ceiling for this lending asset in this universe.",
             "type": "string"
+          }
+        }
+      },
+      "LiquidationHistoryResult": {
+        "type": "object",
+        "required": [
+          "auctions",
+          "pagination"
+        ],
+        "properties": {
+          "auctions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuctionHistory"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
           }
         }
       },

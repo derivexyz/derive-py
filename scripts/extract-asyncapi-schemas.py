@@ -7,7 +7,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent))
 import paths  # noqa: E402
-from patch_spec import patch_split_enums  # noqa: E402
+from patch_spec import patch_order_snapshot, patch_split_enums  # noqa: E402
 
 EXCLUDED_SCHEMAS = {
     "JsonRpcId",
@@ -127,6 +127,8 @@ def main() -> None:
     definitions, collapsed_count = patch_split_enums(definitions)
     if collapsed_count:
         print(f"  → collapsed {collapsed_count} split-enum schema(s) (e.g. TxStatus)", file=sys.stderr)
+
+    patch_order_snapshot(definitions)
 
     merged = {
         "$schema": "http://json-schema.org/draft-07/schema#",

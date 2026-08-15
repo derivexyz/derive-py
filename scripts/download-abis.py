@@ -10,11 +10,11 @@ import os
 import sys
 import time
 
+import requests
 from web3 import Web3
 
-from derive_client.config import ABI_DATA_DIR
-from derive_client.utils.logger import get_logger
-from derive_client.utils.retry import get_retry_session
+from derive_py.config import ABI_DATA_DIR
+from derive_py.utils.logger import get_logger
 
 TIMEOUT = 10
 REQUEST_DELAY = 0.5
@@ -41,9 +41,9 @@ ABIDATA_URL = "https://abidata.net/{address}?network=sepolia"
 SOURCIFY_URL = "https://sourcify.dev/server/v2/contract/{chain_id}/{address}?fields=abi"
 
 
-def _fetch_abidata(session, address: str) -> list:
+def _fetch_abidata(address: str) -> list:
     url = ABIDATA_URL.format(address=address)
-    response = session.get(url, timeout=TIMEOUT)
+    response = requests.get(url, timeout=TIMEOUT)
     response.raise_for_status()
     data = response.json()
     if "abi" not in data:
@@ -51,9 +51,9 @@ def _fetch_abidata(session, address: str) -> list:
     return data["abi"]
 
 
-def _fetch_sourcify(session, address: str) -> list:
+def _fetch_sourcify(address: str) -> list:
     url = SOURCIFY_URL.format(chain_id=CHAIN_ID, address=address)
-    response = session.get(url, timeout=TIMEOUT)
+    response = requests.get(url, timeout=TIMEOUT)
     response.raise_for_status()
     data = response.json()
     if "abi" in data:
@@ -64,7 +64,7 @@ def _fetch_sourcify(session, address: str) -> list:
     raise ValueError(f"Sourcify response had no recognisable 'abi' field: keys={list(data.keys())}")
 
 
-def get_abi(session, address: str, logger) -> list:
+def get_abi(address: str, logger) -> list:
     """Fetch an ABI for `address` on Sepolia. Raises if no source has it."""
     sources = [("abidata.net", _fetch_abidata), ("sourcify", _fetch_sourcify)]
     errors: list[str] = []
@@ -72,7 +72,7 @@ def get_abi(session, address: str, logger) -> list:
     for name, fetch in sources:
         for attempt in range(2):
             try:
-                return fetch(session, address)
+                return fetch(address)
             except Exception as e:
                 error_str = str(e).lower()
                 if attempt == 0 and ("rate limit" in error_str or "429" in error_str):
@@ -98,7 +98,6 @@ def get_impl_address(w3: Web3, address: str) -> str | None:
 
 def main() -> int:
     logger = get_logger()
-    session = get_retry_session()
     w3 = Web3(Web3.HTTPProvider(SEPOLIA_RPC_URL))
 
     if not w3.is_connected():
@@ -133,7 +132,7 @@ def main() -> int:
             continue
 
         try:
-            abi = get_abi(session=session, address=address, logger=logger)
+            abi = get_abi(address=address, logger=logger)
         except Exception as e:
             failures.append(f"{name} ({address}): {e}")
             logger.warning(f"Failed to fetch ABI for {name} ({address}): {e}")

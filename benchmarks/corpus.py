@@ -21,9 +21,9 @@ from typing import Any, Awaitable, Callable
 import msgspec
 
 from benchmarks.synth import Synth, SynthConfig
-from derive_client._clients.websockets.api import PublicChannels
-from derive_client.data_types.channel_models import OrderbookSnapshot, PublicTrade, TickerSlimPayload
-from derive_client.data_types.generated_models import AssetType, Quote, SendQuoteRequest
+from derive_py._clients.websockets.api import PublicChannels
+from derive_py.data_types.channel_models import OrderbookSnapshot, PublicTrade, TickerSlimPayload
+from derive_py.data_types.generated_models import AssetType, Quote, SendQuoteRequest
 
 ENCODER = msgspec.json.Encoder()
 

@@ -13,7 +13,7 @@ from decimal import Decimal
 import pytest
 from web3 import Web3
 
-from derive_client._web3.action_signing import (
+from derive_py._web3.action_signing import (
     RFQExecuteModuleData,
     RFQQuoteDetails,
     RFQQuoteModuleData,
@@ -31,7 +31,7 @@ from derive_client._web3.action_signing import (
     WhitelistedRecipientModuleData,
     WithdrawModuleData,
 )
-from derive_client.data_types import ProtocolScope
+from derive_py.data_types import ProtocolScope
 
 from .expected import (
     EXPECTED_RFQ_EXECUTE,

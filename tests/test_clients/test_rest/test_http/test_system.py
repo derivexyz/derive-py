@@ -1,6 +1,6 @@
 """Tests for System module."""
 
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     GetTransactionResult,
     RateLimitResult,
 )

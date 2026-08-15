@@ -16,10 +16,10 @@ from decimal import Decimal
 import pytest
 from web3 import Account
 
-from derive_client._web3.action_signing import SignedAction, TradeModuleData
-from derive_client.config.contracts import CONFIGS
-from derive_client.data_types import Environment
-from tests.conftest import SESSION_KEY_PRIVATE_KEY
+from derive_py._web3.action_signing import SignedAction, TradeModuleData
+from derive_py.config.contracts import CONFIGS
+from derive_py.data_types import Environment
+from tests.conftest import env_template_value
 
 from . import expected
 from .expected import (
@@ -38,6 +38,8 @@ from .expected import (
 CONFIG = CONFIGS[Environment.TEST]
 
 OTHER_ADDRESS = "0x0000000000000000000000000000000000000001"
+
+SESSION_KEY_PRIVATE_KEY = env_template_value("DERIVE_SESSION_KEY")
 
 
 @pytest.fixture
