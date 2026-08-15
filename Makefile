@@ -32,8 +32,7 @@ clean-build:
 .PHONY: clean-docs
 clean-docs:
 	rm -fr site
-	rm -rf docs/reference
-	rm -rf docs/internal
+	rm -fr docs/reference
 
 .PHONY: clean-pyc
 clean-pyc:
@@ -71,7 +70,7 @@ lint:
 
 .PHONY: docs
 docs: clean-docs
-	poetry run python scripts/generate-internal-pages.py
+	poetry run python scripts/sync-readme.py
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
 
@@ -144,4 +143,4 @@ demo:
 	poetry run bash scripts/demos/all.sh
 
 .PHONY: all
-all: download-abis codegen-all fmt lint deptry typecheck tests docs
+all: download-abis codegen-all fmt lint deptry typecheck docs tests
