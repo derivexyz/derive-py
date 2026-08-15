@@ -38,6 +38,8 @@ import sys
 from decimal import Decimal
 from time import monotonic, sleep
 
+import rich_click as click
+
 from derive_py import HTTPClient
 from derive_py.data_types import D, MarginType, RiskUniverseID
 from derive_py.exceptions import FinalityTimeout, TxPendingTimeout
@@ -51,10 +53,6 @@ MARGIN_TYPE = MarginType.SM  # creating one only
 
 CREDIT_TIMEOUT_SEC = 300
 POLL_INTERVAL_SEC = 5
-
-# Fee level for the on-chain steps is read from .env, like every other setting.
-# TODO: not wired yet. DERIVE_GAS_PRIORITY needs to reach ClientConfig and
-# default the planners' gas_priority; until then they always use MEDIUM.
 
 client = HTTPClient.from_env()
 log = client.logger  # one stream: the client logs here too
@@ -72,21 +70,15 @@ def submit(step) -> bool:
     worst_case_eth = Decimal(tx["gas"] * tx["maxFeePerGas"]) / Decimal(10**18)
     log.info(
         f"[{step.kind}] {step.description}\n"
-        f"  gas {tx['gas']} at up to {tx['maxFeePerGas'] / 1e9:.2f} gwei, {worst_case_eth:.6f} ETH worst case\n"
-        f"  submit? [y/N]"
+        f"  gas {tx['gas']} at up to {tx['maxFeePerGas'] / 1e9:.2f} gwei, {worst_case_eth:.6f} ETH worst case"
     )
 
     if not sys.stdin.isatty():
         log.warning("  not a terminal, so nothing was submitted. Run this interactively to confirm.")
         return False
 
-    try:
-        answer = input("> ").strip().lower()
-    except EOFError:
-        answer = ""
-
-    if answer != "y":
-        log.warning("  not submitted. Set DERIVE_GAS_PRIORITY=SLOW in .env if the fee is the problem.")
+    if not click.confirm("  submit?", default=False):
+        log.warning("  not submitted.")
         return False
 
     log.info(f"  submitted {step.submit()}")
@@ -105,9 +97,6 @@ if CREATE_NEW_SUBACCOUNT:
     # A wallet's first deposit creates two subaccounts: the one you asked for,
     # plus a fallback under manager 0 that catches deposits which cannot be
     # applied. Two new ids on a first run is normal.
-    # TODO: from_env() requires DERIVE_SUBACCOUNT_ID, so the wallet this path
-    # exists for -- one with no subaccount yet -- cannot construct the client.
-    # Make subaccount_id optional in load_client_config.
     known_ids = set(client.account.get_subaccounts().subaccount_ids)
     log.info(f"Creating a {MARGIN_TYPE} subaccount in {RISK_UNIVERSE.name} with {AMOUNT} {ASSET}.")
     steps = client.plan_deposit_to_new_subaccount(
@@ -143,7 +132,10 @@ else:
 
 for step in steps:
     if not submit(step):
-        raise SystemExit("Stopped before the deposit completed.")
+        # Prepared but not submitted is the documented outcome of declining or
+        # of running non-interactively, not a failure.
+        log.info("Stopped before the deposit completed. Nothing further was submitted.")
+        raise SystemExit(0)
 
 log.info(f"Waiting up to {CREDIT_TIMEOUT_SEC}s for the exchange to credit the deposit.")
 deadline = monotonic() + CREDIT_TIMEOUT_SEC
