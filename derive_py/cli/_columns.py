@@ -128,7 +128,6 @@ SUBACCOUNT_COLUMNS = [
     "subaccount_id",
     "label",
     "margin_type",
-    "currency",
     "is_under_liquidation",
     "subaccount_value",
     "initial_margin",
