@@ -165,7 +165,7 @@ class OrderOperations:
         return result
 
     def list_open(self) -> List[Order]:
-        """Get all open orders of a subacccount."""
+        """Get all open orders of a subaccount."""
 
         params = GetOpenOrdersRequest(subaccount_id=self._subaccount.id)
         result = self._subaccount._private_api.rpc.get_open_orders(params)
