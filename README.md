@@ -23,9 +23,6 @@ first, then come back for the Python bindings.
   [websocket.asyncapi.json](https://v3.docs.derive.xyz/websocket.asyncapi.json),
   [subscriptions.asyncapi.json](https://v3.docs.derive.xyz/subscriptions.asyncapi.json)
 
-The generated Python API reference is at
-[derivexyz.github.io/derive-py](https://derivexyz.github.io/derive-py/).
-
 Sibling SDKs: [derive-ts](https://github.com/derivexyz/derive-ts),
 [derive-rs](https://github.com/derivexyz/derive-rs).
 

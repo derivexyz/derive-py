@@ -57,9 +57,14 @@ EXTERNAL = sorted({t for t in TARGETS if t.startswith(("http://", "https://")) a
 
 
 def test_links_were_found():
-    """A regex that matched nothing would make every other test here vacuous."""
+    """A regex that matched nothing would make every other test here vacuous.
 
-    assert LOCAL and OWN and EXTERNAL
+    LOCAL is deliberately not asserted on: the README links its own files by
+    absolute URL so that they resolve on PyPI too, which leaves it empty.
+    """
+
+    assert TARGETS, "no links found at all, the link regex is broken"
+    assert OWN and EXTERNAL, "links were found but none were classified"
 
 
 @pytest.mark.parametrize("target", LOCAL)
