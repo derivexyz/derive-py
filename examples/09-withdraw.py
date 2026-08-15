@@ -12,10 +12,6 @@ Two things make withdrawals unlike every other signed action:
     only pay out to an address on the owner's whitelisted_recipients unless
     the key holds Admin.
 
-TODO: the client always signs the owner wallet and omits the request's
-optional recipient field, so paying out to a whitelisted address is not
-reachable. Thread recipient through subaccount.withdraw().
-
 public/withdraw_debug returns the typed data and hashes the exchange would
 compute for these same parameters, which is how to check your signing
 without spending anything.
@@ -25,9 +21,6 @@ settlement (Batching, Executing, Proving, Settling, Settled) follows later,
 which is what this polls for. max_fee_usd is a cap signed into the action:
 the exchange charges its own fee and the request fails rather than exceed it.
 
-TODO: wait_for_settlement is imported from a private module, yet two
-examples need it. Re-export it from derive_py.
-
 Prerequisites: a subaccount holding USDC. Run 01-deposit.py first.
 Copy .env.template to .env first.
 
@@ -35,8 +28,9 @@ Run:
     python examples/09-withdraw.py
 """
 
-from derive_py import HTTPClient
-from derive_py._clients.utils import wait_for_settlement
+import os
+
+from derive_py import HTTPClient, wait_for_settlement
 from derive_py.data_types import D
 from derive_py.exceptions import SettlementFailed, SettlementTimeout
 
@@ -44,7 +38,8 @@ ASSET = "USDC"
 AMOUNT = D("5")  # must clear the collateral's min_deposit_usd
 MAX_FEE_USD = D("1")
 FORCE_BATCH = False  # True settles straight to L1, skipping the batch, at a higher fee
-SETTLEMENT_TIMEOUT_SEC = 300
+# Realistic: L1 settlement runs to minutes. The example test suite shortens it.
+SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "300"))
 
 client = HTTPClient.from_env()
 log = client.logger
