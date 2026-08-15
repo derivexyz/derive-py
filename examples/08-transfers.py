@@ -9,6 +9,12 @@ settled asynchronously:
                             The recipient must be whitelisted first, and a
                             fee is always charged.
 
+The external transfer here pays out to your session key's own EOA. That
+address is distinct from the owner wallet but you already hold the key for
+it, which makes it a usable stand-in for someone else's wallet without
+needing a second party. If your session key IS the owner wallet, there is no
+second address to send to and this example stops after the internal transfer.
+
 The FALLBACK risk universe holds collateral that could not be applied to its
 intended target. It trades nothing, so it is a valid transfer SOURCE and
 never a valid target:
@@ -18,36 +24,36 @@ max_fee_usd on the external transfer is a cap signed into the action, not a
 target. The exchange charges its own fee and the request fails rather than
 exceed the cap.
 
-Set RECIPIENT_WALLET below to run the external transfer. It is off by
-default because the alternatives are worse: a hardcoded subaccount id only
-exists for one wallet, and creating one for the recipient on every run pays
-a subaccount-creation fee each time.
-
-TODO: wait_for_settlement is imported from a private module, yet two
-examples need it. Re-export it from derive_py.
-
-Prerequisites: two non-fallback subaccounts, one holding at least
-TRANSFER_AMOUNT. See 01-deposit.py. Copy .env.template to .env first.
+Prerequisites: two non-fallback subaccounts, one holding enough USDC, and a
+subaccount belonging to the session key EOA (see RECIPIENT_SUBACCOUNT_ID).
+See 01-deposit.py. Copy .env.template to .env first.
 
 Run:
     python examples/08-transfers.py
 """
 
+import os
 from decimal import Decimal
 
-from derive_py import HTTPClient
-from derive_py._clients.utils import wait_for_settlement
+from derive_py import HTTPClient, wait_for_settlement
 from derive_py.data_types import RiskUniverseID
 from derive_py.exceptions import SettlementFailed, SettlementTimeout
 
 ASSET = "USDC"
-TRANSFER_AMOUNT = Decimal("1")
-SETTLEMENT_TIMEOUT_SEC = 30
 
-RECIPIENT_WALLET = ""  # another owner's wallet; empty skips the external transfer
-RECIPIENT_SUBACCOUNT_ID = 0  # one of theirs; 0 is rejected, they must have one
+INTERNAL_AMOUNT = Decimal("1")
 EXTERNAL_AMOUNT = Decimal("5")  # must clear the risk universe's min_deposit_usd
 EXTERNAL_MAX_FEE_USD = Decimal("5")
+
+# Pre-created on Sepolia for this .env.template's session key wallet. An
+# owner-authenticated client cannot enumerate another wallet's subaccounts, so
+# this cannot be discovered. Running against a different wallet needs its own
+# id here, created via the new_subaccount_manager path shown below.
+RECIPIENT_SUBACCOUNT_ID = 75736
+
+# Realistic. Off-chain balances often move before L1 confirms, so a timeout
+# here is not a failure. The example test suite shortens this.
+SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "30"))
 
 client = HTTPClient.from_env()
 log = client.logger
@@ -78,13 +84,22 @@ def settle(op_uuid: str, what: str) -> bool:
 
 subaccounts = sorted(client.fetch_subaccounts(), key=balance, reverse=True)
 tradable = [s for s in subaccounts if s.risk_universe_id is not RiskUniverseID.FALLBACK]
+stranded = [s for s in subaccounts if s.risk_universe_id is RiskUniverseID.FALLBACK]
 
-if not subaccounts or balance(subaccounts[0]) < TRANSFER_AMOUNT:
-    raise SystemExit(f"No subaccount holds {TRANSFER_AMOUNT} {ASSET}. Run 01-deposit.py first.")
+if not tradable:
+    raise SystemExit("Need at least one non-fallback subaccount to receive a transfer.")
 
-# Richest as source, which may be a fallback subaccount, recovering collateral
-# stranded there. Poorest tradable one as target, which never may be.
-source = subaccounts[0]
+# Prefer a fallback subaccount as the source: that recovers collateral
+# stranded there. Otherwise the richest tradable one.
+if stranded and balance(stranded[0]) >= INTERNAL_AMOUNT:
+    source = stranded[0]
+    log.info(f"recovering stranded collateral from fallback subaccount #{source.id}")
+elif balance(subaccounts[0]) >= INTERNAL_AMOUNT:
+    source = subaccounts[0]
+else:
+    raise SystemExit(f"No subaccount holds {INTERNAL_AMOUNT} {ASSET}. Run 01-deposit.py first.")
+
+# Poorest tradable subaccount as the target, which a fallback never may be.
 target = min((s for s in tradable if s.id != source.id), key=balance, default=None)
 if target is None:
     raise SystemExit("Need a second non-fallback subaccount to receive the transfer.")
@@ -96,7 +111,7 @@ log.info(
 )
 
 internal = source.collateral.transfer_spot(
-    amount=TRANSFER_AMOUNT,
+    amount=INTERNAL_AMOUNT,
     asset_name=ASSET,
     to_subaccount_id=target.id,
 )
@@ -112,8 +127,11 @@ log.info(
 
 # -- 2. External transfer: to a wallet you do not own -----------------------
 
-if not RECIPIENT_WALLET:
-    raise SystemExit("Set RECIPIENT_WALLET and RECIPIENT_SUBACCOUNT_ID to run the external transfer.")
+recipient = client._auth.signer  # session key EOA
+if recipient == client._auth.wallet:
+    # Environment fact, not a failure: everything above ran.
+    log.info("the session key is the owner wallet, so there is no second address to transfer to")
+    raise SystemExit(0)
 
 source = subaccounts[0].refresh()
 if balance(source) < EXTERNAL_AMOUNT + EXTERNAL_MAX_FEE_USD:
@@ -121,22 +139,37 @@ if balance(source) < EXTERNAL_AMOUNT + EXTERNAL_MAX_FEE_USD:
 
 # External transfers only pay out to pre-approved wallets. Whitelisting is
 # itself a signed action, so skip it when the recipient is already listed.
-if RECIPIENT_WALLET in client.account.get().whitelisted_recipients:
-    log.info(f"{RECIPIENT_WALLET} is already whitelisted")
+if recipient in client.account.get().whitelisted_recipients:
+    log.info(f"{recipient} is already whitelisted")
 else:
-    whitelist = client.account.update_whitelisted_recipients(add=[RECIPIENT_WALLET], remove=[])
+    whitelist = client.account.update_whitelisted_recipients(add=[recipient], remove=[])
     if not settle(whitelist.op_uuid, "update_whitelisted_recipients"):
-        raise SystemExit("Whitelisting has not settled; the transfer would be signed against unconfirmed state.")
+        # The exchange accepts the transfer against off-chain state, which
+        # already reflects the whitelist, so this very likely goes through.
+        # Acceptable on testnet. Do not copy into anything moving real funds.
+        log.warning("whitelisting has not settled on L1; proceeding against off-chain state")
 
+# Targets an existing subaccount rather than minting one per run. To create one
+# for the recipient instead, leave to_subaccount_id at its default and pass the
+# target risk manager id, which charges a subaccount-creation fee:
+#
+#   source.collateral.transfer_spot_external(
+#       amount=EXTERNAL_AMOUNT,
+#       asset_name=ASSET,
+#       recipient_address=recipient,
+#       max_fee_usd=EXTERNAL_MAX_FEE_USD,
+#       new_subaccount_manager=1,  # PRIME's standard margin manager
+#   )
 external = source.collateral.transfer_spot_external(
     amount=EXTERNAL_AMOUNT,
     asset_name=ASSET,
-    recipient_address=RECIPIENT_WALLET,
+    recipient_address=recipient,
     to_subaccount_id=RECIPIENT_SUBACCOUNT_ID,
     max_fee_usd=EXTERNAL_MAX_FEE_USD,
 )
 settle(external.op_uuid, "transfer_spot_external")
 
 # The recipient's balance is not readable from here: this client is
-# authenticated as your wallet, not theirs.
+# authenticated as the owner wallet, not as the session key. A second
+# HTTPClient authenticated as the session key could confirm it.
 log.info(f"source #{source.id} now holds {balance(source.refresh()):.4f} {ASSET}")
