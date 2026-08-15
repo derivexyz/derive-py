@@ -90,7 +90,7 @@ def get(ctx, order_id: str):
 @order.command("list-open")
 @click.pass_context
 def list_open(ctx):
-    """List all open orders of a subacccount.
+    """List all open orders of a subaccount.
 
     Examples:
         drv order list-open

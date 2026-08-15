@@ -59,7 +59,7 @@ class OrderOperations:
         max_fee: Decimal = Decimal("1000"),
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
-        extra_fee: Decimal = Decimal("0.000001"),
+        extra_fee: Optional[Decimal] = None,
         is_atomic_signing: Optional[bool] = False,
         label: str = "",
         mmp: bool = False,
@@ -116,7 +116,7 @@ class OrderOperations:
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
             subaccount_id=subaccount_id,
-            extra_fee=extra_fee,
+            extra_fee=unset_if_none(extra_fee),
             is_atomic_signing=unset_if_none(is_atomic_signing),
             label=label,
             mmp=mmp,
@@ -165,7 +165,7 @@ class OrderOperations:
         return result
 
     async def list_open(self) -> List[Order]:
-        """Get all open orders of a subacccount."""
+        """Get all open orders of a subaccount."""
 
         params = GetOpenOrdersRequest(subaccount_id=self._subaccount.id)
         result = await self._subaccount._private_api.rpc.get_open_orders(params)
@@ -268,7 +268,7 @@ class OrderOperations:
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
         expected_filled_amount: Optional[Decimal] = None,
-        extra_fee: Decimal = Decimal("0.000001"),
+        extra_fee: Optional[Decimal] = None,
         is_atomic_signing: Optional[bool] = False,
         label: str = "",
         mmp: bool = False,
@@ -341,7 +341,7 @@ class OrderOperations:
             signer=signed_action.signer,
             subaccount_id=subaccount_id,
             expected_filled_amount=unset_if_none(expected_filled_amount),
-            extra_fee=extra_fee,
+            extra_fee=unset_if_none(extra_fee),
             is_atomic_signing=unset_if_none(is_atomic_signing),
             label=label,
             mmp=mmp,

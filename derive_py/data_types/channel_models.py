@@ -135,24 +135,24 @@ class SpotFeedPayload(Struct):
 class TickerSlimSnapshot(
     Struct,
     rename={
-        'best_ask_price': 'A',
-        'best_bid_price': 'B',
+        'best_ask_amount': 'A',
+        'best_bid_amount': 'B',
         'index_price': 'I',
         'mark_price': 'M',
-        'best_ask_amount': 'a',
-        'best_bid_amount': 'b',
+        'best_ask_price': 'a',
+        'best_bid_price': 'b',
         'max_price': 'maxp',
         'min_price': 'minp',
         'timestamp': 't',
         'funding_rate': 'f',
     },
 ):
-    best_ask_price: str
-    best_bid_price: str
-    index_price: str
-    mark_price: str
     best_ask_amount: str
     best_bid_amount: str
+    index_price: str
+    mark_price: str
+    best_ask_price: str
+    best_bid_price: str
     max_price: str
     min_price: str
     stats: DailyTradingStatistics
