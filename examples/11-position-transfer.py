@@ -1,87 +1,85 @@
 """
-Position transfers: moving PART of an open perp/option position
-between two subaccounts owned by the same wallet.
+11 - Position transfers: moving part of an open position between two
+subaccounts owned by the same wallet.
 
-Position transfers execute as a zero-fee RFQ trade under the hood: both
-sides get a maker quote and a matching taker execute, signed and sent
-together in one private/transfer_positions call.
+A transfer executes as a zero-fee RFQ trade: the source subaccount signs the
+maker side, the target signs the taker side, and both go out together in one
+private/transfer_positions call.
 
-Requires a session key holding ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT
-(or the broader TRANSFER_ALL/ADMIN).
+    Both subaccounts must share a risk universe, otherwise the instrument is
+    not one both managers recognise. This picks a universe that has two, so
+    it works whichever universe your subaccounts live in.
+    Each leg's direction is derived from the sign of its amount, so a
+    negative amount transfers a short. The direction argument is the
+    package-level direction signed on the MAKER side; the taker side is
+    signed as its opposite.
+    Amounts are quantized to the instrument's amount_step, so the smallest
+    transferable slice is one step, or the whole position when it is smaller.
 
-The two subaccounts must share a risk universe, otherwise the
-instrument being transferred isn't one both subaccounts' managers
-recognize.
+Requires a session key holding ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT,
+or the broader TRANSFER_ALL or ADMIN.
 
-Prerequisites: one wallet with at least two subaccounts in the PRIME risk
-universe, one of them holding at least TRANSFER_AMOUNT of INSTRUMENT open,
-and enough margin in the other to receive it.
+Prerequisites: two subaccounts in one non-fallback risk universe, one of
+them holding an open position, and enough margin in the other to receive it.
+Copy .env.template to .env first.
 
 Run:
-    python examples/11-position-transfers.py
+    python examples/11-position-transfer.py
 """
 
 from decimal import Decimal
-from pathlib import Path
 
-from derive_client import HTTPClient
-from derive_client.data_types import PositionTransfer, RiskUniverseID
-from derive_client.data_types.generated_models import Direction
+from derive_py import HTTPClient
+from derive_py.data_types import PositionTransfer, RiskUniverseID
+from derive_py.data_types.generated_models import Direction
+
+client = HTTPClient.from_env()
+log = client.logger
 
 
 def format_positions(positions) -> str:
     return ", ".join(f"{p.instrument_name}={p.amount}" for p in positions) or "(none)"
 
 
-def min_position_transfer(position) -> PositionTransfer:
-    """The smallest transferable slice of a position as a transfer object."""
+def smallest_slice(position) -> PositionTransfer:
+    """One amount_step of a position, or all of it when it is smaller."""
 
-    step = Decimal(position.amount_step)
     full = Decimal(position.amount)
-    magnitude = min(step, abs(full))
-    amount = -magnitude if full < 0 else magnitude
-    return PositionTransfer(position.instrument_name, amount)
+    magnitude = min(Decimal(position.amount_step), abs(full))
+    return PositionTransfer(position.instrument_name, -magnitude if full < 0 else magnitude)
 
 
-env_file = Path(__file__).parent.parent / ".env.template"
-client = HTTPClient.from_env(env_file=env_file)
+# FALLBACK holds orphaned collateral and trades nothing, so it never takes part.
+subaccounts = [s for s in client.fetch_subaccounts() if s.risk_universe_id is not RiskUniverseID.FALLBACK]
 
-subaccounts = client.fetch_subaccounts()
+source, positions = next(((s, p) for s in subaccounts if (p := s.positions.list())), (None, None))
+if source is None or positions is None:
+    raise SystemExit("No subaccount holds an open position. Run 05-place-order.py and let one fill.")
 
-# in order to transfer positions, both subaccounts must be in the same risk universe
-prime_subaccounts = sorted(filter(lambda sa: sa.risk_universe_id is RiskUniverseID.PRIME, subaccounts))
+target = next((s for s in subaccounts if s.id != source.id and s.risk_universe_id is source.risk_universe_id), None)
+if target is None:
+    raise SystemExit(f"Need a second subaccount in {source.risk_universe_id.name} to receive the transfer.")
 
-if len(prime_subaccounts) < 2:
-    raise SystemExit("Need at least two PRIME subaccounts to transfer a position between.")
+# transfer() takes a list, so several positions can move at once. This moves
+# the smallest slice of one of them.
+transfer = [smallest_slice(positions[0])]
 
-# Need to have at least one subaccount with open positions to transfer from.
-prime_subaccounts_with_positions = ((s, p) for s in prime_subaccounts if (p := s.positions.list()))
-source_sub, source_positions = next(prime_subaccounts_with_positions, (None, None))
-if not source_sub or not source_positions:
-    raise SystemExit("No subaccount with open positions found.")
+log.info(
+    f"before, in {source.risk_universe_id.name}:\n"
+    f"  source #{source.id}: {format_positions(positions)}\n"
+    f"  target #{target.id}: {format_positions(target.positions.list())}\n"
+    f"  transferring: {format_positions(transfer)}"
+)
 
-target_sub = next(s for s in prime_subaccounts if s.id != source_sub.id)
-target_positions = target_sub.positions.list()
-
-print("Before transfer:")
-print(f"  Source subaccount #{source_sub.id}: {format_positions(source_positions)}")
-print(f"  Target subaccount #{target_sub.id}: {format_positions(target_positions)}")
-
-# Transfer one or multiple positions at once, in part or in full.
-positions_to_transfer = list(map(min_position_transfer, source_positions))
-print(f"Transferring: {format_positions(positions_to_transfer)}")
-
-result = source_sub.positions.transfer(
-    positions=positions_to_transfer,
+result = source.positions.transfer(
+    positions=transfer,
     direction=Direction.buy,
-    to_subaccount=target_sub.id,
+    to_subaccount=target.id,
 )
 
-print(
-    f"Position transfer filled: maker={result.maker_quote.status}, taker={result.taker_quote.status}, "
-    f"fees=${result.maker_quote.fee}/${result.taker_quote.fee}"
+log.info(
+    f"filled: maker={result.maker_quote.status}, taker={result.taker_quote.status},"
+    f" fees ${result.maker_quote.fee}/${result.taker_quote.fee}\n"
+    f"  source #{source.id}: {format_positions(source.positions.list())}\n"
+    f"  target #{target.id}: {format_positions(target.positions.list())}"
 )
-
-print("After transfer:")
-print(f"  Source subaccount #{source_sub.id}: {format_positions(source_sub.positions.list())}")
-print(f"  Target subaccount #{target_sub.id}: {format_positions(target_sub.positions.list())}")

@@ -1,0 +1,75 @@
+"""Market maker protection configuration operations."""
+
+from __future__ import annotations
+
+from decimal import Decimal
+from typing import TYPE_CHECKING, Optional
+
+from derive_py._clients.utils import unset_if_none
+from derive_py.data_types.generated_models import (
+    MmpConfigResult,
+    MmpScopeRequest,
+    SetMmpConfigRequest,
+    SetMmpConfigResponse,
+)
+
+if TYPE_CHECKING:
+    from .subaccount import Subaccount
+
+
+class MMPOperations:
+    """Market maker protection operations."""
+
+    def __init__(self, subaccount: Subaccount):
+        """
+        Initialize market maker protection operations.
+
+        Args:
+            subaccount: Subaccount instance providing access to auth, config, and APIs
+        """
+        self._subaccount = subaccount
+
+    async def get_config(self, *, currency: Optional[str] = None) -> list[MmpConfigResult]:
+        """Get the current mmp config for a subaccount (optionally filtered by currency)."""
+
+        subaccount_id = self._subaccount.id
+        params = MmpScopeRequest(
+            subaccount_id=subaccount_id,
+            currency=unset_if_none(currency),
+        )
+        result = await self._subaccount._private_api.rpc.get_mmp_config(params=params)
+        return result
+
+    async def set_config(
+        self,
+        *,
+        currency: str,
+        mmp_frozen_time: int,
+        mmp_interval: int,
+        mmp_amount_limit: Decimal = Decimal("0"),
+        mmp_delta_limit: Decimal = Decimal("0"),
+    ) -> SetMmpConfigResponse:
+        """Set the mmp config for the subaccount and currency."""
+
+        subaccount_id = self._subaccount.id
+        params = SetMmpConfigRequest(
+            subaccount_id=subaccount_id,
+            currency=currency,
+            mmp_frozen_time=mmp_frozen_time,
+            mmp_interval=mmp_interval,
+            mmp_amount_limit=mmp_amount_limit,
+            mmp_delta_limit=mmp_delta_limit,
+        )
+        result = await self._subaccount._private_api.rpc.set_mmp_config(params=params)
+        return result
+
+    async def reset(self, *, currency: Optional[str] = None) -> str:
+        """Resets (unfreezes) the mmp state for a subaccount (optionally filtered by currency)."""
+
+        subaccount_id = self._subaccount.id
+        params = MmpScopeRequest(
+            subaccount_id=subaccount_id,
+            currency=unset_if_none(currency),
+        )
+        result = await self._subaccount._private_api.rpc.reset_mmp(params=params)
+        return result

@@ -18,7 +18,7 @@ import msgspec
 
 from benchmarks.corpus import build_channels
 from benchmarks.harness import Bench
-from derive_client._clients.utils import decode_envelope
+from derive_py._clients.utils import decode_envelope
 
 
 def benches(seed: int = 0) -> list[Bench]:

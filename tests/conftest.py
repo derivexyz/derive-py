@@ -11,7 +11,7 @@ import pytest
 from dotenv import dotenv_values
 from pytest_asyncio import is_async_test
 
-from derive_client.data_types import PositionTransfer
+from derive_py.data_types import PositionTransfer
 
 REPO_ROOT = Path(__file__).parent.parent
 ENV_TEMPLATE = REPO_ROOT / ".env.template"
@@ -29,7 +29,7 @@ def env_template_value(key: str) -> str:
 
 def pytest_collection_modifyitems(items):
     pytest_asyncio_tests = (item for item in items if is_async_test(item))
-    session_scope_marker = pytest.mark.asyncio(scope="session")
+    session_scope_marker = pytest.mark.asyncio(loop_scope="session")
     for async_test in pytest_asyncio_tests:
         async_test.add_marker(session_scope_marker, append=False)
 

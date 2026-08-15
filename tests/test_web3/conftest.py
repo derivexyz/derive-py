@@ -7,7 +7,7 @@ from typing import Any, Callable
 import pytest
 from web3.types import RPCEndpoint, RPCResponse
 
-from derive_client.config import SEPOLIA_CHAIN_ID
+from derive_py.config import SEPOLIA_CHAIN_ID
 
 
 @dataclass

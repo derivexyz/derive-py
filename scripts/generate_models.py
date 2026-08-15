@@ -16,12 +16,12 @@ REQUEST_STRUCT_SUFFIXES = ("Request", "Params")
 # class_name -> {readable_python_name: original_wire_key}
 FIELD_RENAMES: dict[str, dict[str, str]] = {
     "TickerSlimSnapshot": {
-        "best_ask_price": "A",
-        "best_bid_price": "B",
+        "best_ask_amount": "A",
+        "best_bid_amount": "B",
         "index_price": "I",
         "mark_price": "M",
-        "best_ask_amount": "a",
-        "best_bid_amount": "b",
+        "best_ask_price": "a",
+        "best_bid_price": "b",
         "max_price": "maxp",
         "min_price": "minp",
         "timestamp": "t",
@@ -641,7 +641,7 @@ def add_imports(module: cst.Module, imports_to_add: set[str]) -> cst.Module:
         body=[
             cst.ImportFrom(
                 module=cst.Attribute(
-                    value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("data_types")),
+                    value=cst.Attribute(value=cst.Name("derive_py"), attr=cst.Name("data_types")),
                     attr=cst.Name("generated_models"),
                 ),
                 names=import_names,

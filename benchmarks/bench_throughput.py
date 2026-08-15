@@ -42,9 +42,9 @@ from websockets.asyncio.client import connect
 from benchmarks.corpus import ENCODER, Channel, RPCCase, build_channels, build_rpc_cases
 from benchmarks.feeder import feeder_main
 from benchmarks.harness import Result, _git_rev
-from derive_client._clients.websockets.api import PrivateAPI, PublicAPI
-from derive_client._clients.websockets.session import WebSocketSession
-from derive_client.data_types import WebSocketSessionConfig
+from derive_py._clients.websockets.api import PrivateAPI, PublicAPI
+from derive_py._clients.websockets.session import WebSocketSession
+from derive_py.data_types import WebSocketSessionConfig
 
 
 def _quiet_logger() -> logging.Logger:

@@ -5,7 +5,7 @@ from pathlib import Path
 import libcst as cst
 import libcst.matchers as matchers
 
-PACKAGE_DIR = Path(__file__).parent.parent / "derive_client"
+PACKAGE_DIR = Path(__file__).parent.parent / "derive_py"
 
 EXCLUDED_SOURCE_MODULES = {"session.py", "client.py", "api.py", "__init__.py"}
 EXCLUDED_TEST_MODULES = {"conftest.py", "test_session.py", "__init__.py"}
@@ -185,7 +185,7 @@ class AsyncConverter(cst.CSTTransformer):
                 body=[
                     cst.ImportFrom(
                         module=cst.Attribute(
-                            value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("_web3")),
+                            value=cst.Attribute(value=cst.Name("derive_py"), attr=cst.Name("_web3")),
                             attr=cst.Name("async_utils"),
                         ),
                         names=[

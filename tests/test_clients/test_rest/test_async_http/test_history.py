@@ -2,8 +2,8 @@
 
 import pytest
 
-from derive_client._clients.rest.async_http.history import HistoryOperations
-from derive_client.data_types.generated_models import (
+from derive_py._clients.rest.async_http.history import HistoryOperations
+from derive_py.data_types.generated_models import (
     DepositHistoryResult,
     InterestHistoryResult,
     OptionSettlementHistoryResponse,

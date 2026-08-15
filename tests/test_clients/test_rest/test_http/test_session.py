@@ -8,8 +8,8 @@ import time
 import pytest
 import requests
 
-from derive_client._clients.rest.http.session import USER_AGENT, HTTPSession, _is_retryable, request_timeout_override
-from derive_client.data_types import HTTPSessionConfig, LoggerType
+from derive_py._clients.rest.http.session import USER_AGENT, HTTPSession, _is_retryable, request_timeout_override
+from derive_py.data_types import HTTPSessionConfig, LoggerType
 
 _LOGGER = logging.getLogger("derive_test")
 
