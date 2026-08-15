@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import math
-from decimal import Decimal
+import re
+from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from enum import Enum
 from typing import Mapping, Sequence, TypeVar
 
@@ -18,22 +19,68 @@ StructT = TypeVar('StructT', bound=msgspec.Struct)
 console = Console()
 
 
-def fmt_sig_up_to(x: float, sig: int = 4) -> str:
-    """Format x to up to `sig` significant digits, preserving all necessary decimals."""
+# The API returns money as strings, and the generated models keep them as strings
+# rather than guessing a precision, so most numeric cells arrive here as text like
+# "2500.123456789012". Match only strings that carry a decimal point: an id, a
+# label of "123" or a hex address must survive untouched.
+NUMERIC_TEXT = re.compile(r"^-?\d+\.\d+$")
 
-    if x == 0:
+SIG_DIGITS = 6
+MIN_DECIMALS = 2
+MAX_DECIMALS = 8
+
+
+def fmt_number(value: Decimal | float | str, sig: int = SIG_DIGITS) -> str:
+    """Format a number for display: `sig` significant digits, bounded decimals.
+
+    Kept in Decimal throughout, so a value that arrived exact stays exact until it
+    is rounded once, here, for the terminal.
+
+    Magnitudes below the decimal cap render in scientific notation rather than as
+    a row of zeros, so a small delta reads as 1e-12 instead of 0.
+    """
+
+    number = value if isinstance(value, Decimal) else Decimal(str(value))
+    if number == 0:
         return "0"
 
-    order = math.floor(math.log10(abs(x)))
-    decimals = max(sig - order - 1, 0)
-    formatted = f"{x:.{decimals}f}"
-    return formatted.rstrip("0").rstrip(".")
+    order = number.copy_abs().adjusted()
+    if order < -MAX_DECIMALS:
+        mantissa, _, exponent = f"{number:.{sig - 1}e}".partition("e")
+        return f"{mantissa.rstrip('0').rstrip('.')}e{exponent}"
+
+    decimals = min(max(sig - order - 1, MIN_DECIMALS if order >= 0 else 0), MAX_DECIMALS)
+    text = format(number.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_EVEN), "f")
+
+    if "." not in text:
+        return text
+
+    # Trailing zeros go, but a monetary column keeps its two decimal places so the
+    # values in it line up.
+    whole, _, fraction = text.partition(".")
+    fraction = fraction.rstrip("0").ljust(MIN_DECIMALS if order >= 0 else 0, "0")
+    return f"{whole}.{fraction}" if fraction else whole
 
 
-def _quantize_safe(value: Decimal | None, quant=Decimal("0.0001")):
-    if value is None:
+def _as_number(value) -> Decimal | None:
+    """The value as a Decimal if it is a number we should format, else None.
+
+    bool is an int, and int is never formatted: ids, timestamps and counts are not
+    quantities and must not grow decimal places.
+    """
+
+    if isinstance(value, (bool, int)):
+        return None
+    if isinstance(value, Decimal):
         return value
-    return value.quantize(quant)
+    if isinstance(value, float):
+        return None if math.isnan(value) else Decimal(str(value))
+    if isinstance(value, str) and NUMERIC_TEXT.match(value):
+        try:
+            return Decimal(value)
+        except InvalidOperation:
+            return None
+    return None
 
 
 def _check_enum_or_list(value):
@@ -59,14 +106,13 @@ def _is_struct(value) -> bool:
 def struct_to_series(struct: msgspec.Struct) -> pd.Series:
     """Convert a msgspec.Struct to a formatted pandas Series.
 
-    UNSET is normalised to None; Decimals are quantized; Enums are unwrapped.
+    UNSET is normalised to None and Enums are unwrapped. Numbers are left alone:
+    rounding twice, once here and once at render, can flatten a small value to
+    zero on the way.
     """
 
     series = pd.Series(msgspec.structs.asdict(struct), dtype=object)
     series = series.map(lambda x: None if x is msgspec.UNSET else x)
-
-    decimal_mask = series.map(lambda x: isinstance(x, Decimal))
-    series[decimal_mask] = series[decimal_mask].map(_quantize_safe)
 
     enum_mask = series.map(_check_enum_or_list)
     series[enum_mask] = series[enum_mask].map(_convert_enum_value)
@@ -128,10 +174,18 @@ def flatten_struct_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return pd.concat([df.drop(columns=[column]), expanded], axis=1)
 
 
+def _is_numeric_column(values) -> bool:
+    """True when every populated cell is a number, so the column can right align."""
+
+    populated = [v for v in values if v is not None and not (isinstance(v, float) and math.isnan(v))]
+    return bool(populated) and all(_as_number(v) is not None for v in populated)
+
+
 def _cell(value) -> str:
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return ""
-    return str(value)
+    number = _as_number(value)
+    return fmt_number(number) if number is not None else str(value)
 
 
 def dataframe_to_rich_table(df: pd.DataFrame, title: str | None = None) -> Table:
@@ -140,7 +194,7 @@ def dataframe_to_rich_table(df: pd.DataFrame, title: str | None = None) -> Table
     table = Table(title=title, show_header=True, header_style="bold magenta")
 
     for column in df.columns:
-        table.add_column(column, style="cyan")
+        table.add_column(column, style="cyan", justify="right" if _is_numeric_column(df[column]) else "left")
 
     for _, row in df.iterrows():
         table.add_row(*map(_cell, row.values))
