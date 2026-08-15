@@ -20,7 +20,7 @@ from ._tree import print_tree
 click.rich_click.USE_RICH_MARKUP = True
 
 
-@click.group("Derive Client")
+@click.group("drv")
 @click.option(
     "--session-key-path",
     "-k",

@@ -130,3 +130,6 @@ site/
 
 node_modules
 /.nix-venv
+
+# generated API reference pages, rebuilt by `make docs`
+docs/reference/

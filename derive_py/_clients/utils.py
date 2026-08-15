@@ -372,7 +372,7 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     session_key = session_key_path.read_text().strip() if session_key_path else os.environ.get("DERIVE_SESSION_KEY")
     wallet_str = os.environ.get("DERIVE_WALLET")
     subaccount_id_str = os.environ.get("DERIVE_SUBACCOUNT_ID")
-    env_name = os.environ.get("DERIVE_ENV", "PROD").upper()
+    env_name = os.environ.get("DERIVE_ENV", "TEST").upper()
 
     missing = []
     if not session_key:

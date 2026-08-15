@@ -1,21 +1,12 @@
-site_name: Derive Client
-site_description:
+site_name: derive-py
+site_description: Python client for the Derive v3 API
 docs_dir: docs
-site_url: https://8ball030.github.io/derive_py/
-repo_url: https://github.com/8ball030/derive_py
+site_url: https://derivexyz.github.io/derive-py/
+repo_url: https://github.com/derivexyz/derive-py
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
-  - Examples: examples.md
-  - Concepts:
-      - Account Model: concepts/account-model.md
-      - Authentication: concepts/authentication.md
-      - Bridging: concepts/bridging.md
-      - Clients: concepts/clients.md
-  - CLI Reference: cli.md
   - API Reference: reference/
-  - Internal API: internal/
 
 validation:
   nav:
@@ -24,7 +15,6 @@ validation:
 theme:
   name: material
   language: en
-  # logo: assets/logo.png
   palette:
     scheme: slate
     primary: indigo
@@ -32,69 +22,33 @@ theme:
   features:
     - navigation.indexes
     - navigation.instant
-    - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - navigation.footer
     - search.highlight
-    - search.share
     - search.suggest
     - content.code.copy
-    - content.code.annotate
-    - content.tabs.link
 
 markdown_extensions:
   - admonition
   - attr_list
-  - meta
   - pymdownx.details
-  - pymdownx.highlight
-  - pymdownx.keys
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.tasklist
-  - pymdownx.magiclink
-  - pymdownx.mark
-  - pymdownx.tilde
-  - pymdownx.caret
-  - pymdownx.critic
-  - pymdownx.betterem
-  - pymdownx.superfences
-  - pymdownx.inlinehilite
-  - pymdownx.details
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.arithmatex:
-      generic: true
   - pymdownx.highlight:
       linenums: false
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - toc:
       baselevel: 2
       toc_depth: 3
       permalink: true
-      slugify: !!python/object/apply:pymdownx.slugs.slugify
-        kwds:
-          case: lower
-          percent_encode: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.superfences:
-      # make exceptions to highlighting of code:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid_custom
 
 plugins:
   - include-markdown
-  - mermaid2
   - search:
       lang: en
-  - gen-files:
-      scripts:
-        - scripts/generate-ref-pages.py
-        - scripts/generate-internal-pages.py
   - literate-nav:
       nav_file: SUMMARY.md
   - mkdocstrings:
@@ -120,7 +74,5 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/8ball030/derive_py
-      name: Github
-    - icon: material/email
-      link: "mailto:8ball030@gmail.com"
+      link: https://github.com/derivexyz/derive-py
+      name: GitHub
