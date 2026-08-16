@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from derive_py.data_types import ChecksumAddress, DeriveContractAddresses, EnvConfig, Environment
-
-from .constants import ETHEREUM_MAINNET_CHAIN_ID, SEPOLIA_CHAIN_ID
+from derive_py.data_types import Chain, ChainConfig, ChecksumAddress, DeriveContractAddresses
 
 # V3_MODULE_ADDRESSES
 TRADE_MODULE = ChecksumAddress("0xB8D20c2B7a1Ad2EE33Bc50eF10876eD3035b5e7b")
@@ -24,11 +22,10 @@ WITHDRAWAL_OUTBOX = ChecksumAddress("0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988"
 SPOT_VAULT = ChecksumAddress("0xB20790d63f648feA1A23948CDF1B8769DF78a173")
 
 
-CONFIGS: dict[Environment, EnvConfig] = {
-    Environment.TEST: EnvConfig(
+CONFIGS: dict[Chain, ChainConfig] = {
+    Chain.SEPOLIA: ChainConfig(
         base_url="https://testnet.api.derive.xyz/v3",
         ws_address="wss://testnet.api.derive.xyz/v3/ws",
-        chain_id=SEPOLIA_CHAIN_ID,
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
         DOMAIN_SEPARATOR="0x24d674cd5f2b9d564691c51e9d88f649b99246a2244dd74ce27b96578d773e85",
         contracts=DeriveContractAddresses(
@@ -47,10 +44,9 @@ CONFIGS: dict[Environment, EnvConfig] = {
             SPOT_VAULT=SPOT_VAULT,
         ),
     ),
-    Environment.PROD: EnvConfig(  # TODO: verify these addresses against the mainnet
+    Chain.ETHEREUM: ChainConfig(  # TODO: verify these addresses against the mainnet
         base_url="https://api.derive.xyz/v3",
         ws_address="wss://api.derive.xyz/v3/ws",
-        chain_id=ETHEREUM_MAINNET_CHAIN_ID,
         ACTION_TYPEHASH="0x4d7a9f27c403ff9c0f19bce61d76d82f9aa29f8d6d4b0c5474607d9770d1af17",
         DOMAIN_SEPARATOR="0xda616dfabb88681b08e1592820a41d55ddc62d68de110e327ae99d734506fe19",
         contracts=DeriveContractAddresses(

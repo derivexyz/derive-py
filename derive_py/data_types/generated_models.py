@@ -1244,7 +1244,7 @@ class ReplaceQuoteRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
@@ -1299,7 +1299,7 @@ class Rfq(Struct):
 
 class RfqGetBestQuoteRequest(Struct):
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     direction: Direction | UnsetType = Direction('buy')
     extra_fee: Decimal | UnsetType = Decimal('0')
     legs: list[LegUnpricedParams] | UnsetType = field(default_factory=list)
@@ -1329,7 +1329,7 @@ class SendQuoteRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
@@ -1339,7 +1339,7 @@ class SendQuoteRequest(Struct):
 class SendRfqRequest(Struct):
     legs: list[LegUnpricedParams]
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     counterparties: list[str] | UnsetType = UNSET
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
@@ -1790,7 +1790,7 @@ class CreateOrderRequest(Struct):
     algo_duration_sec: int | UnsetType = UNSET
     algo_num_slices: int | UnsetType = UNSET
     algo_type: AlgoType | UnsetType = UNSET
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     extra_fee: Decimal | UnsetType = UNSET
     is_atomic_signing: bool | UnsetType = UNSET
     label: str | UnsetType = UNSET
@@ -1817,7 +1817,7 @@ class ExecuteQuoteRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     enable_taker_protection: bool | UnsetType = False
     label: str | UnsetType = ''
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
@@ -1999,7 +1999,7 @@ class OrderQuoteRequest(Struct):
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     extra_fee: Decimal | UnsetType = UNSET
     is_atomic_signing: bool | UnsetType = False
     label: str | UnsetType = ''
@@ -2202,7 +2202,7 @@ class ReplaceOrderRequest(Struct):
     algo_duration_sec: int | UnsetType = UNSET
     algo_num_slices: int | UnsetType = UNSET
     algo_type: AlgoType | UnsetType = UNSET
-    client: str | UnsetType = '8baller-python-sdk'
+    client: str | UnsetType = 'derive-py'
     expected_filled_amount: Decimal | UnsetType = UNSET
     extra_fee: Decimal | UnsetType = UNSET
     is_atomic_signing: bool | UnsetType = UNSET

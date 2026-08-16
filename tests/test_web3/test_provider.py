@@ -8,14 +8,16 @@ from web3 import Web3
 from web3.types import RPCEndpoint
 
 from derive_py._web3.provider import FailoverProvider
-from derive_py.config import SEPOLIA_CHAIN_ID as CHAIN_ID
+from derive_py.data_types import Chain
 from derive_py.exceptions import AllEndpointsFailed, ChainIdMismatch
 
 from .conftest import FakeProvider, ok, rpc_error, static_handler
 
+CHAIN = Chain.SEPOLIA
+
 
 def build(*providers: FakeProvider, logger, cooldown: float = 60.0) -> FailoverProvider:
-    return FailoverProvider(chain_id=CHAIN_ID, logger=logger, cooldown=cooldown, providers=list(providers))
+    return FailoverProvider(chain=CHAIN, logger=logger, cooldown=cooldown, providers=list(providers))
 
 
 def test_chain_id_served_locally_without_touching_the_network(logger):
@@ -24,7 +26,7 @@ def test_chain_id_served_locally_without_touching_the_network(logger):
 
     response = provider.make_request(RPCEndpoint("eth_chainId"), [])
 
-    assert int(str(response.get("result")), 16) == CHAIN_ID
+    assert int(str(response.get("result")), 16) == CHAIN.value
     assert a.calls == []
 
 
@@ -39,7 +41,7 @@ def test_chain_id_probed_once_then_never_again(logger):
 
 
 def test_chain_id_mismatch_disables_the_endpoint_and_fails_over(logger):
-    wrong = FakeProvider("wrong", static_handler(chain_id=1, eth_blockNumber=ok("0x1")))
+    wrong = FakeProvider("wrong", static_handler(chain=Chain.ETHEREUM, eth_blockNumber=ok("0x1")))
     right = FakeProvider("right", static_handler(eth_blockNumber=ok("0x2")))
     provider = build(wrong, right, logger=logger)
 
@@ -50,13 +52,13 @@ def test_chain_id_mismatch_disables_the_endpoint_and_fails_over(logger):
 
 
 def test_verify_all_fails_fast_on_mismatch(logger):
-    wrong = FakeProvider("wrong", static_handler(chain_id=1))
+    wrong = FakeProvider("wrong", static_handler(chain=Chain.ETHEREUM))
     provider = build(wrong, logger=logger)
 
     with pytest.raises(ChainIdMismatch) as excinfo:
         provider.verify_all()
     assert excinfo.value.actual == 1
-    assert excinfo.value.expected == CHAIN_ID
+    assert excinfo.value.expected == CHAIN.value
 
 
 def test_transport_error_fails_over(logger):
@@ -131,7 +133,7 @@ def test_cooldown_then_reset_to_head(logger):
 
     def flaky(method: str, params):
         if method == "eth_chainId":
-            return ok(hex(CHAIN_ID))
+            return ok(hex(CHAIN))
         return rpc_error(-32000, "rate limit") if state["fail"] else ok("0x1")
 
     a = FakeProvider("a", flaky)

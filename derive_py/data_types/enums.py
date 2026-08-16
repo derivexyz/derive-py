@@ -1,6 +1,18 @@
 """Enums used in the derive_py module."""
 
-from enum import Enum, IntEnum, StrEnum
+from enum import IntEnum, StrEnum
+
+
+class Chain(IntEnum):
+    """Chain identity. The value IS the EIP-155 chain id."""
+
+    ETHEREUM = 1
+    SEPOLIA = 11155111
+
+    @property
+    def network(self) -> str:
+        """Directory name under data/abis/."""
+        return self.name.lower()
 
 
 class ConnectionState(StrEnum):
@@ -29,13 +41,6 @@ class GasPriority(IntEnum):
     SLOW = 25
     MEDIUM = 50
     FAST = 75
-
-
-class Environment(Enum):
-    """Environment."""
-
-    PROD = "prod"
-    TEST = "test"
 
 
 class VaultAction(IntEnum):

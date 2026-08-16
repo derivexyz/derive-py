@@ -3,9 +3,9 @@
 from logging import Logger, LoggerAdapter
 
 from .enums import (
+    Chain,
     ConnectionState,
     DeriveJSONRPCErrorCode,
-    Environment,
     EthereumJSONRPCErrorCode,
     GasPriority,
     OffchainScope,
@@ -21,10 +21,10 @@ from .generated_models import (
 )
 from .models import (
     AsyncHTTPSessionConfig,
+    ChainConfig,
     ChecksumAddress,
     ClientConfig,
     DeriveContractAddresses,
-    EnvConfig,
     FeeEstimate,
     FeeEstimates,
     FeeHistory,
@@ -47,6 +47,7 @@ LoggerType = Logger | LoggerAdapter
 __all__ = [
     "AssetType",
     "AsyncHTTPSessionConfig",
+    "Chain",
     "ChecksumAddress",
     "ClientConfig",
     "ConnectionState",
@@ -54,8 +55,7 @@ __all__ = [
     "DeriveJSONRPCErrorCode",
     "DeriveContractAddresses",
     "Direction",
-    "Environment",
-    "EnvConfig",
+    "ChainConfig",
     "EthereumJSONRPCErrorCode",
     "FeeHistory",
     "FeeEstimate",

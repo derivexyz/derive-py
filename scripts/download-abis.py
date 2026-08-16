@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
-"""Download ABIs for Derive v3 settlement contracts.
+"""Download ABIs for Derive v3 settlement contracts, for every chain.
 
-Addresses source: https://v3.docs.derive.xyz/getting-started/contracts
+Addresses come from derive_py.config.CONFIGS, which mirrors
+https://v3.docs.derive.xyz/getting-started/contracts
 """
 
 import json
-import os
 import sys
 import time
+from collections.abc import Callable, Iterable
 
 import requests
 from web3 import Web3
 
-from derive_py.config import ABI_DATA_DIR
+from derive_py._web3 import make_web3
+from derive_py.config import ABI_DATA_DIR, CONFIGS
+from derive_py.data_types import Chain, LoggerType
 from derive_py.utils.logger import get_logger
 
 TIMEOUT = 10
@@ -22,28 +25,29 @@ RATE_LIMIT_BACKOFF = 30  # seconds, per source, single retry
 
 EIP1967_SLOT = (int.from_bytes(Web3.keccak(text="eip1967.proxy.implementation")[:32], "big") - 1).to_bytes(32, "big")
 
-# Only Sepolia exists today. Add a "mainnet" entry here once Derive v3 is live on mainnet
-NETWORK = "sepolia"
-CHAIN_ID = 11155111
+# Explicit rather than list(Chain), so Sepolia is always attempted first: it is
+# the one that currently resolves, and a mainnet RPC stall should not delay it.
+CHAINS = (Chain.SEPOLIA, Chain.ETHEREUM)
 
-SEPOLIA_RPC_URL = os.environ.get("DERIVE_V3_SEPOLIA_RPC_URL", "https://ethereum-sepolia-rpc.publicnode.com")
-
-# Raw strings on purpose -- checksummed via Web3.to_checksum_address() below
-# rather than trusted verbatim from the docs.
-SEPOLIA_CONTRACTS: dict[str, str] = {
-    "ACTION_MANAGER": "0x1b4f369b585D40a27F66775844FC265151f278A4",
-    "VAPP": "0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393",
-    "WITHDRAWAL_OUTBOX": "0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988",
-    "SPOT_VAULT": "0xB20790d63f648feA1A23948CDF1B8769DF78a173",
+# abidata.net network id, its own vocabulary and not Chain.network. Ethereum
+# mainnet is its default and takes no param.
+ABIDATA_NETWORKS: dict[Chain, str | None] = {
+    Chain.ETHEREUM: None,
+    Chain.SEPOLIA: "sepolia",
 }
 
-ABIDATA_URL = "https://abidata.net/{address}?network=sepolia"
+# The subset of CONFIGS[chain].contracts that is settlement infrastructure. The
+# *_MODULE addresses are signing targets, not contracts we call, so no ABI.
+CONTRACT_NAMES = ("ACTION_MANAGER", "VAPP", "WITHDRAWAL_OUTBOX", "SPOT_VAULT")
+
+ABIDATA_URL = "https://abidata.net/{address}"
 SOURCIFY_URL = "https://sourcify.dev/server/v2/contract/{chain_id}/{address}?fields=abi"
 
 
-def _fetch_abidata(address: str) -> list:
-    url = ABIDATA_URL.format(address=address)
-    response = requests.get(url, timeout=TIMEOUT)
+def _fetch_abidata(address: str, chain: Chain) -> list:
+    network = ABIDATA_NETWORKS[chain]
+    params = {"network": network} if network else None
+    response = requests.get(ABIDATA_URL.format(address=address), params=params, timeout=TIMEOUT)
     response.raise_for_status()
     data = response.json()
     if "abi" not in data:
@@ -51,8 +55,10 @@ def _fetch_abidata(address: str) -> list:
     return data["abi"]
 
 
-def _fetch_sourcify(address: str) -> list:
-    url = SOURCIFY_URL.format(chain_id=CHAIN_ID, address=address)
+def _fetch_sourcify(address: str, chain: Chain) -> list:
+    # int() rather than relying on IntEnum.__format__, which only yields the
+    # bare number because 3.11 delegates it to int.
+    url = SOURCIFY_URL.format(chain_id=int(chain), address=address)
     response = requests.get(url, timeout=TIMEOUT)
     response.raise_for_status()
     data = response.json()
@@ -64,15 +70,18 @@ def _fetch_sourcify(address: str) -> list:
     raise ValueError(f"Sourcify response had no recognisable 'abi' field: keys={list(data.keys())}")
 
 
-def get_abi(address: str, logger) -> list:
-    """Fetch an ABI for `address` on Sepolia. Raises if no source has it."""
-    sources = [("abidata.net", _fetch_abidata), ("sourcify", _fetch_sourcify)]
+def get_abi(address: str, chain: Chain, logger: LoggerType) -> list:
+    """Fetch an ABI for `address` on `chain`. Raises if no source has it."""
+    sources: tuple[tuple[str, Callable[[str, Chain], list]], ...] = (
+        ("abidata.net", _fetch_abidata),
+        ("sourcify", _fetch_sourcify),
+    )
     errors: list[str] = []
 
     for name, fetch in sources:
         for attempt in range(2):
             try:
-                return fetch(address)
+                return fetch(address, chain)
             except Exception as e:
                 error_str = str(e).lower()
                 if attempt == 0 and ("rate limit" in error_str or "429" in error_str):
@@ -96,20 +105,31 @@ def get_impl_address(w3: Web3, address: str) -> str | None:
     return impl_address
 
 
-def main() -> int:
-    logger = get_logger()
-    w3 = Web3(Web3.HTTPProvider(SEPOLIA_RPC_URL))
+def any_deployed(w3: Web3, addresses: Iterable[str]) -> bool:
+    """False means the whole deployment is absent, which is the expected state
+    for a chain v3 has not launched on yet. A PARTIAL set is not treated as
+    absent: those addresses fail the ABI fetch and the run exits non-zero,
+    which is what a genuinely wrong config should look like."""
+
+    return any(w3.eth.get_code(Web3.to_checksum_address(address)) for address in addresses)
+
+
+def process_chain(chain: Chain, logger: LoggerType) -> list[str]:
+    """Download every ABI for one chain. Returns the failures."""
+    contracts = CONFIGS[chain].contracts
+    w3 = make_web3(chain, logger=logger)
 
     if not w3.is_connected():
-        logger.error(f"Could not connect to Sepolia RPC at {SEPOLIA_RPC_URL}")
-        return 1
+        return [f"{chain.network}: no configured RPC endpoint answered"]
 
-    abi_dir = ABI_DATA_DIR.parent / "abis" / NETWORK
+    to_process: list[tuple[str, str]] = [(name, Web3.to_checksum_address(contracts[name])) for name in CONTRACT_NAMES]
+
+    if not any_deployed(w3, (address for _, address in to_process)):
+        logger.warning(f"No bytecode at any {chain.network} address, so v3 is not deployed there. Skipping.")
+        return []
+
+    abi_dir = ABI_DATA_DIR / chain.network
     abi_dir.mkdir(exist_ok=True, parents=True)
-
-    to_process: list[tuple[str, str]] = [
-        (name, Web3.to_checksum_address(addr)) for name, addr in SEPOLIA_CONTRACTS.items()
-    ]
 
     manifest: dict[str, dict] = {name: {"address": addr} for name, addr in to_process}
     proxy_mapping: dict[str, str] = {}
@@ -132,9 +152,9 @@ def main() -> int:
             continue
 
         try:
-            abi = get_abi(address=address, logger=logger)
+            abi = get_abi(address=address, chain=chain, logger=logger)
         except Exception as e:
-            failures.append(f"{name} ({address}): {e}")
+            failures.append(f"{chain.network}: {name} ({address}): {e}")
             logger.warning(f"Failed to fetch ABI for {name} ({address}): {e}")
             continue
 
@@ -153,13 +173,28 @@ def main() -> int:
         proxy_mapping_path.write_text(json.dumps(proxy_mapping, indent=4))
         logger.info(f"Saved proxy mapping: {proxy_mapping_path}")
 
+    return failures
+
+
+def main() -> int:
+    logger = get_logger()
+    failures: list[str] = []
+
+    for chain in CHAINS:
+        logger.info(f"Downloading v3 ABIs for {chain.network}")
+        try:
+            failures.extend(process_chain(chain, logger))
+        except Exception as e:
+            failures.append(f"{chain.network}: {e}")
+            logger.warning(f"Aborted {chain.network}: {e}")
+
     if failures:
         logger.error(f"Failed to fetch {len(failures)} ABI(s):")
         for failure in failures:
             logger.error(f"  {failure}")
         return 1
 
-    logger.info("Successfully downloaded all v3 Sepolia contract ABIs.")
+    logger.info("Successfully downloaded all v3 contract ABIs.")
     return 0
 
 

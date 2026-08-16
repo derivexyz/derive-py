@@ -28,10 +28,10 @@ from derive_py._web3.action_signing import (
 )
 from derive_py.config import CONFIGS
 from derive_py.data_types import (
+    Chain,
+    ChainConfig,
     ChecksumAddress,
     ClientConfig,
-    EnvConfig,
-    Environment,
     LoggerType,
     PositionTransfer,
     RiskUniverseID,
@@ -183,7 +183,7 @@ class AuthContext:
     wallet: ChecksumAddress
     w3: Web3
     account: LocalAccount
-    config: EnvConfig
+    config: ChainConfig
 
     @property
     def signer(self) -> ChecksumAddress:
@@ -234,12 +234,10 @@ class AuthContext:
 
 def make_auth(client_config: ClientConfig, *, logger: LoggerType) -> AuthContext:
     """Build the auth context, deriving the session account from the key."""
-
-    env_config = CONFIGS[client_config.env]
+    chain_config = CONFIGS[client_config.chain]
     account = Account.from_key(client_config.session_key.get_secret_value())
-    w3 = make_web3(client_config.env, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
-
-    return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=env_config)
+    w3 = make_web3(client_config.chain, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
+    return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=chain_config)
 
 
 def log_session_key_status(
@@ -372,7 +370,7 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     session_key = session_key_path.read_text().strip() if session_key_path else os.environ.get("DERIVE_SESSION_KEY")
     wallet_str = os.environ.get("DERIVE_WALLET")
     subaccount_id_str = os.environ.get("DERIVE_SUBACCOUNT_ID")
-    env_name = os.environ.get("DERIVE_ENV", "TEST").upper()
+    chain_name = os.environ.get("DERIVE_ETH_CHAIN", Chain.SEPOLIA.name).upper()
 
     missing = []
     if not session_key:
@@ -400,18 +398,20 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
         raise ValueError(f"Invalid subaccount ID '{subaccount_id_str}': must be an integer")
 
     try:
-        env = Environment[env_name]
+        chain = Chain(int(chain_name)) if chain_name.isdigit() else Chain[chain_name]
     except Exception:
-        raise ValueError(f"Invalid DERIVE_ENV '{env_name}': expected one of {[e.name for e in Environment]}")
+        raise ValueError(
+            f"Invalid DERIVE_ETH_CHAIN '{chain_name}': expected one of {[f'{c.name} ({int(c)})' for c in Chain]}"
+        )
 
-    raw_endpoints = os.environ.get("ETH_RPC_ENDPOINTS")
+    raw_endpoints = os.environ.get("DERIVE_ETH_RPC_ENDPOINTS")
     rpc_endpoints = tuple(part.strip() for part in raw_endpoints.split(",") if part.strip()) if raw_endpoints else None
 
     return ClientConfig(
         session_key=SecretStr(session_key),
         wallet=wallet_checksum,
         subaccount_id=subaccount_id,
-        env=env,
+        chain=chain,
         rpc_endpoints=rpc_endpoints,
     )
 

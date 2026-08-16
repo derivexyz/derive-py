@@ -33,8 +33,8 @@ from web3.providers.base import BaseProvider
 from web3.providers.rpc.utils import ExceptionRetryConfiguration
 from web3.types import RPCEndpoint, RPCError, RPCResponse
 
-from derive_py.config import CONFIGS, resolve_rpc_endpoints
-from derive_py.data_types import Environment, LoggerType
+from derive_py.config import resolve_rpc_endpoints
+from derive_py.data_types import Chain, LoggerType
 from derive_py.exceptions import AllEndpointsFailed, ChainIdMismatch
 
 # What a JSON-RPC param actually is at this boundary. bytes is included
@@ -222,7 +222,7 @@ class FailoverProvider(BaseProvider):
         self,
         endpoints: Sequence[str] = (),
         *,
-        chain_id: int,
+        chain: Chain,
         logger: LoggerType,
         timeout: float = 5.0,
         cooldown: float = 60.0,
@@ -235,7 +235,7 @@ class FailoverProvider(BaseProvider):
             providers = _build_http_providers(endpoints, timeout)
 
         self._providers: list[RPCProvider] = list(providers)
-        self._chain_id = chain_id
+        self._chain_id = chain.value
         self._logger = logger
         self._cooldown = cooldown
 
@@ -428,16 +428,11 @@ class FailoverProvider(BaseProvider):
 
 
 def make_web3(
-    env: Environment,
-    *,
-    rpc_endpoints: str | Sequence[str] | None = None,
-    logger: LoggerType,
-    timeout: float = 5.0,
+    chain: Chain, *, rpc_endpoints: str | Sequence[str] | None = None, logger: LoggerType, timeout: float = 5.0
 ) -> Web3:
     """The single construction site for a Web3 instance. All clients call this."""
-
-    endpoints = resolve_rpc_endpoints(env, rpc_endpoints)
-    provider = FailoverProvider(endpoints, chain_id=CONFIGS[env].chain_id, logger=logger, timeout=timeout)
+    endpoints = resolve_rpc_endpoints(chain, rpc_endpoints)
+    provider = FailoverProvider(endpoints, chain=chain, logger=logger, timeout=timeout)
     return Web3(provider)
 
 

@@ -10,7 +10,7 @@ from derive_py._clients.rest.http.api import PrivateAPI, PublicAPI
 from derive_py._clients.rest.http.history import HistoryOperations
 from derive_py._clients.utils import AuthContext, log_session_key_status, unset_if_none
 from derive_py._web3.action_signing import SessionKeyModuleData, WhitelistedRecipientModuleData
-from derive_py.data_types import ChecksumAddress, EnvConfig, LoggerType, OffchainScope, ProtocolScope
+from derive_py.data_types import ChainConfig, ChecksumAddress, LoggerType, OffchainScope, ProtocolScope
 from derive_py.data_types.generated_models import (
     EditSessionKeyRequest,
     GetAccountRequest,
@@ -36,7 +36,7 @@ class LightAccount:
         self,
         *,
         auth: AuthContext,
-        config: EnvConfig,
+        config: ChainConfig,
         logger: LoggerType,
         public_api: PublicAPI,
         private_api: PrivateAPI,
@@ -47,7 +47,7 @@ class LightAccount:
 
         Args:
             auth: Authentication context for signing operations
-            config: Environment configuration
+            config: Chain configuration
             public_api: Public API interface
             private_api: Private API interface for authenticated requests
             _state: Initial state (internal use only)
@@ -65,7 +65,7 @@ class LightAccount:
         cls,
         *,
         auth: AuthContext,
-        config: EnvConfig,
+        config: ChainConfig,
         logger: LoggerType,
         public_api: PublicAPI,
         private_api: PrivateAPI,
@@ -78,7 +78,7 @@ class LightAccount:
 
         Args:
             auth: Authentication context for signing operations
-            config: Environment configuration
+            config: Chain configuration
             public_api: Public API interface
             private_api: Private API interface for authenticated requests
 

@@ -26,7 +26,6 @@ from derive_py._web3.deposits import DepositStep
 from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
-    Environment,
     GasPriority,
     HTTPSessionConfig,
     LoggerType,
@@ -65,8 +64,7 @@ class HTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        network = "sepolia" if client_config.env == Environment.TEST else "ethereum"
-        self._contract_registry = ContractRegistry(w3=auth.w3, network=network)
+        self._contract_registry = ContractRegistry(w3=auth.w3, chain=client_config.chain)
         self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
 
     @classmethod

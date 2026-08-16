@@ -18,7 +18,7 @@ from web3 import Account
 
 from derive_py._web3.action_signing import SignedAction, TradeModuleData
 from derive_py.config.contracts import CONFIGS
-from derive_py.data_types import Environment
+from derive_py.data_types import Chain
 from tests.conftest import env_template_value
 
 from . import expected
@@ -35,7 +35,7 @@ from .expected import (
     SUBACCOUNT_ID,
 )
 
-CONFIG = CONFIGS[Environment.TEST]
+CONFIG = CONFIGS[Chain.SEPOLIA]
 
 OTHER_ADDRESS = "0x0000000000000000000000000000000000000001"
 
@@ -141,7 +141,7 @@ def test_domain_separator_binds_into_the_digest(action):
     """Only the domain separator distinguishes testnet from mainnet, so a
     signature would otherwise be replayable across chains."""
     before = action._to_typed_data_hash()
-    action.DOMAIN_SEPARATOR = CONFIGS[Environment.PROD].DOMAIN_SEPARATOR
+    action.DOMAIN_SEPARATOR = CONFIGS[Chain.ETHEREUM].DOMAIN_SEPARATOR
     assert action._to_typed_data_hash() != before
 
 

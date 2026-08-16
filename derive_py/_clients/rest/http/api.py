@@ -4,7 +4,7 @@ from derive_py._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
 from derive_py._clients.rest.http.session import HTTPSession
 from derive_py._clients.utils import AuthContext, decode_envelope, decode_result, encode_request
 from derive_py.config import PUBLIC_HEADERS
-from derive_py.data_types import EnvConfig
+from derive_py.data_types import ChainConfig
 from derive_py.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
@@ -203,7 +203,7 @@ from derive_py.data_types.generated_models import (
 class PublicRPC:
     """public RPC methods"""
 
-    def __init__(self, session: HTTPSession, config: EnvConfig):
+    def __init__(self, session: HTTPSession, config: ChainConfig):
         self._session = session
 
         self._config = config
@@ -932,7 +932,7 @@ class PublicRPC:
 class PrivateRPC:
     """private RPC methods"""
 
-    def __init__(self, session: HTTPSession, config: EnvConfig, auth: AuthContext):
+    def __init__(self, session: HTTPSession, config: ChainConfig, auth: AuthContext):
         self._session = session
 
         self._config = config
@@ -2355,12 +2355,12 @@ class PrivateRPC:
 class PublicAPI:
     """Combined  public API"""
 
-    def __init__(self, session: HTTPSession, config: EnvConfig):
+    def __init__(self, session: HTTPSession, config: ChainConfig):
         self.rpc = PublicRPC(session, config)
 
 
 class PrivateAPI:
     """Combined  private API"""
 
-    def __init__(self, session: HTTPSession, config: EnvConfig, auth: AuthContext):
+    def __init__(self, session: HTTPSession, config: ChainConfig, auth: AuthContext):
         self.rpc = PrivateRPC(session, config, auth)

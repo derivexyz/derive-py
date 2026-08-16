@@ -8,7 +8,7 @@ import msgspec
 {% if client_type == 'http' %}
 from derive_py._clients.rest{% if is_async %}.async_http{% else %}.http{% endif %}.session import {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}
 from derive_py.config import PUBLIC_HEADERS
-from derive_py.data_types import EnvConfig
+from derive_py.data_types import ChainConfig
 from derive_py._clients.utils import decode_envelope, decode_result, AuthContext, encode_request
 from derive_py._clients.rest.endpoints import PublicEndpoints, PrivateEndpoints
 {% else %}
@@ -46,7 +46,7 @@ Handler = Callable[[MessageT], None] | Callable[[MessageT], Awaitable[None]]
 class {{ api_prefix }}PublicRPC:
     """{{ api_prefix }} public RPC methods"""
 
-    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: EnvConfig{% else %}: WebSocketSession{% endif %}):
+    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: ChainConfig{% else %}: WebSocketSession{% endif %}):
         self._session = session
 {% if client_type == 'http' %}
         self._config = config
@@ -82,7 +82,7 @@ class {{ api_prefix }}PublicRPC:
 class {{ api_prefix }}PrivateRPC:
     """{{ api_prefix }} private RPC methods"""
 
-    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: EnvConfig, auth: AuthContext{% else %}: WebSocketSession{% endif %}):
+    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: ChainConfig, auth: AuthContext{% else %}: WebSocketSession{% endif %}):
         self._session = session
 {% if client_type == 'http' %}
         self._config = config
@@ -209,7 +209,7 @@ class {{ api_prefix }}PrivateChannels:
 class {{ api_prefix }}PublicAPI:
     """Combined {{ api_prefix }} public API{% if client_type == 'websocket' %} - RPC and channels{% endif %}"""
 
-    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: EnvConfig{% else %}: WebSocketSession{% endif %}):
+    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: ChainConfig{% else %}: WebSocketSession{% endif %}):
         self.rpc = {{ api_prefix }}PublicRPC(session{% if client_type == 'http' %}, config{% endif %})
 {% if client_type == 'websocket' %}
         self.channels = {{ api_prefix }}PublicChannels(session)
@@ -219,7 +219,7 @@ class {{ api_prefix }}PublicAPI:
 class {{ api_prefix }}PrivateAPI:
     """Combined {{ api_prefix }} private API{% if client_type == 'websocket' %} - RPC and channels{% endif %}"""
 
-    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: EnvConfig, auth: AuthContext{% else %}: WebSocketSession{% endif %}):
+    def __init__(self, session{% if client_type == 'http' %}: {% if is_async %}AsyncHTTPSession{% else %}HTTPSession{% endif %}, config: ChainConfig, auth: AuthContext{% else %}: WebSocketSession{% endif %}):
         self.rpc = {{ api_prefix }}PrivateRPC(session{% if client_type == 'http' %}, config, auth{% endif %})
 {% if client_type == 'websocket' %}
         self.channels = {{ api_prefix }}PrivateChannels(session)
