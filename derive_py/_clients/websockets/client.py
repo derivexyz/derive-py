@@ -36,7 +36,6 @@ from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
     ConnectionState,
-    Environment,
     GasPriority,
     LoggerType,
     MarginType,
@@ -83,8 +82,7 @@ class WebSocketClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        network = "sepolia" if client_config.env == Environment.TEST else "ethereum"
-        self._contract_registry = ContractRegistry(w3=auth.w3, network=network)
+        self._contract_registry = ContractRegistry(w3=auth.w3, chain=client_config.chain)
         self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
 
         self._logger.info(
@@ -93,7 +91,7 @@ class WebSocketClient:
                             wallet:     {auth.wallet}
                             subaccount: {client_config.subaccount_id}
                             signer:     {auth.account.address}
-                            environment {client_config.env.value} """)
+                            environment {client_config.chain.name} """)
         )
 
     @classmethod

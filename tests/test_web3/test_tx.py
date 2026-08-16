@@ -8,10 +8,11 @@ from web3 import Web3
 from derive_py._web3.provider import FailoverProvider
 from derive_py._web3.tx import prepare_transaction
 from derive_py.config import ABI_DATA_DIR
-from derive_py.config import SEPOLIA_CHAIN_ID as CHAIN_ID
-from derive_py.data_types import ChecksumAddress, GasPriority
+from derive_py.data_types import Chain, ChecksumAddress, GasPriority
 
 from .conftest import FakeProvider, ok, static_handler
+
+CHAIN = Chain.SEPOLIA
 
 TOKEN = ChecksumAddress("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984")
 OWNER = ChecksumAddress("0x2170Ed0880ac9A755fd29B2688956BD959F933F8")
@@ -33,7 +34,7 @@ def w3_and_node(logger):
     node = FakeProvider(
         "node",
         static_handler(
-            chain_id=CHAIN_ID,
+            chain=CHAIN,
             eth_getTransactionCount=ok("0x5"),
             eth_feeHistory=ok(_fee_history()),
             eth_estimateGas=ok("0x186a0"),
@@ -42,7 +43,7 @@ def w3_and_node(logger):
             eth_blockNumber=ok("0x64"),
         ),
     )
-    provider = FailoverProvider(chain_id=CHAIN_ID, logger=logger, providers=[node])
+    provider = FailoverProvider(chain=CHAIN, logger=logger, providers=[node])
     return Web3(provider), node
 
 
@@ -60,7 +61,7 @@ def test_prepare_transaction_reads_the_pending_nonce(w3_and_node, logger):
     call = node.method_calls("eth_getTransactionCount")[0]
     assert call.params[1] == "pending"
     assert tx.get("nonce") == 5
-    assert tx.get("chainId") == CHAIN_ID
+    assert tx.get("chainId") == CHAIN.value
 
 
 def test_chain_id_probed_once_then_served_locally_during_builds(w3_and_node, logger):

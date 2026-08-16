@@ -21,7 +21,7 @@ from derive_py._clients.rest.http.vaults import VaultOperations
 from derive_py._clients.utils import AuthContext
 from derive_py._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
 from derive_py._web3.deposits import Deposits, DepositStep, resolve_collateral
-from derive_py.data_types import ChecksumAddress, EnvConfig, GasPriority, LoggerType, RiskUniverseID
+from derive_py.data_types import ChainConfig, ChecksumAddress, GasPriority, LoggerType, RiskUniverseID
 from derive_py.data_types.generated_models import (
     GetSubaccountRequest,
     PrivateWithdrawRequest,
@@ -39,7 +39,7 @@ class Subaccount:
         *,
         subaccount_id: int,
         auth: AuthContext,
-        config: EnvConfig,
+        config: ChainConfig,
         logger: LoggerType,
         markets: MarketOperations,
         system: SystemOperations,
@@ -54,7 +54,7 @@ class Subaccount:
         Args:
             subaccount_id: Unique identifier for this subaccount
             auth: Authentication context for signing operations
-            config: Environment configuration
+            config: Chain configuration
             markets: Market operations interface
             system: System operations interface
             public_api: Public API interface
@@ -88,7 +88,7 @@ class Subaccount:
         *,
         subaccount_id: int,
         auth: AuthContext,
-        config: EnvConfig,
+        config: ChainConfig,
         logger: LoggerType,
         markets: MarketOperations,
         system: SystemOperations,
@@ -105,7 +105,7 @@ class Subaccount:
         Args:
             subaccount_id: Unique identifier for this subaccount
             auth: Authentication context for signing operations
-            config: Environment configuration
+            config: Chain configuration
             markets: Market operations interface
             system: System operations interface
             deposits: Deposits interface for deposit operations

@@ -44,8 +44,8 @@ directory (default), or from a custom path.
 | `DERIVE_WALLET` | yes | The owner wallet, your own EOA or multisig |
 | `DERIVE_SESSION_KEY` | yes | Private key of the signer, a session key or the owner |
 | `DERIVE_SUBACCOUNT_ID` | yes | Subaccount the client acts on by default |
-| `DERIVE_ENV` | no | `TEST` or `PROD`, defaults to `TEST` |
-| `ETH_RPC_ENDPOINTS` | no | Comma separated L1 RPC URLs, only used by the deposit flows |
+| `DERIVE_ETH_CHAIN` | no | `SEPOLIA` or `ETHEREUM`, defaults to `SEPOLIA` |
+| `DERIVE_ETH_RPC_ENDPOINTS` | no | Comma separated L1 RPC URLs, only used by the deposit flows |
 
 `from_env()` takes a `session_key_path` if you would rather keep the key in a
 file than in the environment, and an `env_file` to point at a `.env` elsewhere.

@@ -4,7 +4,7 @@ from derive_py._clients.rest.async_http.session import AsyncHTTPSession
 from derive_py._clients.rest.endpoints import PrivateEndpoints, PublicEndpoints
 from derive_py._clients.utils import AuthContext, decode_envelope, decode_result, encode_request
 from derive_py.config import PUBLIC_HEADERS
-from derive_py.data_types import EnvConfig
+from derive_py.data_types import ChainConfig
 from derive_py.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
@@ -203,7 +203,7 @@ from derive_py.data_types.generated_models import (
 class AsyncPublicRPC:
     """Async public RPC methods"""
 
-    def __init__(self, session: AsyncHTTPSession, config: EnvConfig):
+    def __init__(self, session: AsyncHTTPSession, config: ChainConfig):
         self._session = session
 
         self._config = config
@@ -932,7 +932,7 @@ class AsyncPublicRPC:
 class AsyncPrivateRPC:
     """Async private RPC methods"""
 
-    def __init__(self, session: AsyncHTTPSession, config: EnvConfig, auth: AuthContext):
+    def __init__(self, session: AsyncHTTPSession, config: ChainConfig, auth: AuthContext):
         self._session = session
 
         self._config = config
@@ -2355,12 +2355,12 @@ class AsyncPrivateRPC:
 class AsyncPublicAPI:
     """Combined Async public API"""
 
-    def __init__(self, session: AsyncHTTPSession, config: EnvConfig):
+    def __init__(self, session: AsyncHTTPSession, config: ChainConfig):
         self.rpc = AsyncPublicRPC(session, config)
 
 
 class AsyncPrivateAPI:
     """Combined Async private API"""
 
-    def __init__(self, session: AsyncHTTPSession, config: EnvConfig, auth: AuthContext):
+    def __init__(self, session: AsyncHTTPSession, config: ChainConfig, auth: AuthContext):
         self.rpc = AsyncPrivateRPC(session, config, auth)

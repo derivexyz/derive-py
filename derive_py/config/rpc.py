@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from urllib.parse import urlparse
 
-from derive_py.data_types import Environment
+from derive_py.data_types import Chain
 
-DEFAULT_RPC_ENDPOINTS: dict[Environment, tuple[str, ...]] = {
+DEFAULT_RPC_ENDPOINTS: dict[Chain, tuple[str, ...]] = {
     # Order matters: index 0 is the sticky head and serves every request until
     # it fails. Each entry is a DISTINCT operator, because two hostnames behind
     # one backend fail together and buy nothing.
@@ -25,12 +25,12 @@ DEFAULT_RPC_ENDPOINTS: dict[Environment, tuple[str, ...]] = {
     #
     # Verified with eth_feeHistory(30, "pending", percentiles); see the live
     # test in tests/test_web3/test_rpc_config.py, which is the pre-release gate.
-    Environment.TEST: (
+    Chain.SEPOLIA: (
         "https://ethereum-sepolia-rpc.publicnode.com",  # Allnodes
         "https://sepolia.gateway.tenderly.co",  # Tenderly
         "https://sepolia.rpc.thirdweb.com",  # thirdweb
     ),
-    Environment.PROD: (
+    Chain.ETHEREUM: (
         "https://ethereum-rpc.publicnode.com",  # Allnodes
         "https://eth.drpc.org",  # DRPC
         "https://ethereum-json-rpc.stakely.io",  # Stakely
@@ -50,11 +50,11 @@ def _normalise(value: str) -> str:
 
 
 def resolve_rpc_endpoints(
-    env: Environment,
+    chain: Chain,
     override: str | Sequence[str] | None = None,
 ) -> tuple[str, ...]:
     """Explicit argument wins, otherwise the using packaged defaults."""
-    raw = DEFAULT_RPC_ENDPOINTS[env] if override is None else ([override] if isinstance(override, str) else override)
+    raw = DEFAULT_RPC_ENDPOINTS[chain] if override is None else ([override] if isinstance(override, str) else override)
     if not (seen := tuple(dict.fromkeys(map(_normalise, raw)))):
-        raise ValueError(f"No RPC endpoints resolved for {env}.")
+        raise ValueError(f"No RPC endpoints resolved for {chain}.")
     return tuple(seen)

@@ -27,7 +27,7 @@ from web3.types import FilterParams, LogReceipt, TxReceipt
 from web3.types import Wei as ETHWei
 
 from .enums import (
-    Environment,
+    Chain,
     GasPriority,
 )
 
@@ -53,10 +53,9 @@ class DeriveContractAddresses(BaseModel, frozen=True):
         return getattr(self, key)
 
 
-class EnvConfig(BaseModel, frozen=True):
+class ChainConfig(BaseModel, frozen=True):
     base_url: str
     ws_address: str
-    chain_id: int
     ACTION_TYPEHASH: str
     DOMAIN_SEPARATOR: str
     contracts: DeriveContractAddresses
@@ -66,7 +65,7 @@ class ClientConfig(BaseModel):
     session_key: SecretStr
     wallet: ChecksumAddress
     subaccount_id: int
-    env: Environment
+    chain: Chain
     rpc_endpoints: tuple[str, ...] | None = None
 
 

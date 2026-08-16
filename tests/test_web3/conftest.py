@@ -7,7 +7,7 @@ from typing import Any, Callable
 import pytest
 from web3.types import RPCEndpoint, RPCResponse
 
-from derive_py.config import SEPOLIA_CHAIN_ID
+from derive_py.data_types import Chain
 
 
 @dataclass
@@ -47,10 +47,10 @@ def rpc_error(code: int, message: str) -> RPCResponse:
     return RPCResponse({"jsonrpc": "2.0", "id": 1, "error": {"code": code, "message": message}})
 
 
-def static_handler(chain_id: int = SEPOLIA_CHAIN_ID, **responses: Any) -> Callable[[str, Any], Any]:
+def static_handler(chain: Chain = Chain.SEPOLIA, **responses: Any) -> Callable[[str, Any], Any]:
     """chain_id is answered by default so _ensure_verified passes."""
 
-    table: dict[str, Any] = {"eth_chainId": ok(hex(chain_id))}
+    table: dict[str, Any] = {"eth_chainId": ok(hex(chain.value))}
     table.update(responses)
 
     def handler(method: str, params: Any) -> Any:
