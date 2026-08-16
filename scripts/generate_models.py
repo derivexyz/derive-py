@@ -148,7 +148,7 @@ def _ensure_default_values(node: ast.ClassDef) -> None:
     """Set default values for referral_code and client fields if they exist."""
     field_defaults = {
         "referral_code": "'0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'",
-        "client": "'8baller-python-sdk'",
+        "client": "'derive-py'",
     }
 
     modified = False
