@@ -1,0 +1,984 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_withdrawalOutbox",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_actionManager",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bool",
+                "name": "admin",
+                "type": "bool"
+            },
+            {
+                "internalType": "uint128",
+                "name": "consumed",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "provided",
+                "type": "uint128"
+            }
+        ],
+        "name": "BatchAccIndexMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bool",
+                "name": "admin",
+                "type": "bool"
+            },
+            {
+                "internalType": "bool",
+                "name": "isNew",
+                "type": "bool"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "onchain",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "provided",
+                "type": "bytes32"
+            }
+        ],
+        "name": "BatchActionsAccMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "storedTip",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "providedTip",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaBlobChainMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "headHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "uint64",
+                "name": "providedHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "providedHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidInitialization",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "minOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "maxOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "lastOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint256",
+                "name": "blockTimestamp",
+                "type": "uint256"
+            }
+        ],
+        "name": "InvalidOpTimestamp",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint128",
+                "name": "consumed",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "provided",
+                "type": "uint128"
+            }
+        ],
+        "name": "NewAccIndexBeforeConsumed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotInitializing",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "expected",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "provided",
+                "type": "bytes32"
+            }
+        ],
+        "name": "OldRootMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnableInvalidOwner",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "OwnableUnauthorizedAccount",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "current",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "provided",
+                "type": "bytes32"
+            }
+        ],
+        "name": "RootMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "current",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "provided",
+                "type": "bytes32"
+            }
+        ],
+        "name": "VKeyMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "expected",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "provided",
+                "type": "bytes32"
+            }
+        ],
+        "name": "WithdrawalDigestMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "ZeroAddress",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "oldRoot",
+                "type": "bytes32"
+            },
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "newRoot",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint128",
+                "name": "oldPublicAccIndex",
+                "type": "uint128"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint128",
+                "name": "newPublicAccIndex",
+                "type": "uint128"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint128",
+                "name": "oldAdminAccIndex",
+                "type": "uint128"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint128",
+                "name": "newAdminAccIndex",
+                "type": "uint128"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "oldPublicActionsAcc",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "newPublicActionsAcc",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "oldAdminActionsAcc",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "newAdminActionsAcc",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "withdrawalDigest",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "minOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "maxOpTimestamp",
+                "type": "uint64"
+            }
+        ],
+        "name": "BatchSubmitted",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "fromCommitment",
+                "type": "bytes32"
+            },
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "toCommitment",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaBlobChainAdvanced",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint64",
+                "name": "fromHeight",
+                "type": "uint64"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint64",
+                "name": "toHeight",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "toHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadAdvanced",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadBootstrapped",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "version",
+                "type": "uint64"
+            }
+        ],
+        "name": "Initialized",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferStarted",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "newRoot",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "newProgramVKey",
+                "type": "bytes32"
+            }
+        ],
+        "name": "RootAndVKeyRotated",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "ACTION_MANAGER",
+        "outputs": [
+            {
+                "internalType": "contract OnchainActionManager",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "WITHDRAWAL_OUTBOX",
+        "outputs": [
+            {
+                "internalType": "contract WithdrawalOutbox",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "acceptOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaLastCommitment",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaTrustedHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaTrustedHeight",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "id",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "accountId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "asset",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "amount",
+                        "type": "uint128"
+                    }
+                ],
+                "internalType": "struct WithdrawalOutbox.Withdrawal[]",
+                "name": "withdrawals",
+                "type": "tuple[]"
+            }
+        ],
+        "name": "computeWithdrawalDigest",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "consumedAdminAccIndex",
+        "outputs": [
+            {
+                "internalType": "uint128",
+                "name": "",
+                "type": "uint128"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "consumedPublicAccIndex",
+        "outputs": [
+            {
+                "internalType": "uint128",
+                "name": "",
+                "type": "uint128"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getCelestiaAnchor",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "lastCommitment",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner_",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_verifier",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "_programVKey",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "_initialStateRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "lastOpTimestamp",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "pendingOwner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "programVKey",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "lastCommitment",
+                "type": "bytes32"
+            }
+        ],
+        "name": "setCelestiaAnchor",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "expectedRoot",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "expectedProgramVKey",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "newRoot",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "newProgramVKey",
+                "type": "bytes32"
+            }
+        ],
+        "name": "setRootAndVKey",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newVerifier",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "newProgramVKey",
+                "type": "bytes32"
+            }
+        ],
+        "name": "setVerifier",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "stateRoot",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "oldRoot",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "newRoot",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "uint128",
+                "name": "oldPublicAccIndex",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "newPublicAccIndex",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "oldAdminAccIndex",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "newAdminAccIndex",
+                "type": "uint128"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "oldPublic",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newPublic",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "oldAdmin",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newAdmin",
+                        "type": "bytes32"
+                    }
+                ],
+                "internalType": "struct OnchainActionManager.ActionAccs",
+                "name": "submittedAccs",
+                "type": "tuple"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "withdrawalDigest",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "uint64",
+                "name": "minOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "maxOpTimestamp",
+                "type": "uint64"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "uint64",
+                        "name": "prevHeight",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "prevHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "newHeight",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "prevLastCommitment",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newLastCommitment",
+                        "type": "bytes32"
+                    }
+                ],
+                "internalType": "struct VerifiableApp.CelestiaProof",
+                "name": "da",
+                "type": "tuple"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "id",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "accountId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "asset",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "amount",
+                        "type": "uint128"
+                    }
+                ],
+                "internalType": "struct WithdrawalOutbox.Withdrawal[]",
+                "name": "withdrawals",
+                "type": "tuple[]"
+            },
+            {
+                "internalType": "bytes",
+                "name": "proofBytes",
+                "type": "bytes"
+            }
+        ],
+        "name": "submitBatch",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "verifier",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

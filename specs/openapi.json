@@ -71,6 +71,10 @@
     {
       "name": "Referrals",
       "description": "Referral codes and program performance."
+    },
+    {
+      "name": "Other",
+      "description": "Uncategorized."
     }
   ],
   "paths": {
@@ -293,42 +297,6 @@
         }
       }
     },
-    "/private/create_session_key": {
-      "post": {
-        "tags": [
-          "Session Keys"
-        ],
-        "summary": "private/create_session_key",
-        "operationId": "private_create_session_key",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PrivateCreateSessionKeyResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
-        "x-rate-limit-class": "endpoint",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSessionKeyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/private/edit_session_key": {
       "post": {
         "tags": [
@@ -351,7 +319,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Updates an existing session key's label, IP allowlist, and/or off-chain scopes for a given wallet; it cannot change on-chain (protocol) scopes, for which you must re-register with private/create_session_key. Editing only the label needs account-info permission, while changing the IP allowlist or off-chain scopes requires admin/owner authorization. Returns the updated session key details.",
+        "description": "Updates an existing session key's label, IP allowlist, and/or off-chain scopes for a given wallet; it cannot change on-chain (protocol) scopes, for which you must re-register with private/set_session_key. Editing only the label needs account-info permission, while changing the IP allowlist or off-chain scopes requires admin/owner authorization. Returns the updated session key details.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -858,7 +826,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns all currently open orders for the given subaccount, including each order's instrument, direction, prices, amounts and status. Read-only query.",
+        "description": "Returns all currently open orders for the given subaccount, including each order's instrument, direction, prices, amounts and status. Only orders resting on the order book are returned: pending trigger orders that have not yet fired are available from get_trigger_orders, and active algo orders from get_algo_orders. Once a trigger order fires, the resulting order appears here if it rests on the book rather than filling immediately; algo orders execute as IOC slices and so never rest here. Read-only query.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -2586,7 +2554,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns a paginated history of orders for a single subaccount or for an entire wallet (specify exactly one), optionally bounded by a from/to timestamp window. Each page includes the order records plus pagination info with the total count and number of pages.",
+        "description": "Returns a paginated history of orders for a single subaccount or for an entire wallet (specify exactly one), optionally bounded by a from/to timestamp window. Only orders in a terminal state (filled, cancelled, expired) are recorded here, one record per order. Trigger and algo orders appear once they terminate, carrying their accumulated filled amount; while they are still live — including partially executed algo orders and trigger orders that have not yet fired — read them from get_trigger_orders and get_algo_orders instead. Each page includes the order records plus pagination info with the total count and number of pages.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -2666,6 +2634,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GetWithdrawalHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_liquidation_history": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "summary": "public/get_liquidation_history",
+        "operationId": "public_get_liquidation_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidationHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns a paginated history of liquidation auctions, newest first, for a single subaccount or across all of them, optionally bounded by a start/end timestamp window over the auction start. Each entry gives the auctioned subaccount, whether the auction was solvent or insolvent, the fee charged at start, the start and end timestamps, and the bids that filled it with the fraction of the account each absorbed and the cash it moved.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiquidationHistoryRequest"
               }
             }
           }
@@ -3571,7 +3575,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns the most recent oracle-signed feed data — spot, forward, volatility (SVI), rate, and perp feeds — each with signer addresses and signatures for on-chain submission. Optional `currency` and `expiry` filters narrow the result (use `expiry` 0 for spot/perp only); both default to all. Public endpoint.",
+        "description": "Returns the most recent oracle-signed feed data — spot, forward, volatility (SVI), rate, perp, and perpetual funding-rate feeds — each with signer addresses and signatures for on-chain submission. Optional `currency` and `expiry` filters narrow the result (use `expiry` 0 for the non-expiry feeds: spot, perp and funding); both default to all. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -3881,6 +3885,111 @@
           }
         }
       }
+    },
+    "/private/liquidate": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "private/liquidate",
+        "operationId": "private_liquidate",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateLiquidateResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateLiquidateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/set_session_key": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "private/set_session_key",
+        "operationId": "private_set_session_key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateSetSessionKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionKeyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/start_auction": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "public/start_auction",
+        "operationId": "public_start_auction",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStartAuctionResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicStartAuctionRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4172,6 +4281,140 @@
             ]
           }
         }
+      },
+      "AuctionBidEvent": {
+        "description": "One executed bid within an auction. Amounts are decimal strings.",
+        "type": "object",
+        "required": [
+          "amounts_liquidated",
+          "cash_received",
+          "discount_pnl",
+          "percent_liquidated",
+          "positions_realized_pnl",
+          "positions_realized_pnl_excl_fees",
+          "realized_pnl",
+          "realized_pnl_excl_fees",
+          "timestamp",
+          "tx_hash"
+        ],
+        "properties": {
+          "amounts_liquidated": {
+            "description": "Amounts of each asset that were closed. Always empty — see the module TODO; the protocol event does not carry the per-asset breakdown.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "cash_received": {
+            "description": "Cash the liquidated account received for the slice: what the bidder paid in the solvent phase, and negative in the insolvent phase, where the security module pays the bidder instead.",
+            "type": "string"
+          },
+          "discount_pnl": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "percent_liquidated": {
+            "description": "Fraction of the account this bid took; \"1\" is the whole account.",
+            "type": "string"
+          },
+          "positions_realized_pnl": {
+            "description": "Always empty — see the module TODO.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "positions_realized_pnl_excl_fees": {
+            "description": "Always empty — see the module TODO.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "realized_pnl": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "realized_pnl_excl_fees": {
+            "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "timestamp": {
+            "description": "When the sequencer applied the bid, unix ms.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "tx_hash": {
+            "description": "Settling L1 transaction; empty until the bid's batch settles.",
+            "type": "string"
+          }
+        }
+      },
+      "AuctionHistory": {
+        "description": "One auction phase and the bids that filled it.",
+        "type": "object",
+        "required": [
+          "auction_id",
+          "auction_type",
+          "bids",
+          "fee",
+          "start_timestamp",
+          "subaccount_id",
+          "tx_hash"
+        ],
+        "properties": {
+          "auction_id": {
+            "description": "`{subaccount_id}-{start_time_sec}` — see the module docs.",
+            "type": "string"
+          },
+          "auction_type": {
+            "$ref": "#/components/schemas/AuctionType"
+          },
+          "bids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuctionBidEvent"
+            }
+          },
+          "end_timestamp": {
+            "description": "When the auction ended, unix ms; `null` while still live.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "fee": {
+            "description": "Liquidation fee charged at auction start; \"0\" for a phase opened by conversion to insolvent.",
+            "type": "string"
+          },
+          "start_timestamp": {
+            "description": "Auction/phase clock start, unix ms.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "description": "The liquidated (auctioned) subaccount.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "tx_hash": {
+            "description": "Settling L1 transaction of the op that opened the auction; empty until that batch settles.",
+            "type": "string"
+          }
+        }
+      },
+      "AuctionType": {
+        "description": "Which phase of the auction this entry describes.",
+        "type": "string",
+        "enum": [
+          "solvent",
+          "insolvent"
+        ]
       },
       "BatchStatus": {
         "description": "Batch lifecycle status — the single source of lifecycle truth for every operation in the batch (individual ops carry no status of their own). Each stage has a healthy variant and a corresponding `...Error` variant meaning that stage failed. Serialized as the variant name (string) in API responses.",
@@ -5008,91 +5251,6 @@
           }
         }
       },
-      "CreateSessionKeyRequest": {
-        "description": "Request parameters for registering a scoped session key. Address fields are 0x-prefixed hex strings.",
-        "type": "object",
-        "required": [
-          "expiry_sec",
-          "nonce",
-          "offchain_scopes",
-          "protocol_scopes",
-          "public_session_key",
-          "signature",
-          "signature_expiry_sec",
-          "signer",
-          "wallet"
-        ],
-        "properties": {
-          "expiry_sec": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          },
-          "ip_whitelist": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "label": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "nonce": {
-            "type": "string"
-          },
-          "offchain_scopes": {
-            "description": "Off-chain scopes which are validated in backend only",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "protocol_scopes": {
-            "description": "Scopes granted to the session key, validated by the protocol. Each is a string like `\"trade:orderbook:all\"`.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "public_session_key": {
-            "description": "Session key address being authorized.",
-            "type": "string"
-          },
-          "signature": {
-            "description": "0x-prefixed hex, 65-byte r||s||v.",
-            "type": "string"
-          },
-          "signature_expiry_sec": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          },
-          "signer": {
-            "type": "string"
-          },
-          "subaccount_ids": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          },
-          "wallet": {
-            "description": "Wallet the session key is being registered for.",
-            "type": "string"
-          }
-        }
-      },
       "CreateVaultRequest": {
         "description": "Fields common to every signed vault action. They appear alongside each endpoint's action-specific parameters in the same request object.",
         "type": "object",
@@ -5643,6 +5801,42 @@
           },
           "spot_aggregate_start": {
             "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "FundingFeedDataResponse": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "deadline",
+          "funding_rate",
+          "signatures",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "funding_rate": {
+            "description": "Per-hour funding rate as a decimal string.",
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/OracleSignatureDataResponse"
           },
           "timestamp": {
             "type": "integer",
@@ -6202,6 +6396,7 @@
       "GetLatestSignedFeedsResponse": {
         "type": "object",
         "required": [
+          "funding_data",
           "fwd_data",
           "perp_data",
           "rate_data",
@@ -6209,6 +6404,13 @@
           "vol_data"
         ],
         "properties": {
+          "funding_data": {
+            "description": "currency -> latest funding-rate feed data",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FundingFeedDataResponse"
+            }
+          },
           "fwd_data": {
             "description": "currency -> expiry -> latest forward feed data",
             "type": "object",
@@ -6255,6 +6457,61 @@
                 "$ref": "#/components/schemas/VolFeedDataResponse"
               }
             }
+          }
+        }
+      },
+      "GetLiquidationHistoryRequest": {
+        "description": "Parameters for `public/get_liquidation_history`. Omit `subaccount_id` to span every account. `[start_timestamp, end_timestamp]` is a unix-millisecond window over the auction *start*.",
+        "type": "object",
+        "properties": {
+          "end_timestamp": {
+            "description": "End of the window, unix milliseconds (default: unbounded).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "page": {
+            "description": "Page number, 1-based (default 1).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "page_size": {
+            "description": "Results per page (default 100, max 1000).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "start_timestamp": {
+            "description": "Start of the window, unix milliseconds (default 0).",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
           }
         }
       },
@@ -7585,6 +7842,24 @@
           }
         }
       },
+      "LiquidationHistoryResult": {
+        "type": "object",
+        "required": [
+          "auctions",
+          "pagination"
+        ],
+        "properties": {
+          "auctions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuctionHistory"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
       "LiquidityRole": {
         "type": "string",
         "enum": [
@@ -7798,20 +8073,9 @@
       },
       "OffchainKeyScope": {
         "description": "Additional permission scopes enforced off-chain (not part of the on-chain session-key scopes).",
-        "oneOf": [
-          {
-            "type": "string",
-            "enum": [
-              "account_info"
-            ]
-          },
-          {
-            "description": "Permission to delete a session key. This is an off-chain-only permission, not part of the on-chain protocol scopes.",
-            "type": "string",
-            "enum": [
-              "delete_session_key"
-            ]
-          }
+        "type": "string",
+        "enum": [
+          "account_info"
         ]
       },
       "Ohlc": {
@@ -8967,8 +9231,7 @@
           "funding_rate",
           "index",
           "max_rate_per_hour",
-          "min_rate_per_hour",
-          "static_interest_rate"
+          "min_rate_per_hour"
         ],
         "properties": {
           "aggregate_funding": {
@@ -8984,9 +9247,6 @@
             "type": "string"
           },
           "min_rate_per_hour": {
-            "type": "string"
-          },
-          "static_interest_rate": {
             "type": "string"
           }
         }
@@ -9368,64 +9628,11 @@
           }
         }
       },
-      "PrivateCreateSessionKeyResponse": {
-        "type": "object",
-        "required": [
-          "expiry_sec",
-          "ip_whitelist",
-          "offchain_scopes",
-          "protocol_scopes",
-          "public_session_key",
-          "subaccount_ids"
-        ],
-        "properties": {
-          "expiry_sec": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          },
-          "ip_whitelist": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "label": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "offchain_scopes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "protocol_scopes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "public_session_key": {
-            "type": "string"
-          },
-          "subaccount_ids": {
-            "description": "Subaccounts the key may act on. Empty/omitted request (all subaccounts) is expanded to the wallet's current subaccount list.",
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          }
-        }
-      },
       "PrivateGetAccountResponse": {
         "type": "object",
         "required": [
           "cancel_on_disconnect",
+          "fallback_subaccount_id",
           "fee_info",
           "is_rfq_maker",
           "per_endpoint_tps",
@@ -9434,7 +9641,8 @@
           "websocket_matching_tps",
           "websocket_non_matching_tps",
           "websocket_option_tps",
-          "websocket_perp_tps"
+          "websocket_perp_tps",
+          "whitelisted_recipients"
         ],
         "properties": {
           "cancel_on_disconnect": {
@@ -9445,6 +9653,12 @@
               "integer",
               "null"
             ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "fallback_subaccount_id": {
+            "description": "Subaccount that receives deposits whose requested destination is unusable — unknown manager id, or the per-wallet subaccount cap already reached. Allocated with the account, and always in the fallback risk universe (id 0).",
+            "type": "integer",
             "format": "uint64",
             "minimum": 0.0
           },
@@ -9498,6 +9712,13 @@
             "type": "integer",
             "format": "uint16",
             "minimum": 0.0
+          },
+          "whitelisted_recipients": {
+            "description": "Recipients that session keys may withdraw or transfer ERC-20s to. The owner and `Admin`-scoped session keys bypass this list.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -9561,6 +9782,91 @@
           }
         }
       },
+      "PrivateLiquidateRequest": {
+        "type": "object",
+        "required": [
+          "cash_transfer",
+          "last_seen_trade_id",
+          "liquidate_subaccount_id",
+          "merge_account",
+          "nonce",
+          "percent_of_acc",
+          "price_limit",
+          "signature",
+          "signature_expiry_sec",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "cash_transfer": {
+            "description": "Cash to transfer during liquidation, in USD as a decimal string (e.g. `\"5.0\"`) or a JSON number.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "last_seen_trade_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "liquidate_subaccount_id": {
+            "description": "Subaccount being liquidated.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "merge_account": {
+            "type": "boolean"
+          },
+          "nonce": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "percent_of_acc": {
+            "description": "Fraction of the account to liquidate (`\"1.0\"` = 100%), decimal string or JSON number. Must be a whole percent, i.e. a multiple of `\"0.01\"`.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "price_limit": {
+            "description": "Signed limit price (`\"0\"` opts out), decimal string or JSON number.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "description": "Bidder subaccount.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "PrivateLiquidateResponse": {
+        "type": "object",
+        "required": [
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "PrivateSessionKeysResponse": {
         "type": "object",
         "required": [
@@ -9571,6 +9877,60 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SessionKey"
+            }
+          }
+        }
+      },
+      "PrivateSetSessionKeyResponse": {
+        "type": "object",
+        "required": [
+          "expiry_sec",
+          "ip_whitelist",
+          "offchain_scopes",
+          "protocol_scopes",
+          "public_session_key",
+          "subaccount_ids"
+        ],
+        "properties": {
+          "expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "ip_whitelist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "offchain_scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "protocol_scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "public_session_key": {
+            "type": "string"
+          },
+          "subaccount_ids": {
+            "description": "Subaccounts the key may act on. Empty/omitted request (all subaccounts) is expanded to the wallet's current subaccount list.",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
             }
           }
         }
@@ -9781,6 +10141,14 @@
           "nonce": {
             "type": "integer",
             "format": "int64"
+          },
+          "recipient": {
+            "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted.\n\nA non-owner signer (session key) may only pay out to an address on the owner's `whitelisted_recipients`, unless the key holds `Admin`.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "signature": {
             "type": "string"
@@ -10162,6 +10530,37 @@
           }
         }
       },
+      "PublicStartAuctionRequest": {
+        "type": "object",
+        "required": [
+          "subaccount_id"
+        ],
+        "properties": {
+          "subaccount_id": {
+            "description": "Subaccount to auction.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "PublicStartAuctionResponse": {
+        "type": "object",
+        "required": [
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "PublicTradesResult": {
         "type": "object",
         "required": [
@@ -10308,6 +10707,14 @@
           "nonce": {
             "type": "integer",
             "format": "int64"
+          },
+          "recipient": {
+            "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted — matching what `private/withdraw` reconstructs.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "signature_expiry_sec": {
             "type": "integer",
@@ -10693,7 +11100,8 @@
           "session_key_deregistered",
           "subaccount_withdrawn",
           "rfq_no_longer_open",
-          "compliance"
+          "compliance",
+          "validation_failed"
         ]
       },
       "RFQGetResponse": {
@@ -12157,6 +12565,91 @@
           }
         }
       },
+      "SetSessionKeyRequest": {
+        "description": "Request parameters for registering a scoped session key. Address fields are 0x-prefixed hex strings.",
+        "type": "object",
+        "required": [
+          "expiry_sec",
+          "nonce",
+          "offchain_scopes",
+          "protocol_scopes",
+          "public_session_key",
+          "signature",
+          "signature_expiry_sec",
+          "signer",
+          "wallet"
+        ],
+        "properties": {
+          "expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "ip_whitelist": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "offchain_scopes": {
+            "description": "Off-chain scopes which are validated in backend only",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "protocol_scopes": {
+            "description": "Scopes granted to the session key, validated by the protocol. Each is a string like `\"trade:orderbook:all\"`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "public_session_key": {
+            "description": "Session key address being authorized.",
+            "type": "string"
+          },
+          "signature": {
+            "description": "0x-prefixed hex, 65-byte r||s||v.",
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "wallet": {
+            "description": "Wallet the session key is being registered for.",
+            "type": "string"
+          }
+        }
+      },
       "SettledTrade": {
         "description": "A settled trade returned by `public/get_trade_history`. Anonymized: no `order_id` or `label`. `wallet` is included since settled trades are visible on-chain.",
         "type": "object",
@@ -12513,6 +13006,7 @@
           "maintenance_margin",
           "manager_id",
           "margin_type",
+          "mm_credits",
           "open_orders",
           "open_orders_margin",
           "positions",
@@ -12569,6 +13063,10 @@
             "minimum": 0.0
           },
           "margin_type": {
+            "type": "string"
+          },
+          "mm_credits": {
+            "description": "MM credit from universe loss-socialization events: the socialized USDC debit lands on cash in full, and `debit × (1 − write_down)` is added back to maintenance margin while the 15-minute write-down runs. Events this subaccount has not yet realized contribute their expected credit, with the current subaccount value standing in for the MtM at realization. Zero while under auction — the credit is cleared when liquidation starts.",
             "type": "string"
           },
           "open_orders": {

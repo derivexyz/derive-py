@@ -1,19 +1,13 @@
 """Tests for RFQ module."""
 
-import time
 from decimal import Decimal
 
-import pytest
-
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     CancelBatchRfqsResponse,
     Direction,
     LegUnpricedParams,
-    LiquidityRole,
     PricedLegParamsAndResponse,
-    Quote,
-    QuoteExecuteResponse,
     QuoteGetResponse,
     QuotePollResponse,
     Rfq,
@@ -21,7 +15,6 @@ from derive_client.data_types.generated_models import (
     RFQGetResponse,
     RFQPollResponse,
 )
-from tests.conftest import assert_api_calls
 
 
 def _resolve_currency(client) -> str:
@@ -89,9 +82,9 @@ def _create_priced_legs(client, rfq):
         # Derive RPC 11107: Quote maker total cost too high  [data={'worst_cost': '6.33919554', 'total_cost': '80.596'}]
         # Use mark price (more realistic than index for options)
         # Add a small buffer to ensure quote is profitable
-        base_price = Decimal(str(ticker["I"]))
+        base_price = Decimal(ticker.mark_price)
         if base_price == Decimal("0.0"):
-            base_price = Decimal(str(ticker["index_price"]))
+            base_price = Decimal(ticker.index_price)
 
         if unpriced_leg.direction == Direction.buy:
             # Maker is selling - quote ask side (higher)
@@ -124,19 +117,19 @@ def _create_rfq(client) -> Rfq:
     return rfq
 
 
-def test_rfq_send_rfq(client_owner_wallet):
-    rfq = _create_rfq(client_owner_wallet)
+def test_rfq_send_rfq(client_admin_wallet):
+    rfq = _create_rfq(client_admin_wallet)
     assert isinstance(rfq, Rfq)
 
 
-def test_rfq_get_rfqs(client_owner_wallet):
-    rfqs = client_owner_wallet.rfq.get_rfqs()
+def test_rfq_get_rfqs(client_admin_wallet):
+    rfqs = client_admin_wallet.rfq.get_rfqs()
     assert isinstance(rfqs, RFQGetResponse)
 
 
-def test_rfq_cancel_rfq(client_owner_wallet):
-    rfq = _create_rfq(client_owner_wallet)
-    result = client_owner_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
+def test_rfq_cancel_rfq(client_admin_wallet):
+    rfq = _create_rfq(client_admin_wallet)
+    result = client_admin_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
     assert isinstance(result, str)
 
 
@@ -152,80 +145,17 @@ def test_rfq_poll_rfqs(client_admin_wallet):
     assert isinstance(polled_rfqs, RFQPollResponse)
 
 
-def test_rfq_get_quotes(client_owner_wallet):
-    quotes = client_owner_wallet.rfq.get_quotes()
+def test_rfq_get_quotes(client_admin_wallet):
+    quotes = client_admin_wallet.rfq.get_quotes()
     assert isinstance(quotes, QuoteGetResponse)
 
 
-def test_rfq_poll_quotes(client_owner_wallet):
-    quotes = client_owner_wallet.rfq.poll_quotes()
+def test_rfq_poll_quotes(client_admin_wallet):
+    quotes = client_admin_wallet.rfq.poll_quotes()
     assert isinstance(quotes, QuotePollResponse)
 
 
-@pytest.mark.skip("Requires an open position, no liquidity on testnet yet.")
-def test_rfq_get_best_quote(client_owner_wallet):
-    unpriced_legs = _create_unpriced_legs(client_owner_wallet)
-    best_quote = client_owner_wallet.rfq.get_best_quote(legs=unpriced_legs)
+def test_rfq_get_best_quote(client_admin_wallet):
+    unpriced_legs = _create_unpriced_legs(client_admin_wallet)
+    best_quote = client_admin_wallet.rfq.get_best_quote(legs=unpriced_legs)
     assert isinstance(best_quote, RfqGetBestQuoteResponse)
-
-
-@pytest.mark.skip("Requires an open position, no liquidity on testnet yet.")
-def test_rfq_full_lifecycle(client_admin_wallet, client_owner_wallet):
-    # Derive RPC 11007: Self-crossing disallowed: use two wallets
-
-    # Only admin as authorization as RFQ maker
-    # hence: owner wallet sends RFQ and admin wallet quotes
-    taker = client_owner_wallet
-    maker = client_admin_wallet
-
-    taker_direction = Direction.buy
-    maker_direction = Direction.sell
-
-    unpriced_legs = _create_unpriced_legs(taker)
-    label = "test_rfq"
-    rfq = taker.rfq.send_rfq(legs=unpriced_legs, label=label)
-
-    # was INT64_MAX — an absolute epoch timestamp astronomically past v3's
-    # 120-day-from-now ceiling (RPC 11011), same bug class as
-    # get_default_signature_expiry_sec's old 1-year default.
-    signature_expiry_sec = int(time.time()) + 3600
-    max_fee = Decimal("1000")
-
-    priced_legs = _create_priced_legs(maker, rfq)
-
-    # Quote direction:
-    # buy means trading each leg at its direction
-    # sell means trading each leg in the opposite direction.
-    utc_now_s = int(time.time())
-    with assert_api_calls(maker, expected=1):
-        sent_quote = maker.rfq.send_quote(
-            direction=maker_direction,
-            legs=priced_legs,
-            max_fee=max_fee,
-            rfq_id=rfq.rfq_id,
-            signature_expiry_sec=utc_now_s + 330,
-        )
-
-    assert isinstance(sent_quote, Quote)
-    assert rfq.rfq_id == sent_quote.rfq_id
-
-    # best_quote = taker.rfq.get_best_quote(legs=unpriced_legs, direction=maker_direction)
-    quotes = taker.rfq.poll_quotes(rfq_id=rfq.rfq_id)
-    quote = quotes.quotes[0]
-
-    assert quote.subaccount_id == maker.active_subaccount.id
-    assert quote.liquidity_role == LiquidityRole.maker
-    assert quote.direction == maker_direction
-
-    with assert_api_calls(taker, expected=1):
-        executed_quote = taker.rfq.execute_quote(
-            direction=taker_direction,
-            legs=quote.legs,
-            max_fee=max_fee,
-            quote_id=quote.quote_id,
-            rfq_id=rfq.rfq_id,
-            signature_expiry_sec=signature_expiry_sec,
-        )
-
-    assert isinstance(executed_quote, QuoteExecuteResponse)
-    assert executed_quote.liquidity_role == LiquidityRole.taker

@@ -5,7 +5,10 @@ from pathlib import Path
 import libcst as cst
 import libcst.matchers as matchers
 
-PACKAGE_DIR = Path(__file__).parent.parent / "derive_client"
+PACKAGE_DIR = Path(__file__).parent.parent / "derive_py"
+
+EXCLUDED_SOURCE_MODULES = {"session.py", "client.py", "api.py", "__init__.py"}
+EXCLUDED_TEST_MODULES = {"conftest.py", "test_session.py", "__init__.py"}
 
 # Modules who's methods should be converted to async
 ASYNC_OPERATION_MODULES = {
@@ -14,9 +17,11 @@ ASYNC_OPERATION_MODULES = {
     "collateral",
     "orders",
     "positions",
-    "transactions",
+    "system",
+    "history",
     "rfq",
     "mmp",
+    "vaults",
     "trades",
     "rpc",
 }
@@ -26,6 +31,12 @@ SYNC_METHODS = {
     "_get_cache_for_type",
     "_get_cached_instrument",
     "sign_action",
+    "_resolve_vault_id",
+    "_sign_vault_action",
+    "_sign_intent",
+    "_sign_settle",
+    "for_wallet",
+    "for_subaccount",
 }
 
 # Identifiers renamed at every use site (constructor calls, imports, type
@@ -41,6 +52,14 @@ ASYNC_RENAMES = {
 # see AsyncConverter._wrap_deposit_plan_return. Deposits itself stays sync
 # (see _web3), so "add await" alone is never the right fix for these.
 DEPOSIT_PLAN_METHODS = {"plan_deposit", "plan_new_subaccount"}
+
+# Test helpers that stay synchronous. Pure functions over already-fetched
+# data: making them coroutines breaks their call sites, which use map() and
+# comprehensions rather than await.
+SYNC_TEST_FUNCTIONS = {
+    "_min_position_transfer",
+    "_resolve_currency",
+}
 
 
 class AsyncConverter(cst.CSTTransformer):
@@ -166,7 +185,7 @@ class AsyncConverter(cst.CSTTransformer):
                 body=[
                     cst.ImportFrom(
                         module=cst.Attribute(
-                            value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("_web3")),
+                            value=cst.Attribute(value=cst.Name("derive_py"), attr=cst.Name("_web3")),
                             attr=cst.Name("async_utils"),
                         ),
                         names=[
@@ -531,7 +550,8 @@ class AsyncTestConverter(cst.CSTTransformer):
     def _should_skip(self, node: cst.FunctionDef) -> bool:
         """Check if function should not be made async."""
 
-        return bool(node.name.value.startswith("__"))
+        name = node.name.value
+        return name.startswith("__") or name in SYNC_TEST_FUNCTIONS
 
     def _is_client_call(self, node: cst.Call) -> bool:
         """Check if this is a client method call that needs await."""
@@ -554,20 +574,23 @@ class AsyncTestConverter(cst.CSTTransformer):
         return False
 
     def _is_helper_call(self, node: cst.Call) -> bool:
-        """Check if this is a helper function call that needs await."""
+        """Check if this is a helper function call that needs await.
 
-        # Pattern: _create_order(...) or other helper functions
-        return bool(isinstance(node.func, cst.Name) and node.func.value.startswith("_"))
+        The leading underscore is load-bearing: it is how a helper opts into
+        being awaited. Anything in SYNC_TEST_FUNCTIONS opts back out.
+        """
+
+        if not isinstance(node.func, cst.Name):
+            return False
+        return node.func.value.startswith("_") and node.func.value not in SYNC_TEST_FUNCTIONS
 
 
 def generate_async_client():
     source_dir = PACKAGE_DIR / "_clients" / "rest" / "http"
     target_dir = source_dir.parent / "async_http"
 
-    excluded = ["session.py", "client.py", "api.py", "__init__.py"]
-
     for py_file in source_dir.glob("*.py"):
-        if py_file.name in excluded:
+        if py_file.name in EXCLUDED_SOURCE_MODULES:
             continue
 
         source = py_file.read_text()
@@ -583,10 +606,8 @@ def generate_async_tests():
     source_dir = PACKAGE_DIR.parent / "tests" / "test_clients" / "test_rest" / "test_http"
     target_dir = source_dir.parent / "test_async_http"
 
-    excluded = ["conftest.py", "__init__.py"]
-
     for py_file in source_dir.glob("*.py"):
-        if py_file.name in excluded:
+        if py_file.name in EXCLUDED_TEST_MODULES:
             continue
 
         source = py_file.read_text()

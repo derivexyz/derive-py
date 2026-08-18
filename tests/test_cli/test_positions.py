@@ -2,7 +2,7 @@
 
 import pytest
 
-from derive_client.cli import cli as drv
+from derive_py.cli import cli as drv
 
 
 def test_position_list(runner):
@@ -12,9 +12,13 @@ def test_position_list(runner):
     assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
 
 
-@pytest.mark.skip(reason="Complex end-to-end test that mutates subaccount state.")
 def test_position_transfer(runner):
     """Test: `drv position transfer`"""
 
-    result = runner.invoke(drv, ["position", "transfer", "ETH-PERP", "0.01", "137627"])
+    result = runner.invoke(drv, ["position", "transfer", "ETH-PERP", "0.01", "75726"])
+
+    if "No ETH-PERP position" in result.output or "cannot transfer" in result.output:
+        pytest.skip(f"Nothing transferable: {result.output.strip()}")
+
     assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
+    assert "filled" in result.output

@@ -2,6 +2,7 @@
 import argparse
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Tuple
 
@@ -118,6 +119,60 @@ def patch_split_enums(node: Any) -> Tuple[Any, int]:
     return node, changed
 
 
+def drop_mm_credits_required(data: dict) -> None:
+    """
+    Remove `mm_credits` from `Subaccount.required` (in-place).
+
+    The spec marks it required, but the server does not send it.
+    """
+    schema = data["components"]["schemas"]["Subaccount"]
+    try:
+        schema["required"].remove("mm_credits")
+    except ValueError as e:
+        raise RuntimeError("'mm_credits' absent from Subaccount.required: patch obsolete, remove it") from e
+
+
+# --- TEMPORARY: order book wire shape -----------------------------------
+# Upstream: <issue URL>
+#
+# subscriptions.json declares OrderSnapshot as an object with `price` and
+# `amount`. The channel sends a two-element array of decimal strings:
+#   {"bids":[["1867.38","0.1"]],"asks":[["1867.78","0.1"]]}
+# Rewrite the schema to describe the wire. Remove once upstream lands.
+#
+# prefixItems + maxItems is what makes datamodel-code-generator emit
+# `tuple[str, str]`. Without maxItems it emits `list[Any]`; the draft-07
+# `items: [...]` tuple form emits `list[str]`. Both decode the wire
+# without complaint, so a silent regression here is invisible without the
+# arity test in tests/test_clients/test_websocket/test_channels.py.
+
+ORDER_SNAPSHOT_SPEC = {
+    "type": "object",
+    "required": ["amount", "price"],
+    "properties": {"amount": {"type": "string"}, "price": {"type": "string"}},
+}
+
+ORDER_SNAPSHOT_WIRE = {
+    "type": "array",
+    "description": "[price, amount], both decimal strings.",
+    "prefixItems": [{"type": "string"}, {"type": "string"}],
+    "minItems": 2,
+    "maxItems": 2,
+}
+
+
+def patch_order_snapshot(definitions: dict[str, dict]) -> None:
+    """Rewrite OrderSnapshot from the spec's object to the wire's 2-tuple (in-place)."""
+    current = definitions.get("OrderSnapshot")
+    if current is None:
+        raise RuntimeError("OrderSnapshot absent from the extracted closure: patch obsolete, remove it")
+    if current == ORDER_SNAPSHOT_WIRE:
+        raise RuntimeError("OrderSnapshot already describes the array: patch obsolete, remove it")
+    if current != ORDER_SNAPSHOT_SPEC:
+        raise RuntimeError(f"OrderSnapshot matches neither the known-wrong object nor the wire array: {current}")
+    definitions["OrderSnapshot"] = deepcopy(ORDER_SNAPSHOT_WIRE)
+
+
 def main():
     p = argparse.ArgumentParser(description="Patch openapi-spec.json (erc20_details, split-enum oneOf) before codegen.")
     p.add_argument("json_path", type=Path, help="Path to openapi-spec.json")
@@ -141,6 +196,7 @@ def main():
 
     data, erc20_count = patch_node(data)
     data, enum_count = patch_split_enums(data)
+    drop_mm_credits_required(data)
 
     with out.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

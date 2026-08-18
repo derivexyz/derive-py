@@ -2,19 +2,29 @@ import asyncio
 
 import msgspec
 import pytest
+import pytest_asyncio
 
-from derive_client.data_types.channel_models import (
+from derive_py.data_types.channel_models import (
     OrderbookSnapshot,
     SpotFeedPayload,
     TickerSlimPayload,
 )
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     AssetType,
     BatchStatus,
 )
+from derive_py.exceptions import DeriveJSONRPCError
 
 TIMEOUT = 5
 SUBSCRIPTION_OK = "ok"
+
+
+@pytest_asyncio.fixture(autouse=True, loop_scope="session")
+async def _drop_subscriptions(client_admin_wallet):
+    """Leave the shared connection clean, since the client fixture is session-scoped."""
+
+    yield
+    await client_admin_wallet.unsubscribe(*client_admin_wallet.subscriptions)
 
 
 def noop(result: msgspec.Struct) -> None:
@@ -67,7 +77,6 @@ async def test_public_margin_watch(client_admin_wallet):
     assert subscription_result.status["margin.watch"] == SUBSCRIPTION_OK
 
 
-@pytest.mark.skip(reason="TODO: v3 migration: OrderSnapshot bids and asks are array instead of object.")
 @pytest.mark.asyncio
 async def test_public_orderbook_group_depth_by_instrument_name(client_admin_wallet):
     subscription_result, data = await _wait_for_one(
@@ -226,3 +235,15 @@ async def test_private_rfqs_by_wallet(client_admin_wallet):
     )
 
     assert subscription_result.status[f"{wallet}.rfqs"] == SUBSCRIPTION_OK
+
+
+@pytest.mark.asyncio
+async def test_rejected_subscription_is_not_registered(client_admin_wallet):
+    with pytest.raises(DeriveJSONRPCError):
+        await client_admin_wallet.public_channels.orderbook_group_depth_by_instrument_name(
+            instrument_name="ETH-PERP",
+            group=1,
+            depth=2,
+            callback=noop,
+        )
+    assert "orderbook.ETH-PERP.1.2" not in client_admin_wallet.subscriptions

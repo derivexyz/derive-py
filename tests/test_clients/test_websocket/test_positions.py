@@ -4,8 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from derive_client.data_types import PositionTransfer
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     Direction,
     RFQStatus,
     TransferPositionsResponse,
@@ -13,8 +12,8 @@ from derive_client.data_types.generated_models import (
 
 
 @pytest.mark.asyncio
-async def test_position_transfer(client_owner_wallet):
-    subaccounts = {sa.id: sa for sa in await client_owner_wallet.fetch_subaccounts()}
+async def test_position_transfer(client_admin_wallet, min_position_transfer):
+    subaccounts = {sa.id: sa for sa in await client_admin_wallet.fetch_subaccounts()}
 
     subaccount_a = subaccounts.get(75723)
     subaccount_b = subaccounts.get(75726)
@@ -31,9 +30,7 @@ async def test_position_transfer(client_owner_wallet):
     else:
         pytest.fail("No open positions found in either subaccount.")
 
-    positions_to_transfer = [
-        PositionTransfer(instrument_name=p.instrument_name, amount=Decimal(p.amount)) for p in source_positions
-    ]
+    positions_to_transfer = list(map(min_position_transfer, source_positions))
 
     transfer_position_response: TransferPositionsResponse = await source_account.positions.transfer(
         positions=positions_to_transfer,

@@ -11,15 +11,17 @@ from libcst import matchers as m
 TIMEOUT = 10
 CUSTOM_HEADER = "# ruff: noqa: E741,E501"
 
+REQUEST_STRUCT_SUFFIXES = ("Request", "Params")
+
 # class_name -> {readable_python_name: original_wire_key}
 FIELD_RENAMES: dict[str, dict[str, str]] = {
     "TickerSlimSnapshot": {
-        "best_ask_price": "A",
-        "best_bid_price": "B",
+        "best_ask_amount": "A",
+        "best_bid_amount": "B",
         "index_price": "I",
         "mark_price": "M",
-        "best_ask_amount": "a",
-        "best_bid_amount": "b",
+        "best_ask_price": "a",
+        "best_bid_price": "b",
         "max_price": "maxp",
         "min_price": "minp",
         "timestamp": "t",
@@ -146,7 +148,7 @@ def _ensure_default_values(node: ast.ClassDef) -> None:
     """Set default values for referral_code and client fields if they exist."""
     field_defaults = {
         "referral_code": "'0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'",
-        "client": "'8baller-python-sdk'",
+        "client": "'derive-py'",
     }
 
     modified = False
@@ -209,6 +211,52 @@ def _apply_field_renames(node: ast.ClassDef) -> None:
     node.keywords.append(ast.keyword(arg="rename", value=rename_dict))
 
 
+def _union_members(annotation: ast.expr) -> list[ast.expr]:
+    if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+        return _union_members(annotation.left) + _union_members(annotation.right)
+    return [annotation]
+
+
+def _is_none(node: ast.expr) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def _rebuild_union(members: list[ast.expr]) -> ast.expr:
+    out = members[0]
+    for member in members[1:]:
+        out = ast.BinOp(left=out, op=ast.BitOr(), right=member)
+    return out
+
+
+def _drop_none_from_requests(node: ast.ClassDef) -> None:
+    """Rewrite `T | None | UnsetType` to `T | UnsetType` on request structs.
+
+    A field left at `T | None = None` (the asyncapi path emits these) gains
+    UnsetType and defaults to UNSET instead, since `T = None` would not
+    typecheck and null is not what the API wants on the wire either.
+    """
+    if not node.name.endswith(REQUEST_STRUCT_SUFFIXES):
+        return
+
+    for stmt in node.body:
+        if not isinstance(stmt, ast.AnnAssign):
+            continue
+        members = _union_members(stmt.annotation)
+        kept = [m for m in members if not _is_none(m)]
+        if len(kept) == len(members):
+            continue
+        if not kept:
+            raise ValueError(f"{node.name}.{ast.unparse(stmt.target)} is None-only")
+
+        had_unset = any(isinstance(m, ast.Name) and m.id == "UnsetType" for m in kept)
+        if not had_unset:
+            kept.append(ast.Name(id="UnsetType", ctx=ast.Load()))
+        stmt.annotation = _rebuild_union(kept)
+
+        if stmt.value is not None and _is_none(stmt.value):
+            stmt.value = ast.Name(id="UNSET", ctx=ast.Load())
+
+
 class OptionalRewriter(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         self.generic_visit(node)
@@ -225,6 +273,7 @@ class OptionalRewriter(ast.NodeTransformer):
             return node
 
         _apply_field_renames(node)
+        _drop_none_from_requests(node)
         node.body = reorder_fields(node.body)
         return node
 
@@ -592,7 +641,7 @@ def add_imports(module: cst.Module, imports_to_add: set[str]) -> cst.Module:
         body=[
             cst.ImportFrom(
                 module=cst.Attribute(
-                    value=cst.Attribute(value=cst.Name("derive_client"), attr=cst.Name("data_types")),
+                    value=cst.Attribute(value=cst.Name("derive_py"), attr=cst.Name("data_types")),
                     attr=cst.Name("generated_models"),
                 ),
                 names=import_names,

@@ -1,8 +1,6 @@
 """Tests for Market module."""
 
-import pytest
-
-from derive_client.data_types.generated_models import (
+from derive_py.data_types.generated_models import (
     Asset,
     AssetType,
     Currency,
@@ -10,6 +8,7 @@ from derive_client.data_types.generated_models import (
     GetLatestSignedFeedsResponse,
     Instrument,
     RiskUniverse,
+    SettledTrade,
     TickerSlimSnapshot,
 )
 
@@ -44,14 +43,12 @@ def test_markets_get_all_instruments(client_admin_wallet):
     assert isinstance(all_instruments, GetAllInstrumentsResponse)
 
 
-@pytest.mark.skip(reason="TODO: v3 migration. Websocket client returns Derive RPC -32603: Internal error.")
 def test_markets_get_all_live_instruments(client_admin_wallet):
     all_live_instruments = client_admin_wallet.markets.get_all_live_instruments()
     assert isinstance(all_live_instruments, list)
     assert all(isinstance(item, str) for item in all_live_instruments)
 
 
-@pytest.mark.skip(reason="TODO: v3 migration. Websocket client returns Derive RPC -32603: Internal error.")
 def test_markets_get_assets(client_admin_wallet):
     asset_type = AssetType.option
     currency = "ETH"
@@ -105,3 +102,9 @@ def test_markets_get_tickers(client_admin_wallet):
 
     assert isinstance(tickers, dict)
     assert all(isinstance(ticker, TickerSlimSnapshot) for ticker in tickers.values())
+
+
+def test_markets_trade_history(client_admin_wallet):
+    trades = client_admin_wallet.markets.trade_history()
+    assert isinstance(trades, list)
+    assert all(isinstance(t, SettledTrade) for t in trades)
