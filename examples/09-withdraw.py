@@ -7,10 +7,16 @@ Two things make withdrawals unlike every other signed action:
     the protocol's usual e18 fixed point. It is resolved from the
     subaccount's own risk universe, so you never pass it.
     The payout goes to the recipient signed into the action, which defaults
-    to the subaccount's owner wallet and is independent of who signs. A
-    session key does not redirect funds to itself, and a non-owner signer may
-    only pay out to an address on the owner's whitelisted_recipients unless
-    the key holds Admin.
+    to the subaccount's owner wallet.
+
+Who may send it, and to whom: the signer needs the withdraw protocol scope.
+Scopes form a tree and admin sits above all of them, so an admin session key
+holds withdraw implicitly. Owner and admin signers may pay out to any
+address; any other signer is limited to the owner's whitelisted_recipients,
+printed below. That list is changed with update_whitelisted_recipients(),
+itself an owner-or-admin action that settles asynchronously, which is why it
+is not part of this example. Set RECIPIENT to an address only if your key
+clears one of those two bars.
 
 public/withdraw_debug returns the typed data and hashes the exchange would
 compute for these same parameters, which is how to check your signing
@@ -20,6 +26,8 @@ Withdrawal is asynchronous. Submitting returns an op_uuid immediately and
 settlement (Batching, Executing, Proving, Settling, Settled) follows later,
 which is what this polls for. max_fee_usd is a cap signed into the action:
 the exchange charges its own fee and the request fails rather than exceed it.
+FORCE_BATCH requests immediate batching and proving, at the expense of a
+higher MAX_FEE_USD.
 
 Prerequisites: a subaccount holding USDC. Run 01-deposit.py first.
 Copy .env.template to .env first.
@@ -35,16 +43,18 @@ from derive_py.data_types import D
 from derive_py.exceptions import SettlementFailed, SettlementTimeout
 
 ASSET = "USDC"
-AMOUNT = D("5")  # must clear the collateral's min_deposit_usd
-MAX_FEE_USD = D("1")
-FORCE_BATCH = False  # True settles straight to L1, skipping the batch, at a higher fee
-# Realistic: L1 settlement runs to minutes. The example test suite shortens it.
+AMOUNT = D("5")  # Must clear the collateral's min_deposit_usd, and the MAX_FEE_USD
+MAX_FEE_USD = D("1")  # 10 is required when FORCE_BATCH is True
+FORCE_BATCH = False  # If True immediate batching/proving: faster, higher fee
+RECIPIENT = None  # None pays out to the owner wallet
+# L1 settlement may take several minutes and total tx time depends on FORCE_BATCH
 SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "300"))
 
 client = HTTPClient.from_env()
 log = client.logger
 
 subaccount = client.active_subaccount
+account = client.account
 
 # Portfolio figures come back as human-readable decimal strings.
 collateral = next((c for c in subaccount.state.collaterals if c.asset_name == ASSET), None)
@@ -55,12 +65,15 @@ if balance < AMOUNT:
 
 log.info(
     f"Subaccount {subaccount.id} holds {balance} {ASSET}, withdrawing {AMOUNT}.\n"
-    f"  signed payout recipient: {client.account.address}"
+    f"  signed payout recipient: {RECIPIENT or account.address}\n"
+    f"  owner wallet: {account.address}\n"
+    f"  whitelisted recipients: {account.state.whitelisted_recipients}"
 )
 
 response = subaccount.withdraw(
     asset_name=ASSET,
     amount=AMOUNT,
+    recipient=RECIPIENT,
     max_fee_usd=MAX_FEE_USD,
     force_batch=FORCE_BATCH,
 )
