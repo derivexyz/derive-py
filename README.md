@@ -256,6 +256,13 @@ and publishes to PyPI.
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/8ball030-max">
+                    <img src="https://avatars.githubusercontent.com/u/326239837?v=4" width="100;" alt="8ball030-max"/>
+                    <br />
+                    <sub><b>8ball030-max</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/Aviksaikat">
                     <img src="https://avatars.githubusercontent.com/u/31238298?v=4" width="100;" alt="Aviksaikat"/>
                     <br />
@@ -276,6 +283,8 @@ and publishes to PyPI.
                     <sub><b>DomRom</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
             <td align="center">
                 <a href="https://github.com/DeBelg">
                     <img src="https://avatars.githubusercontent.com/u/38403795?v=4" width="100;" alt="DeBelg"/>
