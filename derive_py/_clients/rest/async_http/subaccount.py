@@ -287,16 +287,23 @@ class Subaccount:
         *,
         asset_name: str,
         amount: Decimal,
+        recipient: Optional[ChecksumAddress] = None,
         max_fee_usd: Decimal = Decimal("1"),
         force_batch: bool = False,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
     ) -> PrivateWithdrawResponse:
-        """Submits a signed request to withdraw a spot asset out of a subaccount."""
+        """Submits a signed request to withdraw a spot asset out of a subaccount.
+
+        `recipient` is signed into the action and defaults to the owner wallet.
+        The signer needs the `withdraw` protocol scope, which `admin` covers, scopes being a tree.
+        Owner and admin signers may pay out to any address; any other signer is limited to the owner's
+        `whitelisted_recipients`, changed through `update_whitelisted_recipients` by owner-or-admin.
+        """
 
         risk_universes = self.markets._risk_universes_cache or await self.markets.get_risk_universes()
         collateral = resolve_collateral(risk_universes, manager_id=self.state.manager_id, asset_name=asset_name)
-        recipient = self._auth.wallet
+        recipient = recipient if recipient is not None else self._auth.wallet
 
         module_data = WithdrawModuleData(
             protocol_asset=collateral.protocol_asset_address,
@@ -326,6 +333,7 @@ class Subaccount:
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
+            recipient=recipient,
         )
 
         response = await self._private_api.rpc.withdraw(params)
