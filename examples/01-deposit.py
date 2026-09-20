@@ -21,8 +21,8 @@ Mining is not crediting. The exchange applies the deposit asynchronously,
 around two minutes, and the new subaccount id is not in the receipt, so
 this waits for the credit afterwards.
 
-Direct deposits only. The Standard and Instant deposit-address routes are a
-different mechanism: https://v3.docs.derive.xyz/getting-started/depositing
+Direct deposits only. The Standard deposit-address route is a different
+mechanism: https://docs.derive.xyz/getting-started/depositing
 
 Prerequisites: a Sepolia wallet holding ETH for gas and USDC to deposit.
 Copy .env.template to .env first.
@@ -42,7 +42,12 @@ import rich_click as click
 
 from derive_py import HTTPClient
 from derive_py.data_types import D, MarginType, RiskUniverseID
-from derive_py.exceptions import FinalityTimeout, TxPendingTimeout
+from derive_py.exceptions import (
+    FinalityTimeout,
+    InsufficientNativeBalance,
+    InsufficientTokenBalance,
+    TxPendingTimeout,
+)
 
 ASSET = "USDC"
 AMOUNT = D("5")  # below the collateral's min_deposit_usd it is donated, not credited
@@ -122,7 +127,7 @@ else:
     target = tradable[0]
 
     opening_balance = usdc_balance(target)
-    log.info(f"Depositing {AMOUNT} {ASSET} into subaccount {target.id}, holding {opening_balance} {ASSET}.")
+    log.info(f"Depositing {AMOUNT} {ASSET} from L1 into subaccount {target.id}, holding {opening_balance} {ASSET}.")
     steps = target.plan_deposit(asset_name=ASSET, amount=AMOUNT)
 
     def credited() -> str | None:
@@ -130,12 +135,20 @@ else:
         return f"subaccount {target.id} now holds {balance} {ASSET}" if balance > opening_balance else None
 
 
-for step in steps:
-    if not submit(step):
-        # Prepared but not submitted is the documented outcome of declining or
-        # of running non-interactively, not a failure.
-        log.info("Stopped before the deposit completed. Nothing further was submitted.")
-        raise SystemExit(0)
+try:
+    for step in steps:
+        if not submit(step):
+            # Prepared but not submitted is the documented outcome of declining or
+            # of running non-interactively, not a failure.
+            log.info("Stopped before the deposit completed. Nothing further was submitted.")
+            raise SystemExit(0)
+except (InsufficientTokenBalance, InsufficientNativeBalance) as e:
+    # The deposit is funded from the L1 wallet, not from the subaccount, so a
+    # healthy exchange balance says nothing about whether this can run. An
+    # unfunded wallet is a setup gap rather than a fault in the SDK.
+    log.warning(f"{e}")
+    log.warning(f"Fund the L1 wallet with {ASSET} and Sepolia ETH at https://testnet.app.derive.xyz/developers.")
+    raise SystemExit(0)
 
 log.info(f"Waiting up to {CREDIT_TIMEOUT_SEC}s for the exchange to credit the deposit.")
 deadline = monotonic() + CREDIT_TIMEOUT_SEC
