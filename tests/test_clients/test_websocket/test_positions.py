@@ -12,11 +12,12 @@ from derive_py.data_types.generated_models import (
 
 
 @pytest.mark.asyncio
-async def test_position_transfer(client_admin_wallet, min_position_transfer):
+async def test_position_transfer(client_admin_wallet, min_position_transfer, transfer_subaccounts):
     subaccounts = {sa.id: sa for sa in await client_admin_wallet.fetch_subaccounts()}
 
-    subaccount_a = subaccounts.get(75723)
-    subaccount_b = subaccounts.get(75726)
+    subaccount_a_id, subaccount_b_id = transfer_subaccounts
+    subaccount_a = subaccounts.get(subaccount_a_id)
+    subaccount_b = subaccounts.get(subaccount_b_id)
     if not subaccount_a or not subaccount_b:
         pytest.fail("Expected subaccounts not found. Both must be part of the same risk universe.")
 
