@@ -2,6 +2,8 @@
 
 from decimal import Decimal
 
+import pytest
+
 from derive_py.data_types.generated_models import (
     AssetType,
     CancelBatchRfqsResponse,
@@ -140,6 +142,13 @@ def test_rfq_cancel_batch_rfqs(client_admin_wallet):
     assert rfq.rfq_id in cancelled_batch.cancelled_ids
 
 
+# Polling for RFQs directed at you is a market-maker endpoint, and the venue
+# gates it per wallet: an unapproved wallet is rejected with 14027,
+# UNAUTHORIZED_RQF_MAKER, which no amount of local setup can satisfy. Approval
+# for the current test wallet has been requested. This is the only coverage the
+# maker side of RFQ has, so drop the skip as soon as approval lands rather than
+# letting it become permanent.
+@pytest.mark.skip(reason="wallet is not an approved RFQ maker on this venue (14027); approval requested")
 def test_rfq_poll_rfqs(client_admin_wallet):
     polled_rfqs = client_admin_wallet.rfq.poll_rfqs()
     assert isinstance(polled_rfqs, RFQPollResponse)

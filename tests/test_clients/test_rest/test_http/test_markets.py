@@ -1,7 +1,6 @@
 """Tests for Market module."""
 
 from derive_py.data_types.generated_models import (
-    Asset,
     AssetType,
     Currency,
     GetAllInstrumentsResponse,
@@ -47,19 +46,6 @@ def test_markets_get_all_live_instruments(client_admin_wallet):
     all_live_instruments = client_admin_wallet.markets.get_all_live_instruments()
     assert isinstance(all_live_instruments, list)
     assert all(isinstance(item, str) for item in all_live_instruments)
-
-
-def test_markets_get_assets(client_admin_wallet):
-    asset_type = AssetType.option
-    currency = "ETH"
-    expired = False
-    assets = client_admin_wallet.markets.get_assets(
-        asset_type=asset_type,
-        currency=currency,
-        expired=expired,
-    )
-    assert isinstance(assets, list)
-    assert all(isinstance(item, Asset) for item in assets)
 
 
 def test_markets_get_latest_signed_feeds(client_admin_wallet):

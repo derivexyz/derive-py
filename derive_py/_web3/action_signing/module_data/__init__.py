@@ -15,6 +15,7 @@ from .vault import (
     VaultCancelModuleData,
     VaultCreateModuleData,
     VaultDepositModuleData,
+    VaultForceBurnModuleData,
     VaultMintSharesModuleData,
     VaultWithdrawModuleData,
 )
@@ -38,6 +39,7 @@ __all__ = [
     "VaultCancelModuleData",
     "VaultCreateModuleData",
     "VaultDepositModuleData",
+    "VaultForceBurnModuleData",
     "VaultMintSharesModuleData",
     "VaultWithdrawModuleData",
     "WhitelistedRecipientModuleData",

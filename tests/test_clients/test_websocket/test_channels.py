@@ -5,13 +5,12 @@ import pytest
 import pytest_asyncio
 
 from derive_py.data_types.channel_models import (
-    OrderbookSnapshot,
+    OrderbookPayloadDoc,
     SpotFeedPayload,
     TickerSlimPayload,
 )
 from derive_py.data_types.generated_models import (
     AssetType,
-    BatchStatus,
 )
 from derive_py.exceptions import DeriveJSONRPCError
 
@@ -89,7 +88,7 @@ async def test_public_orderbook_group_depth_by_instrument_name(client_admin_wall
         ),
     )
     assert subscription_result.status["orderbook.ETH-PERP.1.1"] == SUBSCRIPTION_OK
-    assert isinstance(data, OrderbookSnapshot)
+    assert isinstance(data, OrderbookPayloadDoc)
 
 
 @pytest.mark.asyncio
@@ -140,21 +139,6 @@ async def test_public_trades_by_instrument_type(client_admin_wallet):
     )
 
     assert subscription_result.status["trades.erc20.ETH"] == SUBSCRIPTION_OK
-
-
-@pytest.mark.asyncio
-async def test_public_trades_batch_status_by_instrument_type(client_admin_wallet):
-    instrument_type = AssetType.option
-    currency = "ETH"
-    batch_status = BatchStatus.Settled
-    subscription_result = await client_admin_wallet.public_channels.trades_batch_status_by_instrument_type(
-        instrument_type=instrument_type,
-        currency=currency,
-        batch_status=batch_status,
-        callback=noop,
-    )
-
-    assert subscription_result.status[f"trades.{instrument_type}.{currency}.{batch_status}"] == SUBSCRIPTION_OK
 
 
 ## Private channels
@@ -211,19 +195,6 @@ async def test_private_trades_by_subaccount_id(client_admin_wallet):
     )
 
     assert subscription_result.status[f"{subaccount_id}.trades"] == SUBSCRIPTION_OK
-
-
-@pytest.mark.asyncio
-async def test_private_trades_batch_status_by_subaccount_id(client_admin_wallet):
-    subaccount_id = client_admin_wallet.active_subaccount.id
-    batch_status = BatchStatus.Settled
-    subscription_result = await client_admin_wallet.private_channels.trades_batch_status_by_subaccount_id(
-        subaccount_id=subaccount_id,
-        batch_status=batch_status,
-        callback=noop,
-    )
-
-    assert subscription_result.status[f"{subaccount_id}.trades.{batch_status}"] == SUBSCRIPTION_OK
 
 
 @pytest.mark.asyncio

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from enum import StrEnum
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from msgspec import UNSET, Struct, UnsetType, field
 
@@ -258,6 +258,49 @@ class DailyTradingStatistics(
     notional_volume_24h: Decimal
 
 
+class DecodableActionType(StrEnum):
+    order = 'order'
+    rfq_maker = 'rfq_maker'
+    rfq_taker = 'rfq_taker'
+    transfer = 'transfer'
+    external_transfer = 'external_transfer'
+    withdrawal = 'withdrawal'
+    liquidation = 'liquidation'
+    set_session_key = 'set_session_key'
+    update_whitelisted_recipients = 'update_whitelisted_recipients'
+    delete_subaccount = 'delete_subaccount'
+    vault_deposit = 'vault_deposit'
+    vault_withdraw = 'vault_withdraw'
+    vault_cancel = 'vault_cancel'
+    vault_create = 'vault_create'
+    vault_mint_shares = 'vault_mint_shares'
+    vault_burn_shares = 'vault_burn_shares'
+    vault_force_burn = 'vault_force_burn'
+
+
+class DecodeActionRequest(Struct):
+    action_type: DecodableActionType
+    encoded_data: str
+
+
+class DecodeActionResponse(Struct):
+    action_type: DecodableActionType
+    decoded: Any
+
+
+class DeleteSubaccountRequest(Struct):
+    nonce: int
+    signature: str
+    signature_expiry_sec: int
+    signer: str
+    subaccount_id: int
+
+
+class DeleteSubaccountResponse(Struct):
+    op_uuid: str
+    operation_id: int
+
+
 class DepositEntry(Struct):
     amount: Decimal
     asset: str
@@ -275,12 +318,6 @@ class DepositEntry(Struct):
 
 class DepositHistoryResult(Struct):
     deposits: list[DepositEntry]
-
-
-class DepositType(StrEnum):
-    standard = 'standard'
-    instant = 'instant'
-    direct = 'direct'
 
 
 class Direction(StrEnum):
@@ -312,6 +349,10 @@ class ExpirySettlementPrice(Struct):
 
 class ForceBurnRequest(Struct):
     holder: Address
+    nonce: int
+    signature: str
+    signature_expiry_sec: int
+    signer: Address
     subaccount_id: int
 
 
@@ -353,12 +394,6 @@ class GetAllPortfoliosRequest(GetAccountRequest):
 
 class GetAllReferralCodesParams(Struct):
     pass
-
-
-class GetAssetsRequest(Struct):
-    asset_type: AssetType
-    currency: str
-    expired: bool
 
 
 class GetCollateralsRequest(CancelAllAlgoOrdersRequest):
@@ -448,6 +483,24 @@ class GetLiveMintRequestsRequest(GetLiveBurnRequestsRequest):
 
 class GetLiveVaultRequestsRequest(GetCuratedVaultsRequest):
     pass
+
+
+class GetMakerProgramScoresParams(Struct):
+    epoch_start_timestamp: int
+    program_name: str
+
+
+class GetMakerProgramsParams(GetAllReferralCodesParams):
+    pass
+
+
+class GetMarginResponse(Struct):
+    is_valid_trade: bool
+    post_initial_margin: str
+    post_maintenance_margin: str
+    pre_initial_margin: str
+    pre_maintenance_margin: str
+    subaccount_id: int
 
 
 class GetOnchainActionHistoryParams(Struct):
@@ -540,6 +593,16 @@ class GetShareholderVaultsRequest(GetCuratedVaultsRequest):
 
 class GetSubaccountRequest(CancelAllAlgoOrdersRequest):
     pass
+
+
+class GetSubaccountValueHistoryRequest(Struct):
+    end_timestamp: int | UnsetType = UNSET
+    page: int | UnsetType = UNSET
+    page_size: int | UnsetType = UNSET
+    period: int | UnsetType = UNSET
+    start_timestamp: int | UnsetType = UNSET
+    subaccount_id: int | UnsetType = UNSET
+    wallet: str | UnsetType = UNSET
 
 
 class GetSubaccountsRequest(GetAccountRequest):
@@ -668,6 +731,10 @@ class MarginType(StrEnum):
     PM2 = 'PM2'
 
 
+class MarginWatchRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
 class MarketType(StrEnum):
     ALL = 'ALL'
     SRM_BASE_ONLY = 'SRM_BASE_ONLY'
@@ -724,12 +791,20 @@ class OnchainActionHistoryEntry(Struct):
     first_failed_at: int | None | UnsetType = UNSET
     last_failed_at: int | None | UnsetType = UNSET
     op_uuid: str | None | UnsetType = UNSET
+    skip_reason: str | None | UnsetType = UNSET
+    skip_reason_code: str | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
 
 
 class OpenInterestStats(Struct):
     current_open_interest: str
     interest_cap: str
+
+
+class OperationAckResponse(Struct):
+    mmp_triggered: list[int]
+    op_uuid: str
+    operation_id: int
 
 
 class OptionDetails(Struct):
@@ -774,12 +849,14 @@ class OptionSettlementPricesResult(Struct):
 
 
 class OptionSettlementResponse(Struct):
-    amount: str
+    amount: Decimal
     expiry: int
     instrument_name: str
-    settlement_price: str
-    settlement_value: str
+    settlement_price: Decimal
+    settlement_value: Decimal
     subaccount_id: int
+    option_settlement_pnl: Decimal | None = None
+    option_settlement_pnl_excl_fees: Decimal | None = None
 
 
 class OracleSignatureDataResponse(Struct):
@@ -863,14 +940,6 @@ class PerformanceResolution(StrEnum):
     field_8h = '8h'
     field_24h = '24h'
     field_1wk = '1wk'
-
-
-class PerpDetails(Struct):
-    aggregate_funding: str
-    funding_rate: str
-    index: str
-    max_rate_per_hour: str
-    min_rate_per_hour: str
 
 
 class PerpFeedDataResponse(Struct):
@@ -988,10 +1057,7 @@ class PrivateGetSubaccountsResponse(Struct):
 
 
 class PrivateLiquidateRequest(Struct):
-    cash_transfer: Decimal
-    last_seen_trade_id: int
     liquidate_subaccount_id: int
-    merge_account: bool
     nonce: int
     percent_of_acc: Decimal
     price_limit: Decimal
@@ -1001,9 +1067,8 @@ class PrivateLiquidateRequest(Struct):
     subaccount_id: int
 
 
-class PrivateLiquidateResponse(Struct):
-    op_uuid: str
-    operation_id: int
+class PrivateLiquidateResponse(DeleteSubaccountResponse):
+    pass
 
 
 class PrivateSetSessionKeyResponse(Struct):
@@ -1031,7 +1096,7 @@ class PrivateTransferSpotExternalRequest(Struct):
     to_subaccount_id: int
 
 
-class PrivateTransferSpotExternalResponse(PrivateLiquidateResponse):
+class PrivateTransferSpotExternalResponse(DeleteSubaccountResponse):
     pass
 
 
@@ -1049,7 +1114,7 @@ class PrivateTransferSpotRequest(Struct):
     to_subaccount_id: int
 
 
-class PrivateTransferSpotResponse(PrivateLiquidateResponse):
+class PrivateTransferSpotResponse(DeleteSubaccountResponse):
     pass
 
 
@@ -1066,8 +1131,18 @@ class PrivateWithdrawRequest(Struct):
     recipient: str | UnsetType = UNSET
 
 
-class PrivateWithdrawResponse(PrivateLiquidateResponse):
+class PrivateWithdrawResponse(DeleteSubaccountResponse):
     pass
+
+
+class ProgramResponse(Struct):
+    asset_types: list[str]
+    currencies: list[str]
+    end_timestamp: int
+    min_notional: str
+    name: str
+    rewards: dict[str, str]
+    start_timestamp: int
 
 
 class PublicExecuteQuoteDebugRequest(Struct):
@@ -1087,6 +1162,45 @@ class PublicGetWalletsFromSessionKeyResponse(Struct):
     wallets: list[str]
 
 
+class PublicMarginWatchResponse(Struct):
+    collaterals: list[Collateral]
+    currency: list[str]
+    initial_margin: str
+    is_delayed_liquidation: bool
+    maintenance_margin: str
+    margin_type: str
+    positions: list[Position]
+    risk_universe_id: int
+    subaccount_id: int
+    subaccount_value: str
+    valuation_timestamp: int
+
+
+class PublicOracleSignatureDataParams(Struct):
+    signatures: list[str] | UnsetType = field(default_factory=list)
+    signers: list[str] | UnsetType = field(default_factory=list)
+
+
+class PublicPerpFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    spot_diff_value: str
+    timestamp: int
+    type: str
+    deadline: int | UnsetType = 0
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
+
+
+class PublicRateFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    expiry: int
+    rate: str
+    timestamp: int
+    deadline: int | UnsetType = 0
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
+
+
 class PublicSendQuoteDebugRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
@@ -1099,11 +1213,21 @@ class PublicSendQuoteDebugRequest(Struct):
     subaccount_id: int
 
 
+class PublicSpotFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    price: str
+    timestamp: int
+    deadline: int | UnsetType = 0
+    feed_source_type: str | UnsetType = UNSET
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
+
+
 class PublicStartAuctionRequest(Struct):
     subaccount_id: int
 
 
-class PublicStartAuctionResponse(PrivateLiquidateResponse):
+class PublicStartAuctionResponse(DeleteSubaccountResponse):
     pass
 
 
@@ -1124,6 +1248,16 @@ class PublicVaultActionResponse(Struct):
     status: str
     subaccount_id: int
     total_shares: Decimal
+
+
+class PublicVolSVIParamDataParams(Struct):
+    SVI_a: str
+    SVI_b: str
+    SVI_fwd: str
+    SVI_m: str
+    SVI_refTau: str
+    SVI_rho: str
+    SVI_sigma: str
 
 
 class PublicWithdrawDebugRequest(Struct):
@@ -1220,7 +1354,6 @@ class Referrer(Struct):
 
 
 class RegisterDepositAddressParams(Struct):
-    deposit_type: DepositType
     wallet: str
     manager_id: int | UnsetType = UNSET
     subaccount_id: int | UnsetType = 0
@@ -1228,7 +1361,6 @@ class RegisterDepositAddressParams(Struct):
 
 class RegisterDepositAddressResult(Struct):
     deposit_address: str
-    deposit_type: DepositType
     wallet: str
     manager_id: int | None | UnsetType = UNSET
     subaccount_id: int | None | UnsetType = UNSET
@@ -1311,6 +1443,16 @@ class RiskUniverseManager(Struct):
     instruments: list[str]
     manager_id: int
     margin_type: MarginType
+
+
+class ScoreBreakdown(Struct):
+    coverage_score: str
+    holder_boost: str
+    quality_score: str
+    total_score: str
+    volume: str
+    volume_multiplier: str
+    wallet: str
 
 
 class SecurityModuleDetails(Struct):
@@ -1431,6 +1573,17 @@ class SignedTransferQuoteRequest(Struct):
     subaccount_id: int
 
 
+class SimulatedCollateralRequest(Struct):
+    amount: Decimal
+    asset_name: str
+
+
+class SimulatedPositionRequest(Struct):
+    amount: Decimal
+    instrument_name: str
+    entry_price: Decimal | UnsetType = UNSET
+
+
 class SpotFeedDataResponse(Struct):
     confidence: str
     currency: str
@@ -1456,6 +1609,27 @@ class SpotUniverse(Struct):
     srm_im_discount: str
     srm_mm_discount: str
     lending: LendingDetails | None | UnsetType = UNSET
+
+
+class SrmPerpMarginRequirements(Struct):
+    im_perp_req: str
+    max_leverage: str
+    mm_perp_req: str
+
+
+class SubaccountValueEntry(Struct):
+    currency: str
+    initial_margin: Decimal
+    maintenance_margin: Decimal
+    margin_type: str
+    subaccount_id: int
+    subaccount_value: Decimal
+    timestamp: int
+
+
+class SubaccountValueHistoryResult(Struct):
+    pagination: Pagination
+    subaccount_value_history: list[SubaccountValueEntry]
 
 
 class TickerSlimSnapshot(
@@ -1655,7 +1829,7 @@ class VaultConfig(Struct):
     benchmark_asset: Address | None | UnsetType = UNSET
 
 
-class VaultCreateResponse(PrivateLiquidateResponse):
+class VaultCreateResponse(DeleteSubaccountResponse):
     pass
 
 
@@ -1666,7 +1840,7 @@ class VaultDepositHold(Struct):
     vault_id: int
 
 
-class VaultForceBurnResponse(PrivateLiquidateResponse):
+class VaultForceBurnResponse(DeleteSubaccountResponse):
     pass
 
 
@@ -1691,18 +1865,12 @@ class VaultRequestId(Struct):
     wallet: Address
 
 
-class VaultSettleResponse(PrivateLiquidateResponse):
+class VaultSettleResponse(DeleteSubaccountResponse):
     pass
 
 
-class VolSVIParamDataResponse(Struct):
-    SVI_a: str
-    SVI_b: str
-    SVI_fwd: str
-    SVI_m: str
-    SVI_refTau: str
-    SVI_rho: str
-    SVI_sigma: str
+class VolSVIParamDataResponse(PublicVolSVIParamDataParams):
+    pass
 
 
 class WithdrawalEntry(Struct):
@@ -1734,24 +1902,11 @@ class Action(Struct):
     subaccount_id: int
 
 
-class Asset(Struct):
-    address: str
-    asset_id: str
-    asset_name: str
-    asset_type: AssetType
-    currency: str
-    is_collateral: bool
-    is_position: bool
-    sub_id: str
-    erc20_details: SpotPublicDetails | None | UnsetType = UNSET
-    option_details: OptionDetails | None | UnsetType = UNSET
-    perp_details: PerpDetails | None | UnsetType = UNSET
-
-
 class AssetUniverse(Struct):
     oi: OpenInterestStats
     risk_universe_id: int
     risk_universe_name: str | None | UnsetType = UNSET
+    srm_perp_margin_requirements: SrmPerpMarginRequirements | None | UnsetType = UNSET
 
 
 class AuctionHistory(Struct):
@@ -1844,6 +1999,13 @@ class FundingFeedDataResponse(Struct):
     timestamp: int
 
 
+class GetMakerProgramScoresResponse(Struct):
+    program: ProgramResponse
+    scores: list[ScoreBreakdown]
+    total_score: str
+    total_volume: str
+
+
 class GetOnchainActionHistoryResponse(Struct):
     actions: list[OnchainActionHistoryEntry]
     pagination: Pagination
@@ -1880,32 +2042,6 @@ class GetVaultPerformanceHistoryRequest(Struct):
 class GetWalletsFromSessionKeyRequest(Struct):
     public_session_key: str
     scope: OffchainKeyScope | UnsetType = UNSET
-
-
-class Instrument(Struct):
-    amount_step: str
-    base_asset_address: str
-    base_asset_sub_id: str
-    base_currency: str
-    base_fee: str
-    fifo_min_allocation: str
-    instrument_name: str
-    instrument_type: AssetType
-    is_active: bool
-    maker_fee_rate: str
-    maximum_amount: str
-    minimum_amount: str
-    pro_rata_amount_step: str
-    pro_rata_fraction: str
-    quote_currency: str
-    scheduled_activation: int
-    scheduled_deactivation: int
-    taker_fee_rate: str
-    tick_size: str
-    erc20_details: SpotPublicDetails | None | UnsetType = UNSET
-    mark_price_fee_rate_cap: str | None | UnsetType = UNSET
-    option_details: OptionDetails | None | UnsetType = UNSET
-    perp_details: PerpDetails | None | UnsetType = UNSET
 
 
 class InterestHistoryResult(Struct):
@@ -2055,6 +2191,21 @@ class PaginatedVaultRequestHistory(Struct):
     wallet: str
 
 
+class PerpDetails(Struct):
+    aggregate_funding: str
+    funding_rate: str
+    index: str
+    max_rate_per_hour: str
+    min_rate_per_hour: str
+    srm_perp_margin_requirements: SrmPerpMarginRequirements | None | UnsetType = UNSET
+
+
+class PrivateGetMarginRequest(Struct):
+    subaccount_id: int
+    simulated_collateral_changes: list[SimulatedCollateralRequest] | UnsetType = UNSET
+    simulated_position_changes: list[SimulatedPositionRequest] | UnsetType = UNSET
+
+
 class PrivateSessionKeysResponse(Struct):
     public_session_keys: list[SessionKey]
 
@@ -2067,6 +2218,36 @@ class ProtocolVault(Struct):
     protocol_fee_share_bps: int
     subaccount_id: int
     total_shares: Decimal
+
+
+class PublicForwardFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    expiry: int
+    fwd_diff: str
+    spot_aggregate_latest: str
+    spot_aggregate_start: str
+    timestamp: int
+    deadline: int | UnsetType = 0
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
+
+
+class PublicFundingFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    funding_rate: str
+    timestamp: int
+    deadline: int | UnsetType = 0
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
+
+
+class PublicGetMarginRequest(Struct):
+    margin_type: str
+    simulated_collaterals: list[SimulatedCollateralRequest]
+    simulated_positions: list[SimulatedPositionRequest]
+    market: str | UnsetType = UNSET
+    simulated_collateral_changes: list[SimulatedCollateralRequest] | UnsetType = UNSET
+    simulated_position_changes: list[SimulatedPositionRequest] | UnsetType = UNSET
 
 
 class PublicQuote(Struct):
@@ -2106,6 +2287,16 @@ class PublicRfq(Struct):
 class PublicTradesResult(Struct):
     pagination: Pagination
     trades: list[SettledTrade]
+
+
+class PublicVolFeedDataParams(Struct):
+    confidence: str
+    currency: str
+    expiry: int
+    timestamp: int
+    vol_data: PublicVolSVIParamDataParams
+    deadline: int | UnsetType = 0
+    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
 
 
 class Quote(Struct):
@@ -2185,6 +2376,7 @@ class RFQPollResponse(Struct):
 
 class RejectDepositRequestRequest(Struct):
     request_id: VaultRequestId
+    subaccount_id: int
     reason: str | UnsetType = UNSET
 
 
@@ -2389,11 +2581,6 @@ class Currency(Struct):
     spot_price_24h: str | None | UnsetType = UNSET
 
 
-class GetAllInstrumentsResponse(Struct):
-    instruments: list[Instrument]
-    pagination: Pagination
-
-
 class GetLatestSignedFeedsResponse(Struct):
     funding_data: dict[str, FundingFeedDataResponse]
     fwd_data: dict[str, dict[str, ForwardFeedDataResponse]]
@@ -2403,6 +2590,51 @@ class GetLatestSignedFeedsResponse(Struct):
     vol_data: dict[str, dict[str, VolFeedDataResponse]]
 
 
+class Instrument(Struct):
+    amount_step: str
+    base_asset_address: str
+    base_asset_sub_id: str
+    base_currency: str
+    base_fee: str
+    fifo_min_allocation: str
+    instrument_name: str
+    instrument_type: AssetType
+    is_active: bool
+    maker_fee_rate: str
+    maximum_amount: str
+    minimum_amount: str
+    pro_rata_amount_step: str
+    pro_rata_fraction: str
+    quote_currency: str
+    scheduled_activation: int
+    scheduled_deactivation: int
+    taker_fee_rate: str
+    tick_size: str
+    erc20_details: SpotPublicDetails | None | UnsetType = UNSET
+    mark_price_fee_rate_cap: str | None | UnsetType = UNSET
+    option_details: OptionDetails | None | UnsetType = UNSET
+    perp_details: PerpDetails | None | UnsetType = UNSET
+
+
 class MultipleVaultRequestsResponse(Struct):
     requests: list[VaultRequestResponse]
     total: int
+
+
+class PublicSetFeedDataRequest(Struct):
+    forward: list[PublicForwardFeedDataParams]
+    perp: list[PublicPerpFeedDataParams]
+    rate: list[PublicRateFeedDataParams]
+    spot: list[PublicSpotFeedDataParams]
+    vol: list[PublicVolFeedDataParams]
+    funding: list[PublicFundingFeedDataParams] | UnsetType = UNSET
+
+
+class PublicSetSocializationFeedDataRequest(Struct):
+    feeds: PublicSetFeedDataRequest
+    universe_id: int
+
+
+class GetAllInstrumentsResponse(Struct):
+    instruments: list[Instrument]
+    pagination: Pagination
