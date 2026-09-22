@@ -25,9 +25,9 @@ dev-version:
 		$(TOML_FILE); \
 	rm -f $(TOML_FILE).bak; \
 	poetry lock; \
-	# git add $(TOML_FILE) poetry.lock; \
-	# git commit -m "Bump version to v$$NEW_VERSION"; \
-	# git push origin HEAD:$(DEV_BRANCH)
+	git add $(TOML_FILE) poetry.lock; \
+	git commit -m "Bump version to v$$NEW_VERSION"; \
+	git push origin HEAD:$(DEV_BRANCH)
 
 release:
 	@set -e; \
