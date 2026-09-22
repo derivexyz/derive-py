@@ -109,14 +109,23 @@ async def main() -> None:
                             )
                         )
 
-                    quote = await subaccount.rfq.send_quote(
-                        direction=direction,
-                        legs=legs,
-                        rfq_id=rfq.rfq_id,
-                        max_fee=max(MAX_FEE_FLOOR, notional_usd * MAX_FEE_RATE),
-                        label=LABEL,
-                        mmp=False,  # set True once the subaccount has an MMP config
-                    )
+                    try:
+                        quote = await subaccount.rfq.send_quote(
+                            direction=direction,
+                            legs=legs,
+                            rfq_id=rfq.rfq_id,
+                            max_fee=max(MAX_FEE_FLOOR, notional_usd * MAX_FEE_RATE),
+                            label=LABEL,
+                            mmp=False,  # set True once the subaccount has an MMP config
+                        )
+                    except DeriveJSONRPCError as e:
+                        # An RFQ from a sibling subaccount, 06-rfq-taker on this
+                        # wallet say, cannot be quoted: skip that side.
+                        if e.rpc_error.code != DeriveJSONRPCErrorCode.SELF_CROSS_DISALLOWED:
+                            raise
+                        log.warning(f"  skipped {direction} on rfq {rfq.rfq_id}: would self-cross")
+                        continue
+
                     summary = " + ".join(f"{leg.instrument_name}@{leg.price}" for leg in legs)
                     log.info(f"  quoted {direction} on rfq {rfq.rfq_id}: quote {quote.quote_id} ({summary})")
 
