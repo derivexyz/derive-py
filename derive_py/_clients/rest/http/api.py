@@ -8,7 +8,6 @@ from derive_py.data_types import ChainConfig
 from derive_py.data_types.generated_models import (
     AggregatedOrdersResult,
     AggregatedTriggerOrdersResult,
-    Asset,
     BurnSharesRequest,
     CancelAlgoOrderRequest,
     CancelAllAlgoOrdersRequest,
@@ -33,6 +32,10 @@ from derive_py.data_types.generated_models import (
     CreateOrderRequest,
     CreateVaultRequest,
     Currency,
+    DecodeActionRequest,
+    DecodeActionResponse,
+    DeleteSubaccountRequest,
+    DeleteSubaccountResponse,
     DepositHistoryResult,
     EditSessionKeyRequest,
     EmptyRequest,
@@ -45,7 +48,6 @@ from derive_py.data_types.generated_models import (
     GetAllInstrumentsResponse,
     GetAllPortfoliosRequest,
     GetAllReferralCodesParams,
-    GetAssetsRequest,
     GetCollateralsRequest,
     GetCuratedVaultsRequest,
     GetCurrencyRequest,
@@ -63,6 +65,10 @@ from derive_py.data_types.generated_models import (
     GetLiveBurnRequestsRequest,
     GetLiveMintRequestsRequest,
     GetLiveVaultRequestsRequest,
+    GetMakerProgramScoresParams,
+    GetMakerProgramScoresResponse,
+    GetMakerProgramsParams,
+    GetMarginResponse,
     GetOnchainActionHistoryParams,
     GetOnchainActionHistoryResponse,
     GetOpenOrdersRequest,
@@ -81,6 +87,7 @@ from derive_py.data_types.generated_models import (
     GetShareholderVaultsRequest,
     GetSubaccountRequest,
     GetSubaccountsRequest,
+    GetSubaccountValueHistoryRequest,
     GetTickerRequest,
     GetTickersRequest,
     GetTickersResponse,
@@ -102,11 +109,13 @@ from derive_py.data_types.generated_models import (
     InterestHistoryResult,
     InterestRateHistoryResult,
     LiquidationHistoryResult,
+    MarginWatchRequest,
     MintSharesRequest,
     MmpConfigResult,
     MmpScopeRequest,
     MultipleVaultRequestsResponse,
     OffchainAckResponse,
+    OperationAckResponse,
     OptionSettlementHistoryResponse,
     OptionSettlementPricesResult,
     Order,
@@ -124,6 +133,7 @@ from derive_py.data_types.generated_models import (
     PrivateChangeSubaccountLabelResponse,
     PrivateGetAccountResponse,
     PrivateGetCollateralsResponse,
+    PrivateGetMarginRequest,
     PrivateGetPositionsResponse,
     PrivateGetSubaccountsResponse,
     PrivateLiquidateRequest,
@@ -136,9 +146,13 @@ from derive_py.data_types.generated_models import (
     PrivateTransferSpotResponse,
     PrivateWithdrawRequest,
     PrivateWithdrawResponse,
+    ProgramResponse,
     PublicExecuteQuoteDebugRequest,
+    PublicGetMarginRequest,
     PublicGetWalletsFromSessionKeyResponse,
+    PublicMarginWatchResponse,
     PublicSendQuoteDebugRequest,
+    PublicSetSocializationFeedDataRequest,
     PublicStartAuctionRequest,
     PublicStartAuctionResponse,
     PublicTradesResult,
@@ -174,6 +188,7 @@ from derive_py.data_types.generated_models import (
     SetMmpConfigResponse,
     SetSessionKeyRequest,
     Subaccount,
+    SubaccountValueHistoryResult,
     TickerSlimSnapshot,
     TradingviewCandle,
     TransferHistoryResult,
@@ -212,6 +227,28 @@ class PublicRPC:
     @property
     def headers(self) -> dict:
         return PUBLIC_HEADERS
+
+    def margin_watch(
+        self,
+        params: MarginWatchRequest,
+    ) -> PublicMarginWatchResponse:
+        """
+        Calculates the mark-to-market value and initial/maintenance margin for a given
+        subaccount, with per-position and per-collateral breakdowns, computed from live
+        feed data at request time. Margins are reported on the margin basis actually in
+        effect: when a delayed-liquidation override is active the response's
+        is_delayed_liquidation flag is true and the reported margins use the temporarily
+        lowered requirements. A maintenance margin below zero means the subaccount is
+        flagged for liquidation.
+        """
+
+        url = self._endpoints.margin_watch
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicMarginWatchResponse)
+
+        return result
 
     def get_wallets_from_session_key(
         self,
@@ -477,12 +514,13 @@ class PublicRPC:
         params: RegisterDepositAddressParams,
     ) -> RegisterDepositAddressResult:
         """
-        Returns the deterministic on-chain deposit address for a wallet and records it
-        so incoming deposits are watched and credited. Pass the wallet and optionally an
-        existing subaccount id; when creating a new subaccount (subaccount omitted or 0)
-        a non-zero manager_id is required. Repeated calls return the same cached address
-        and keep it alive, while new registrations are rate limited per rolling window;
-        unused addresses are dropped after 7 days.
+        A pre-requisite before using the `standard` deposit method as opposed to
+        `direct` contract calls. Returns the deterministic on-chain deposit address for
+        a wallet and records it so incoming deposits are watched and credited. Pass the
+        wallet and optionally an existing subaccount id; when creating a new subaccount
+        (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls
+        return the same cached address and keep it alive, while new registrations are
+        rate limited per rolling window; unused addresses are dropped after 7 days.
         """
 
         url = self._endpoints.register_deposit_address
@@ -490,6 +528,28 @@ class PublicRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, RegisterDepositAddressResult)
+
+        return result
+
+    def decode_action(
+        self,
+        params: DecodeActionRequest,
+    ) -> DecodeActionResponse:
+        """
+        Runs a hex-encoded Action.data payload through the exchange's own ABI decoder
+        and returns either the decoded fields or the exact reason the bytes were
+        rejected, naming the 32-byte word and the field that broke. Reach for this first
+        when a request fails signature verification (14014): every other route encodes
+        Action.data server-side, so a client whose encoder emits a bad word never sees a
+        decode error - the hashes simply disagree. This is the only route a client's own
+        bytes reach the decoder. Needs no auth and executes nothing.
+        """
+
+        url = self._endpoints.decode_action
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, DecodeActionResponse)
 
         return result
 
@@ -604,27 +664,6 @@ class PublicRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[str])
-
-        return result
-
-    def get_assets(
-        self,
-        params: GetAssetsRequest,
-    ) -> list[Asset]:
-        """
-        Returns the assets of a given `asset_type` (option, perp, or erc20) for a
-        `currency`, with `expired` controlling whether past-expiry options are included.
-        Each entry includes the asset id, name, on-chain address and sub_id,
-        collateral/position flags, and type-specific details (option
-        strike/expiry/settlement price, perp funding config, or ERC20 lending indices).
-        Public endpoint.
-        """
-
-        url = self._endpoints.get_assets
-        data = encode_request(params)
-        message = self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, list[Asset])
 
         return result
 
@@ -837,10 +876,10 @@ class PublicRPC:
         params: GetPublicTradeHistoryRequest,
     ) -> PublicTradesResult:
         """
-        Returns paginated, anonymized settled trades with optional filters: `trade_id`
-        (a UUID, which overrides all other filters), `instrument_name`,
-        `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`,
-        `batch_status` (a batch-status name, default Settled), and
+        Returns paginated, anonymized trades with optional filters: `trade_id` (a UUID,
+        which overrides all other filters), `instrument_name`, `instrument_type`
+        (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status
+        name; unset returns trades in every batch state), and
         `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement
         status and transaction hash. Public endpoint.
         """
@@ -870,6 +909,24 @@ class PublicRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, list[TradingviewCandle])
+
+        return result
+
+    def get_maker_programs(
+        self,
+        params: GetMakerProgramsParams,
+    ) -> list[ProgramResponse]:
+        """
+        Returns every maker-program epoch, including historical epochs, with its asset
+        and currency scope, minimum eligible notional, timestamps, and reward-token
+        amounts. Takes no parameters and reads the configuration from ClickHouse.
+        """
+
+        url = self._endpoints.get_maker_programs
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, list[ProgramResponse])
 
         return result
 
@@ -909,6 +966,54 @@ class PublicRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetReferralPerformanceResult)
+
+        return result
+
+    def get_maker_program_scores(
+        self,
+        params: GetMakerProgramScoresParams,
+    ) -> GetMakerProgramScoresResponse:
+        """
+        public/get_maker_program_scores
+        """
+
+        url = self._endpoints.get_maker_program_scores
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetMakerProgramScoresResponse)
+
+        return result
+
+    def get_margin(
+        self,
+        params: PublicGetMarginRequest,
+    ) -> GetMarginResponse:
+        """
+        public/get_margin
+        """
+
+        url = self._endpoints.get_margin
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetMarginResponse)
+
+        return result
+
+    def set_socialization_feed_data(
+        self,
+        params: PublicSetSocializationFeedDataRequest,
+    ) -> OperationAckResponse:
+        """
+        public/set_socialization_feed_data
+        """
+
+        url = self._endpoints.set_socialization_feed_data
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, OperationAckResponse)
 
         return result
 
@@ -962,6 +1067,26 @@ class PrivateRPC:
 
         return result
 
+    def delete_subaccount(
+        self,
+        params: DeleteSubaccountRequest,
+    ) -> DeleteSubaccountResponse:
+        """
+        Permanently deletes one of the caller's subaccounts via a signed action. The
+        subaccount must be fully wound down: no balances or debt, no open orders, RFQs,
+        or quotes, not a vault, not under auction, and not the wallet's fallback
+        subaccount. Deletion never moves value; subaccount ids are never reused. This is
+        an owner-or-admin operation (session keys need the admin scope).
+        """
+
+        url = self._endpoints.delete_subaccount
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, DeleteSubaccountResponse)
+
+        return result
+
     def get_all_portfolios(
         self,
         params: GetAllPortfoliosRequest,
@@ -997,6 +1122,26 @@ class PrivateRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetCollateralsResponse)
+
+        return result
+
+    def get_margin(
+        self,
+        params: PrivateGetMarginRequest,
+    ) -> GetMarginResponse:
+        """
+        Calculates net initial and maintenance margin for a subaccount before and after
+        an optional simulated state change (position and/or collateral deltas), and
+        whether that change would pass the margin requirement. Values are net margin —
+        mark-to-market value minus the requirement — so positive means healthy. Does not
+        take open-order margin into account.
+        """
+
+        url = self._endpoints.get_margin
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetMarginResponse)
 
         return result
 
@@ -1092,6 +1237,28 @@ class PrivateRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateSessionKeysResponse)
+
+        return result
+
+    def set_session_key(
+        self,
+        params: SetSessionKeyRequest,
+    ) -> PrivateSetSessionKeyResponse:
+        """
+        Authorizes a new session key for a wallet from a signed action, granting it a
+        set of on-chain (protocol) scopes and off-chain scopes with an expiry, an
+        optional label, an optional IP allowlist, and an optional list of subaccounts it
+        may act on (defaults to all of the wallet's subaccounts). Send the signed action
+        fields (nonce, signer, signature, signature expiry, and module) alongside the
+        requested scopes; the endpoint returns the registered key's public address and
+        its granted scopes, expiry, allowlist, label, and subaccounts.
+        """
+
+        url = self._endpoints.set_session_key
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateSetSessionKeyResponse)
 
         return result
 
@@ -1867,10 +2034,12 @@ class PrivateRPC:
         params: ForceBurnRequest,
     ) -> VaultForceBurnResponse:
         """
-        Curator-only endpoint that builds an on-chain action to forcibly redeem a given
-        holder's entire share balance at the current mark-to-market share price. Inputs
-        are the vault subaccount and the holder's wallet address. Requires the curator
-        mint-and-burn permission.
+        Curator-signed endpoint that builds an on-chain action to forcibly redeem a
+        given holder's entire share balance at the current mark-to-market share price.
+        Inputs are the vault subaccount the curator signs on, the EIP-712 envelope
+        (nonce, signer, signature, expiry), and the holder's wallet address. Requires
+        the curator mint-and-burn permission; the protocol re-verifies the curator
+        signature.
         """
 
         url = self._endpoints.force_burn
@@ -2077,7 +2246,9 @@ class PrivateRPC:
         """
         Returns option settlement (expiry) events for a single subaccount or an entire
         wallet (specify exactly one). Each settlement includes the reconstructed option
-        instrument name and the settled amounts for that expired position.
+        instrument name, the settled amount and value for that expired position, and the
+        realized settlement PnL against the position's cost basis, with and without
+        trading fees.
         """
 
         url = self._endpoints.get_option_settlement_history
@@ -2314,6 +2485,22 @@ class PrivateRPC:
 
         return result
 
+    def get_subaccount_value_history(
+        self,
+        params: GetSubaccountValueHistoryRequest,
+    ) -> SubaccountValueHistoryResult:
+        """
+        private/get_subaccount_value_history
+        """
+
+        url = self._endpoints.get_subaccount_value_history
+        data = encode_request(params)
+        message = self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, SubaccountValueHistoryResult)
+
+        return result
+
     def liquidate(
         self,
         params: PrivateLiquidateRequest,
@@ -2327,22 +2514,6 @@ class PrivateRPC:
         message = self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateLiquidateResponse)
-
-        return result
-
-    def set_session_key(
-        self,
-        params: SetSessionKeyRequest,
-    ) -> PrivateSetSessionKeyResponse:
-        """
-        private/set_session_key
-        """
-
-        url = self._endpoints.set_session_key
-        data = encode_request(params)
-        message = self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateSetSessionKeyResponse)
 
         return result
 

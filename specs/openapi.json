@@ -69,6 +69,10 @@
       "description": "Instruments, currencies, tickers, and market-wide feeds."
     },
     {
+      "name": "Maker Scoring",
+      "description": "Maker programs, score breakdowns, and detailed scoring snapshots."
+    },
+    {
       "name": "Referrals",
       "description": "Referral codes and program performance."
     },
@@ -108,6 +112,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChangeSubaccountLabelRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/delete_subaccount": {
+      "post": {
+        "tags": [
+          "Subaccounts"
+        ],
+        "summary": "private/delete_subaccount",
+        "operationId": "private_delete_subaccount",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSubaccountResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Permanently deletes one of the caller's subaccounts via a signed action. The subaccount must be fully wound down: no balances or debt, no open orders, RFQs, or quotes, not a vault, not under auction, and not the wallet's fallback subaccount. Deletion never moves value; subaccount ids are never reused. This is an owner-or-admin operation (session keys need the admin scope).",
+        "x-rate-limit-class": "proven",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteSubaccountRequest"
               }
             }
           }
@@ -183,6 +223,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GetCollateralsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_margin": {
+      "post": {
+        "tags": [
+          "Subaccounts"
+        ],
+        "summary": "private/get_margin",
+        "operationId": "private_get_margin",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMarginResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Calculates net initial and maintenance margin for a subaccount before and after an optional simulated state change (position and/or collateral deltas), and whether that change would pass the margin requirement. Values are net margin — mark-to-market value minus the requirement — so positive means healthy. Does not take open-order margin into account.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateGetMarginRequest"
               }
             }
           }
@@ -297,6 +373,42 @@
         }
       }
     },
+    "/public/margin_watch": {
+      "post": {
+        "tags": [
+          "Subaccounts"
+        ],
+        "summary": "public/margin_watch",
+        "operationId": "public_margin_watch",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMarginWatchResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Calculates the mark-to-market value and initial/maintenance margin for a given subaccount, with per-position and per-collateral breakdowns, computed from live feed data at request time. Margins are reported on the margin basis actually in effect: when a delayed-liquidation override is active the response's is_delayed_liquidation flag is true and the reported margins use the temporarily lowered requirements. A maintenance margin below zero means the subaccount is flagged for liquidation.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarginWatchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/edit_session_key": {
       "post": {
         "tags": [
@@ -363,6 +475,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SessionKeysRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/set_session_key": {
+      "post": {
+        "tags": [
+          "Session Keys"
+        ],
+        "summary": "private/set_session_key",
+        "operationId": "private_set_session_key",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateSetSessionKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
+        "x-rate-limit-class": "proven",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionKeyRequest"
               }
             }
           }
@@ -1655,7 +1803,7 @@
           }
         },
         "description": "Submits a signed cancel action that drains all of the caller's pending deposit and withdraw requests for a given vault and posts the corresponding on-chain operation. Input is the vault subaccount; any subaccount the caller owns may sign. Requires the user-cancel permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -1835,7 +1983,7 @@
           }
         },
         "description": "Submits a signed deposit action from the user's source subaccount and enqueues it in the vault's pending-deposit queue for the curator to settle. Inputs are the target vault subaccount, the deposit asset, and the amount as a decimal string. Returns an acknowledgement with the queued request; requires the user-deposit permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -1871,7 +2019,7 @@
           }
         },
         "description": "Submits a signed withdraw action that enqueues a request to burn a given number of vault shares and redeem the proceeds to the user's subaccount. Inputs are the vault subaccount and the share quantity to burn (decimal string). Returns an acknowledgement with the queued request; requires the user-withdraw permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2051,7 +2199,7 @@
           }
         },
         "description": "Curator-only endpoint that settles a pending withdraw request by signing a burn approval at a quoted share price (USD per share). Takes the request id and the user's withdraw-action hash, burns the shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2087,7 +2235,7 @@
           }
         },
         "description": "Registers a new vault on-chain from a signed action; the signing wallet becomes the vault's curator and seeds the initial deposit from its funding subaccount. Inputs set the deposit asset, initial deposit amount, initial share price, management/performance fee rates (in basis points), max slippage, redemption cooldown, an optional benchmark asset for the high-water mark, and the max sequencer fee authorized. Requires the vault curator-create permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2122,8 +2270,8 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Curator-only endpoint that builds an on-chain action to forcibly redeem a given holder's entire share balance at the current mark-to-market share price. Inputs are the vault subaccount and the holder's wallet address. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
+        "description": "Curator-signed endpoint that builds an on-chain action to forcibly redeem a given holder's entire share balance at the current mark-to-market share price. Inputs are the vault subaccount the curator signs on, the EIP-712 envelope (nonce, signer, signature, expiry), and the holder's wallet address. Requires the curator mint-and-burn permission; the protocol re-verifies the curator signature.",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2267,7 +2415,7 @@
           }
         },
         "description": "Curator-only endpoint that settles a pending deposit request by signing a mint approval at a quoted share price (USD per share). Takes the request id and the user's deposit-action hash, mints the corresponding shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2518,7 +2666,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns option settlement (expiry) events for a single subaccount or an entire wallet (specify exactly one). Each settlement includes the reconstructed option instrument name and the settled amounts for that expired position.",
+        "description": "Returns option settlement (expiry) events for a single subaccount or an entire wallet (specify exactly one). Each settlement includes the reconstructed option instrument name, the settled amount and value for that expired position, and the realized settlement PnL against the position's cost basis, with and without trading fees.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -2810,7 +2958,7 @@
           }
         },
         "description": "Atomically transfers one or more derivative positions between a maker and a taker subaccount using matched, signed transfer quotes. Each side supplies its subaccount, signer, nonce, signature, expiry, max fee, direction, and priced legs (instrument, amount, price); the two quotes must mirror each other. Requires a session key with transfer permission and returns the resulting operation details.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2846,7 +2994,7 @@
           }
         },
         "description": "Submits a signed transfer of a single spot asset from one subaccount to another subaccount you own. You specify the source and destination subaccounts (or set new_subaccount_manager to create a new destination subaccount under a manager), the asset and its sub_id, the amount, a nonce, signer, signature with expiry, and the maximum USD sequencer fee. Requires a session key with a transfer permission and returns the operation id and uuid.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2882,7 +3030,7 @@
           }
         },
         "description": "Submits a signed transfer of a single spot asset to a subaccount belonging to a different owner. Alongside the standard transfer fields (asset, sub_id, amount, nonce, signer, signature, expiry, max USD fee) you give the recipient's wallet address and either an existing destination subaccount or 0 to create a new one under new_subaccount_manager; the max fee must cover both the transfer and any subaccount-creation cost. Requires a session key permitted to transfer to a different owner and returns the operation id and uuid.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2918,7 +3066,7 @@
           }
         },
         "description": "Adds and/or removes recipient wallet addresses on an account's transfer whitelist via a signed, wallet-level action. Provide the owner wallet, signer, nonce, signature with expiry, and the add and remove address lists. This is an owner-or-admin operation (session keys need the admin scope); it returns the operation id, uuid, and the full whitelist after the update is applied.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2954,7 +3102,7 @@
           }
         },
         "description": "Submits a signed request to withdraw a spot asset out of a subaccount. You provide the subaccount id, asset name, amount in underlying units, a nonce, the signer, an EIP-712 signature with its expiry, and the maximum sequencer fee (in USD) you authorise; setting force_batch controls whether the withdrawal is batched. Requires a session key with withdraw permission, and returns the accepted operation id and its uuid for tracking.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -3095,7 +3243,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
+        "description": "A pre-requisite before using the `standard` deposit method as opposed to `direct` contract calls. Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -3103,6 +3251,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterDepositAddressParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/decode_action": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "public/decode_action",
+        "operationId": "public_decode_action",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecodeActionResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Runs a hex-encoded Action.data payload through the exchange's own ABI decoder and returns either the decoded fields or the exact reason the bytes were rejected, naming the 32-byte word and the field that broke. Reach for this first when a request fails signature verification (14014): every other route encodes Action.data server-side, so a client whose encoder emits a bad word never sees a decode error - the hashes simply disagree. This is the only route a client's own bytes reach the decoder. Needs no auth and executes nothing.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecodeActionRequest"
               }
             }
           }
@@ -3318,52 +3502,13 @@
           }
         },
         "description": "Returns a sorted list of the names of every currently live instrument (active and within its scheduled activation window). Takes no parameters and returns names only, not full definitions. Public endpoint.",
-        "x-rate-limit-class": "custom",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmptyRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/get_assets": {
-      "post": {
-        "tags": [
-          "Market Data"
-        ],
-        "summary": "public/get_assets",
-        "operationId": "public_get_assets",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Asset"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Returns the assets of a given `asset_type` (option, perp, or erc20) for a `currency`, with `expired` controlling whether past-expiry options are included. Each entry includes the asset id, name, on-chain address and sub_id, collateral/position flags, and type-specific details (option strike/expiry/settlement price, perp funding config, or ERC20 lending indices). Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAssetsRequest"
+                "$ref": "#/components/schemas/EmptyRequest"
               }
             }
           }
@@ -3758,7 +3903,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns paginated, anonymized settled trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name, default Settled), and `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
+        "description": "Returns paginated, anonymized trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name; unset returns trades in every batch state), and `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -3805,6 +3950,45 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GetTradingviewChartDataRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_maker_programs": {
+      "post": {
+        "tags": [
+          "Maker Scoring"
+        ],
+        "summary": "public/get_maker_programs",
+        "operationId": "public_get_maker_programs",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramResponse"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns every maker-program epoch, including historical epochs, with its asset and currency scope, minimum eligible notional, timestamps, and reward-token amounts. Takes no parameters and reads the configuration from ClickHouse.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetMakerProgramsParams"
               }
             }
           }
@@ -3886,6 +4070,41 @@
         }
       }
     },
+    "/private/get_subaccount_value_history": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "private/get_subaccount_value_history",
+        "operationId": "private_get_subaccount_value_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubaccountValueHistoryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSubaccountValueHistoryRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/liquidate": {
       "post": {
         "tags": [
@@ -3908,7 +4127,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -3921,20 +4140,20 @@
         }
       }
     },
-    "/private/set_session_key": {
+    "/public/get_maker_program_scores": {
       "post": {
         "tags": [
           "Other"
         ],
-        "summary": "private/set_session_key",
-        "operationId": "private_set_session_key",
+        "summary": "public/get_maker_program_scores",
+        "operationId": "public_get_maker_program_scores",
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrivateSetSessionKeyResponse"
+                  "$ref": "#/components/schemas/GetMakerProgramScoresResponse"
                 }
               }
             }
@@ -3943,13 +4162,83 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "x-rate-limit-class": "endpoint",
+        "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetSessionKeyRequest"
+                "$ref": "#/components/schemas/GetMakerProgramScoresParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_margin": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "public/get_margin",
+        "operationId": "public_get_margin",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMarginResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicGetMarginRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/set_socialization_feed_data": {
+      "post": {
+        "tags": [
+          "Other"
+        ],
+        "summary": "public/set_socialization_feed_data",
+        "operationId": "public_set_socialization_feed_data",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicSetSocializationFeedDataRequest"
               }
             }
           }
@@ -4154,75 +4443,6 @@
           "twap"
         ]
       },
-      "Asset": {
-        "type": "object",
-        "required": [
-          "address",
-          "asset_id",
-          "asset_name",
-          "asset_type",
-          "currency",
-          "is_collateral",
-          "is_position",
-          "sub_id"
-        ],
-        "properties": {
-          "address": {
-            "type": "string"
-          },
-          "asset_id": {
-            "type": "string"
-          },
-          "asset_name": {
-            "type": "string"
-          },
-          "asset_type": {
-            "$ref": "#/components/schemas/AssetType"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "erc20_details": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SpotPublicDetails"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "is_collateral": {
-            "type": "boolean"
-          },
-          "is_position": {
-            "type": "boolean"
-          },
-          "option_details": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OptionDetails"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "perp_details": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PerpDetails"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "sub_id": {
-            "type": "string"
-          }
-        }
-      },
       "AssetEntry": {
         "description": "A non-spot asset (option or perp) and its per-universe risk.",
         "type": "object",
@@ -4258,7 +4478,7 @@
         ]
       },
       "AssetUniverse": {
-        "description": "Per-`(asset, universe)` open interest for an option/perp asset.",
+        "description": "Per-`(asset, universe)` risk for an option/perp asset: open interest, plus the SRM's perp margin rates on a perp.",
         "type": "object",
         "required": [
           "oi",
@@ -4278,6 +4498,17 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "srm_perp_margin_requirements": {
+            "description": "Absent on an option asset, and where no SRM in this universe prices the currency.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SrmPerpMarginRequirements"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         }
@@ -4422,11 +4653,13 @@
         "enum": [
           "Batching",
           "Executing",
+          "Da",
           "Proving",
           "Settling",
           "Settled",
           "BatchingError",
           "ExecutingError",
+          "DaError",
           "ProvingError",
           "SettlingError",
           "SettledError"
@@ -5472,6 +5705,112 @@
           }
         }
       },
+      "DecodableActionType": {
+        "description": "Which action codec to run the bytes through. A module address is not enough on its own: the RFQ module signs two different layouts, and the vault module signs seven.",
+        "type": "string",
+        "enum": [
+          "order",
+          "rfq_maker",
+          "rfq_taker",
+          "transfer",
+          "external_transfer",
+          "withdrawal",
+          "liquidation",
+          "set_session_key",
+          "update_whitelisted_recipients",
+          "delete_subaccount",
+          "vault_deposit",
+          "vault_withdraw",
+          "vault_cancel",
+          "vault_create",
+          "vault_mint_shares",
+          "vault_burn_shares",
+          "vault_force_burn"
+        ]
+      },
+      "DecodeActionRequest": {
+        "type": "object",
+        "required": [
+          "action_type",
+          "encoded_data"
+        ],
+        "properties": {
+          "action_type": {
+            "description": "Which action layout the bytes are meant to be.",
+            "$ref": "#/components/schemas/DecodableActionType"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded action data (the `Action.data` bytes), 0x-prefixed hex. Same value the `*_debug` routes return as `encoded_data`.",
+            "type": "string"
+          }
+        }
+      },
+      "DecodeActionResponse": {
+        "type": "object",
+        "required": [
+          "action_type",
+          "decoded"
+        ],
+        "properties": {
+          "action_type": {
+            "description": "Echoed back so a batch of probes stays attributable.",
+            "$ref": "#/components/schemas/DecodableActionType"
+          },
+          "decoded": {
+            "description": "The decoded fields. Decimal values are at the protocol's 1e12 scale — the wire carries 1e18, and the codec rejects anything that does not convert exactly."
+          }
+        }
+      },
+      "DeleteSubaccountRequest": {
+        "type": "object",
+        "required": [
+          "nonce",
+          "signature",
+          "signature_expiry_sec",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "nonce": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signature": {
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "DeleteSubaccountResponse": {
+        "type": "object",
+        "required": [
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "DepositEntry": {
         "description": "`amount` and `fee` are decimal strings (e.g. `\"1.1\"`); the net credited amount is `amount - fee`. `operation_id`/`batch_uuid` are stable uuids.",
         "type": "object",
@@ -5556,15 +5895,6 @@
           }
         }
       },
-      "DepositType": {
-        "description": "How a deposit reached the protocol. `Standard` and `Instant` are the two CEX deposit-address flows: `Standard` (formerly `slow`) credits the depositor's own subaccount on-chain via its factory; `Instant` (formerly `fast`) pools every deposit and credits the owner off-chain from the factory's `DepositProcessed` events. `Direct` is a plain wallet deposit straight into a subaccount — no escrow, no factory. Only `Standard`/`Instant` are factory-routed (and registerable / sweepable); `Direct` is a read-only provenance tag.",
-        "type": "string",
-        "enum": [
-          "standard",
-          "instant",
-          "direct"
-        ]
-      },
       "Direction": {
         "type": "string",
         "enum": [
@@ -5590,6 +5920,7 @@
             }
           },
           "label": {
+            "description": "Send `null` to clear the label; omit the field to leave it unchanged.",
             "default": null,
             "type": [
               "string",
@@ -5742,9 +6073,14 @@
         }
       },
       "ForceBurnRequest": {
+        "description": "Fields common to every signed vault action. They appear alongside each endpoint's action-specific parameters in the same request object.",
         "type": "object",
         "required": [
           "holder",
+          "nonce",
+          "signature",
+          "signature_expiry_sec",
+          "signer",
           "subaccount_id"
         ],
         "properties": {
@@ -5752,8 +6088,25 @@
             "description": "The shareholder being exited.",
             "$ref": "#/components/schemas/Address"
           },
+          "nonce": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signature": {
+            "description": "0x-prefixed hex of the 65-byte EOA signature.",
+            "type": "string"
+          },
+          "signature_expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Address"
+          },
           "subaccount_id": {
-            "description": "The vault's subaccount ID.",
+            "description": "The subaccount the action is signed on; which subaccount applies depends on the specific method — see that method's reference.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
@@ -6006,25 +6359,6 @@
       },
       "GetAllReferralCodesParams": {
         "type": "object"
-      },
-      "GetAssetsRequest": {
-        "type": "object",
-        "required": [
-          "asset_type",
-          "currency",
-          "expired"
-        ],
-        "properties": {
-          "asset_type": {
-            "$ref": "#/components/schemas/AssetType"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "expired": {
-            "type": "boolean"
-          }
-        }
       },
       "GetCollateralsRequest": {
         "type": "object",
@@ -6565,6 +6899,87 @@
           }
         }
       },
+      "GetMakerProgramScoresParams": {
+        "type": "object",
+        "required": [
+          "epoch_start_timestamp",
+          "program_name"
+        ],
+        "properties": {
+          "epoch_start_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "program_name": {
+            "type": "string"
+          }
+        }
+      },
+      "GetMakerProgramScoresResponse": {
+        "type": "object",
+        "required": [
+          "program",
+          "scores",
+          "total_score",
+          "total_volume"
+        ],
+        "properties": {
+          "program": {
+            "$ref": "#/components/schemas/ProgramResponse"
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoreBreakdown"
+            }
+          },
+          "total_score": {
+            "type": "string"
+          },
+          "total_volume": {
+            "type": "string"
+          }
+        }
+      },
+      "GetMakerProgramsParams": {
+        "type": "object"
+      },
+      "GetMarginResponse": {
+        "description": "Result of `public/get_margin` / `private/get_margin`: net margin (MtM minus requirement; positive = healthy) before and after the simulated changes, as USD decimal strings.",
+        "type": "object",
+        "required": [
+          "is_valid_trade",
+          "post_initial_margin",
+          "post_maintenance_margin",
+          "pre_initial_margin",
+          "pre_maintenance_margin",
+          "subaccount_id"
+        ],
+        "properties": {
+          "is_valid_trade": {
+            "description": "`true` when post-change initial margin passes, or the change is risk-reducing while maintenance margin stays healthy.",
+            "type": "boolean"
+          },
+          "post_initial_margin": {
+            "type": "string"
+          },
+          "post_maintenance_margin": {
+            "type": "string"
+          },
+          "pre_initial_margin": {
+            "type": "string"
+          },
+          "pre_maintenance_margin": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "description": "`0` for the public simulated-portfolio variant.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "GetOnchainActionHistoryParams": {
         "type": "object",
         "properties": {
@@ -7100,6 +7515,73 @@
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
+          }
+        }
+      },
+      "GetSubaccountValueHistoryRequest": {
+        "description": "`wallet`, when set, takes precedence over `subaccount_id`. The window is unix milliseconds; `period` is seconds and must be one the sampler's tables cover.",
+        "type": "object",
+        "properties": {
+          "end_timestamp": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "page": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "page_size": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "period": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "start_timestamp": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "wallet": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -7911,6 +8393,20 @@
           "PM2"
         ]
       },
+      "MarginWatchRequest": {
+        "type": "object",
+        "required": [
+          "subaccount_id"
+        ],
+        "properties": {
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
       "MarketType": {
         "type": "string",
         "enum": [
@@ -8195,6 +8691,20 @@
             "description": "Onchain queue: 'public' or 'admin'.",
             "type": "string"
           },
+          "skip_reason": {
+            "description": "The rendered rejection behind `skip_reason_code`, e.g. the risk-gate error or the owning wallet on 'sender_not_owner'.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "skip_reason_code": {
+            "description": "Why the protocol consumed an L1 escape-hatch withdrawal without moving funds: 'undecodable_payload' | 'unknown_subaccount' | 'sender_not_owner' | 'rejected'. Null for every other action, and for a withdrawal that paid out.\n\nDistinct from `error_code`/`error_message`, which are the listener's *submit* rejections. A skip is a successful submit — `status` stays 'applied' — that the protocol then declined to execute; the action is spent and is never retried.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "status": {
             "description": "Sequencer applied states: 'applied' | 'applied_with_fallback' Failed States: 'instant_fallback' | 'retry_then_fallback' | 'never_escalate'",
             "type": "string"
@@ -8224,6 +8734,33 @@
           },
           "interest_cap": {
             "type": "string"
+          }
+        }
+      },
+      "OperationAckResponse": {
+        "description": "Postcard-friendly mirror of `sequencer_runtime::types::OperationResult`.\n\nWe can't use `OperationResult` directly for two reasons: - it only derives `Serialize` (no `Deserialize` or `JsonSchema`), and - it has a `BalanceSnapshot` field marked `#[serde(skip)]` that we don't want crossing the wire.\n\nThis mirror carries just the fields that actually cross the wire and adds the derives the gateway needs.",
+        "type": "object",
+        "required": [
+          "mmp_triggered",
+          "op_uuid",
+          "operation_id"
+        ],
+        "properties": {
+          "mmp_triggered": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "op_uuid": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
           }
         }
       },
@@ -8355,6 +8892,8 @@
           "amount",
           "expiry",
           "instrument_name",
+          "option_settlement_pnl",
+          "option_settlement_pnl_excl_fees",
           "settlement_price",
           "settlement_value",
           "subaccount_id"
@@ -8362,7 +8901,8 @@
         "properties": {
           "amount": {
             "description": "Settled balance (negative = short, positive = long).",
-            "type": "string"
+            "type": "string",
+            "format": "decimal"
           },
           "expiry": {
             "description": "Expiry of the option, unix seconds.",
@@ -8373,12 +8913,31 @@
           "instrument_name": {
             "type": "string"
           },
+          "option_settlement_pnl": {
+            "description": "USD profit or loss from the settlement: settlement value minus the position's average cost including fees times amount. `null` when no closing balance row exists for the settlement (settled before balance history was recorded).",
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "decimal"
+          },
+          "option_settlement_pnl_excl_fees": {
+            "description": "Same as `option_settlement_pnl` but against the average price excluding fees.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "decimal"
+          },
           "settlement_price": {
-            "type": "string"
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
           },
           "settlement_value": {
             "description": "Crystallized cash value = intrinsic value * amount.",
-            "type": "string"
+            "type": "string",
+            "format": "decimal"
           },
           "subaccount_id": {
             "type": "integer",
@@ -8641,7 +9200,7 @@
             "type": "string"
           },
           "desired_amount": {
-            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
             "format": "decimal"
           },
@@ -8649,7 +9208,7 @@
             "type": "boolean"
           },
           "limit_price": {
-            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
             "format": "decimal"
           },
@@ -9148,13 +9707,13 @@
         ],
         "properties": {
           "action_id": {
-            "description": "Per-queue id assigned by the `OnchainActionManager`; `0` for fast deposits (indexed from the factory event, not the pooled OAM action).",
+            "description": "Per-queue id assigned by the `OnchainActionManager`.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
           },
           "action_type": {
-            "description": "`Deposit` (existing subaccount), `DepositToNewSubaccount`, or `FastDeposit` (pooled, credited off-chain).",
+            "description": "`Deposit` (existing subaccount) or `DepositToNewSubaccount`",
             "type": "string"
           },
           "amount": {
@@ -9170,14 +9729,13 @@
             "minimum": 0.0
           },
           "credit_nonce": {
-            "description": "Fast only: the credit transfer's nonce, disambiguating a deposit's entries. Absent on slow entries and the uncredited remainder. Decimal string — the value exceeds JS number precision.",
+            "description": "Deprecated",
             "type": [
               "string",
               "null"
             ]
           },
           "deposit_type": {
-            "description": "`slow` or `fast`.",
             "type": "string"
           },
           "log_index": {
@@ -9192,7 +9750,7 @@
             "minimum": 0.0
           },
           "status": {
-            "description": "`detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists) Fast deposits additionally show: `crediting` (transfer in flight), `credited` (paid out) `partial_revert` (reorged out after a chunk was paid)",
+            "description": "`detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists)",
             "type": "string"
           },
           "subaccount_id": {
@@ -9248,6 +9806,17 @@
           },
           "min_rate_per_hour": {
             "type": "string"
+          },
+          "srm_perp_margin_requirements": {
+            "description": "Null when no SRM in the instrument's risk universe prices its currency.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SrmPerpMarginRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -9742,6 +10311,40 @@
           }
         }
       },
+      "PrivateGetMarginRequest": {
+        "type": "object",
+        "required": [
+          "subaccount_id"
+        ],
+        "properties": {
+          "simulated_collateral_changes": {
+            "description": "Optional collateral deltas to simulate deposits / withdrawals / spot trades.",
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SimulatedCollateralRequest"
+            }
+          },
+          "simulated_position_changes": {
+            "description": "Optional position deltas to simulate perp / option trades.",
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SimulatedPositionRequest"
+            }
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
       "PrivateGetPositionsResponse": {
         "type": "object",
         "required": [
@@ -9785,10 +10388,7 @@
       "PrivateLiquidateRequest": {
         "type": "object",
         "required": [
-          "cash_transfer",
-          "last_seen_trade_id",
           "liquidate_subaccount_id",
-          "merge_account",
           "nonce",
           "percent_of_acc",
           "price_limit",
@@ -9798,24 +10398,11 @@
           "subaccount_id"
         ],
         "properties": {
-          "cash_transfer": {
-            "description": "Cash to transfer during liquidation, in USD as a decimal string (e.g. `\"5.0\"`) or a JSON number.",
-            "type": "string",
-            "format": "decimal"
-          },
-          "last_seen_trade_id": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          },
           "liquidate_subaccount_id": {
             "description": "Subaccount being liquidated.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
-          },
-          "merge_account": {
-            "type": "boolean"
           },
           "nonce": {
             "type": "integer",
@@ -10185,6 +10772,52 @@
           }
         }
       },
+      "ProgramResponse": {
+        "type": "object",
+        "required": [
+          "asset_types",
+          "currencies",
+          "end_timestamp",
+          "min_notional",
+          "name",
+          "rewards",
+          "start_timestamp"
+        ],
+        "properties": {
+          "asset_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "currencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "end_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "min_notional": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rewards": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "start_timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "ProtocolVault": {
         "type": "object",
         "required": [
@@ -10290,6 +10923,141 @@
           }
         }
       },
+      "PublicForwardFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "expiry",
+          "fwd_diff",
+          "spot_aggregate_latest",
+          "spot_aggregate_start",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fwd_diff": {
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "spot_aggregate_latest": {
+            "type": "string"
+          },
+          "spot_aggregate_start": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PublicFundingFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "funding_rate",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "funding_rate": {
+            "description": "Per-hour funding rate as a decimal string; may be negative.",
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PublicGetMarginRequest": {
+        "type": "object",
+        "required": [
+          "margin_type",
+          "simulated_collaterals",
+          "simulated_positions"
+        ],
+        "properties": {
+          "margin_type": {
+            "description": "`SM` (standard margin) or `PM2` (portfolio margin).",
+            "type": "string"
+          },
+          "market": {
+            "description": "Currency the PM2 manager must cover; required for PM2.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "simulated_collateral_changes": {
+            "description": "Optional collateral deltas to simulate deposits / withdrawals / spot trades.",
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SimulatedCollateralRequest"
+            }
+          },
+          "simulated_collaterals": {
+            "description": "Collaterals of the simulated portfolio.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedCollateralRequest"
+            }
+          },
+          "simulated_position_changes": {
+            "description": "Optional position deltas to simulate perp / option trades.",
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SimulatedPositionRequest"
+            }
+          },
+          "simulated_positions": {
+            "description": "Positions of the simulated portfolio.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulatedPositionRequest"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "PublicGetWalletsFromSessionKeyResponse": {
         "type": "object",
         "required": [
@@ -10301,6 +11069,130 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "PublicMarginWatchResponse": {
+        "description": "Result of `public/margin_watch`: the margin state a liquidation watcher needs, computed on the margin basis actually in effect (a delayed- liquidation override, when installed, is already applied).",
+        "type": "object",
+        "required": [
+          "collaterals",
+          "currency",
+          "initial_margin",
+          "is_delayed_liquidation",
+          "maintenance_margin",
+          "margin_type",
+          "positions",
+          "risk_universe_id",
+          "subaccount_id",
+          "subaccount_value",
+          "valuation_timestamp"
+        ],
+        "properties": {
+          "collaterals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Collateral"
+            }
+          },
+          "currency": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "initial_margin": {
+            "type": "string"
+          },
+          "is_delayed_liquidation": {
+            "description": "`true` when a delayed-liquidation margin override is active, i.e. the margins above are computed on the temporarily lowered basis.",
+            "type": "boolean"
+          },
+          "maintenance_margin": {
+            "description": "Below zero the subaccount is flagged for liquidation.",
+            "type": "string"
+          },
+          "margin_type": {
+            "type": "string"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
+          },
+          "risk_universe_id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_value": {
+            "type": "string"
+          },
+          "valuation_timestamp": {
+            "description": "Unix seconds at which margin and MtM were computed.",
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PublicOracleSignatureDataParams": {
+        "type": "object",
+        "properties": {
+          "signatures": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "signers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PublicPerpFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "spot_diff_value",
+          "timestamp",
+          "type"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "spot_diff_value": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
           }
         }
       },
@@ -10372,6 +11264,43 @@
           },
           "wallet": {
             "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "PublicRateFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "expiry",
+          "rate",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rate": {
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -10530,6 +11459,113 @@
           }
         }
       },
+      "PublicSetFeedDataRequest": {
+        "type": "object",
+        "required": [
+          "forward",
+          "perp",
+          "rate",
+          "spot",
+          "vol"
+        ],
+        "properties": {
+          "forward": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicForwardFeedDataParams"
+            }
+          },
+          "funding": {
+            "description": "Per-hour perpetual funding rates. Optional so an oracle that predates the funding feed keeps publishing the other five.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicFundingFeedDataParams"
+            }
+          },
+          "perp": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicPerpFeedDataParams"
+            }
+          },
+          "rate": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicRateFeedDataParams"
+            }
+          },
+          "spot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicSpotFeedDataParams"
+            }
+          },
+          "vol": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicVolFeedDataParams"
+            }
+          }
+        }
+      },
+      "PublicSetSocializationFeedDataRequest": {
+        "type": "object",
+        "required": [
+          "feeds",
+          "universe_id"
+        ],
+        "properties": {
+          "feeds": {
+            "description": "Oracle feed batch, in the `public/set_feed_data` shape.",
+            "$ref": "#/components/schemas/PublicSetFeedDataRequest"
+          },
+          "universe_id": {
+            "description": "Universe whose pending socialization event to patch.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          }
+        }
+      },
+      "PublicSpotFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "price",
+          "timestamp"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "feed_source_type": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price": {
+            "type": "string"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "PublicStartAuctionRequest": {
         "type": "object",
         "required": [
@@ -10662,7 +11698,7 @@
             "format": "decimal"
           },
           "status": {
-            "description": "While the action is in the queue, one of: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce the action is in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
+            "description": "While the action is in the queue, one of: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce the action is in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Da\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
             "type": "string"
           },
           "subaccount_id": {
@@ -10674,6 +11710,78 @@
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
             "format": "decimal"
+          }
+        }
+      },
+      "PublicVolFeedDataParams": {
+        "type": "object",
+        "required": [
+          "confidence",
+          "currency",
+          "expiry",
+          "timestamp",
+          "vol_data"
+        ],
+        "properties": {
+          "confidence": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline": {
+            "default": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "signatures": {
+            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "vol_data": {
+            "$ref": "#/components/schemas/PublicVolSVIParamDataParams"
+          }
+        }
+      },
+      "PublicVolSVIParamDataParams": {
+        "type": "object",
+        "required": [
+          "SVI_a",
+          "SVI_b",
+          "SVI_fwd",
+          "SVI_m",
+          "SVI_refTau",
+          "SVI_rho",
+          "SVI_sigma"
+        ],
+        "properties": {
+          "SVI_a": {
+            "type": "string"
+          },
+          "SVI_b": {
+            "type": "string"
+          },
+          "SVI_fwd": {
+            "type": "string"
+          },
+          "SVI_m": {
+            "type": "string"
+          },
+          "SVI_refTau": {
+            "type": "string"
+          },
+          "SVI_rho": {
+            "type": "string"
+          },
+          "SVI_sigma": {
+            "type": "string"
           }
         }
       },
@@ -11330,14 +12438,9 @@
       "RegisterDepositAddressParams": {
         "type": "object",
         "required": [
-          "deposit_type",
           "wallet"
         ],
         "properties": {
-          "deposit_type": {
-            "description": "Which factory to register against. Required: the same `(wallet, subaccount, manager)` has a distinct escrow address per factory, so callers must always be explicit about which flow they want.",
-            "$ref": "#/components/schemas/DepositType"
-          },
           "manager_id": {
             "description": "Manager the deposit routes under. Required (non-zero) when creating a new subaccount (`subaccount_id` omitted or 0); must be 0 or omitted for an existing subaccount — it salts the deposit address, so a nonzero value would mint a distinct escrow for the same destination.",
             "default": null,
@@ -11363,15 +12466,11 @@
         "type": "object",
         "required": [
           "deposit_address",
-          "deposit_type",
           "wallet"
         ],
         "properties": {
           "deposit_address": {
             "type": "string"
-          },
-          "deposit_type": {
-            "$ref": "#/components/schemas/DepositType"
           },
           "manager_id": {
             "type": [
@@ -11396,7 +12495,8 @@
       "RejectDepositRequestRequest": {
         "type": "object",
         "required": [
-          "request_id"
+          "request_id",
+          "subaccount_id"
         ],
         "properties": {
           "reason": {
@@ -11409,6 +12509,12 @@
           },
           "request_id": {
             "$ref": "#/components/schemas/VaultRequestId"
+          },
+          "subaccount_id": {
+            "description": "The vault's subaccount ID; the caller must be the vault's curator.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
           }
         }
       },
@@ -12242,6 +13348,41 @@
           }
         }
       },
+      "ScoreBreakdown": {
+        "type": "object",
+        "required": [
+          "coverage_score",
+          "holder_boost",
+          "quality_score",
+          "total_score",
+          "volume",
+          "volume_multiplier",
+          "wallet"
+        ],
+        "properties": {
+          "coverage_score": {
+            "type": "string"
+          },
+          "holder_boost": {
+            "type": "string"
+          },
+          "quality_score": {
+            "type": "string"
+          },
+          "total_score": {
+            "type": "string"
+          },
+          "volume": {
+            "type": "string"
+          },
+          "volume_multiplier": {
+            "type": "string"
+          },
+          "wallet": {
+            "type": "string"
+          }
+        }
+      },
       "SecurityModuleDetails": {
         "description": "The universe's Security Module: the subaccount whose funds absorb insolvent losses before any socialization within the universe.",
         "type": "object",
@@ -12844,6 +13985,53 @@
           }
         }
       },
+      "SimulatedCollateralRequest": {
+        "type": "object",
+        "required": [
+          "amount",
+          "asset_name"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Collateral amount to simulate, as a decimal string or JSON number.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "asset_name": {
+            "description": "Collateral ERC20 asset name (e.g. ETH, USDC, WSTETH).",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SimulatedPositionRequest": {
+        "type": "object",
+        "required": [
+          "amount",
+          "instrument_name"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Position amount to simulate, as a decimal string or JSON number.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "entry_price": {
+            "description": "Perps only: entry price to simulate against; mark price when omitted.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "decimal"
+          },
+          "instrument_name": {
+            "description": "Perp or option instrument name.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "SpotAssetEntry": {
         "description": "A spot asset and its per-universe risk: collateral discounts, lending, OI.",
         "type": "object",
@@ -12991,6 +14179,29 @@
           }
         }
       },
+      "SrmPerpMarginRequirements": {
+        "description": "The SRM's perp margin rates for one `(currency, risk universe)`, and the leverage they imply.\n\nPMRM purposefully does not have a mirror struct as the leverage depends heavily on the composition of the portfolio.",
+        "type": "object",
+        "required": [
+          "im_perp_req",
+          "max_leverage",
+          "mm_perp_req"
+        ],
+        "properties": {
+          "im_perp_req": {
+            "description": "Initial margin rate, as a fraction of perp notional.",
+            "type": "string"
+          },
+          "max_leverage": {
+            "description": "`1 / im_perp_req`, rounded to 2 decimals. A zero `im_perp_req` scales the perp market out. It reports `\"0\"` here, not unbounded leverage.",
+            "type": "string"
+          },
+          "mm_perp_req": {
+            "description": "Maintenance margin rate, as a fraction of perp notional.",
+            "type": "string"
+          }
+        }
+      },
       "Subaccount": {
         "type": "object",
         "required": [
@@ -13113,6 +14324,72 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/VaultDepositHold"
+            }
+          }
+        }
+      },
+      "SubaccountValueEntry": {
+        "type": "object",
+        "required": [
+          "currency",
+          "initial_margin",
+          "maintenance_margin",
+          "margin_type",
+          "subaccount_id",
+          "subaccount_value",
+          "timestamp"
+        ],
+        "properties": {
+          "currency": {
+            "description": "The manager's currencies, comma-joined; empty if it has none listed.",
+            "type": "string"
+          },
+          "initial_margin": {
+            "description": "Initial margin at the sample, positive meaning healthy.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "maintenance_margin": {
+            "description": "Maintenance margin at the sample, positive meaning healthy.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "margin_type": {
+            "description": "Manager's margin model — \"SM\" or \"PM2\".",
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subaccount_value": {
+            "description": "Mark-to-market value, e12 fixed point on the wire as a decimal string.",
+            "type": "string",
+            "format": "decimal"
+          },
+          "timestamp": {
+            "description": "The instant this sample is as-of, unix milliseconds.",
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SubaccountValueHistoryResult": {
+        "description": "By-wallet lookups return every owned subaccount's samples, concatenated and tagged with `subaccount_id` — not a summed wallet total. Coverage is ragged by design: a subaccount contributes no entry for buckets in which it held nothing, rather than reporting a zero it never had. Callers plotting a wallet total must group by `subaccount_id` and carry each series forward.",
+        "type": "object",
+        "required": [
+          "pagination",
+          "subaccount_value_history"
+        ],
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "subaccount_value_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubaccountValueEntry"
             }
           }
         }
@@ -13710,7 +14987,7 @@
             ]
           },
           "mtm_cap": {
-            "description": "Advisory mark-to-market cap in USD, as a decimal string (e.g. `\"1000\"`).",
+            "description": "Advisory mark-to-market cap in USD, as a decimal string (e.g. `\"1000\"`). Send `null` to remove the cap; omit the field to leave it unchanged.",
             "default": null,
             "type": [
               "string",
@@ -13983,7 +15260,7 @@
             "format": "decimal"
           },
           "status": {
-            "description": "While the action is in the queue, can be one of the following: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce action is applied in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
+            "description": "While the action is in the queue, can be one of the following: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce action is applied in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Da\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
             "type": "string"
           },
           "user_action_hash": {

@@ -13,15 +13,15 @@ or WebSocket, synchronously or asynchronously, plus a `drv` command line tool.
 Protocol semantics are documented by Derive and are not repeated here. Read them
 first, then come back for the Python bindings.
 
-- [Derive v3 documentation](https://v3.docs.derive.xyz/)
-- [Quickstart](https://v3.docs.derive.xyz/getting-started/quickstart) and [depositing](https://v3.docs.derive.xyz/getting-started/depositing)
-- [Action signing](https://v3.docs.derive.xyz/authentication/action-signing), [session keys](https://v3.docs.derive.xyz/authentication/session-keys) and [access scopes](https://v3.docs.derive.xyz/authentication/access-scopes)
-- [Migrating from v2](https://v3.docs.derive.xyz/migrating/breaking-changes), written to double as a `SKILL.md` for a coding agent
-- [llms.txt](https://v3.docs.derive.xyz/llms.txt), an index of every page for agents
+- [Derive v3 documentation](https://docs.derive.xyz/)
+- [Quickstart](https://docs.derive.xyz/getting-started/quickstart) and [depositing](https://docs.derive.xyz/getting-started/depositing)
+- [Action signing](https://docs.derive.xyz/authentication/action-signing), [session keys](https://docs.derive.xyz/authentication/session-keys) and [access scopes](https://docs.derive.xyz/authentication/access-scopes)
+- [Migrating from v2](https://docs.derive.xyz/migrating/breaking-changes), written to double as a `SKILL.md` for a coding agent
+- [llms.txt](https://docs.derive.xyz/llms.txt), an index of every page for agents
 - Machine readable specs, which this client is generated from:
-  [openapi.json](https://v3.docs.derive.xyz/openapi.json),
-  [websocket.asyncapi.json](https://v3.docs.derive.xyz/websocket.asyncapi.json),
-  [subscriptions.asyncapi.json](https://v3.docs.derive.xyz/subscriptions.asyncapi.json)
+  [openapi.json](https://docs.derive.xyz/openapi.json),
+  [websocket.asyncapi.json](https://docs.derive.xyz/websocket.asyncapi.json),
+  [subscriptions.asyncapi.json](https://docs.derive.xyz/subscriptions.asyncapi.json)
 
 Sibling SDKs: [derive-ts](https://github.com/derivexyz/derive-ts),
 [derive-rs](https://github.com/derivexyz/derive-rs).

@@ -29,6 +29,7 @@ dev-version:
 	git commit -m "Bump version to v$$NEW_VERSION"; \
 	git push origin HEAD:$(DEV_BRANCH)
 
+.PHONY: release
 release:
 	@set -e; \
 	VERSION=$$(sed -n 's/^version *= *"\(.*\)"/\1/p' $(TOML_FILE)); \
@@ -116,19 +117,12 @@ docs: clean-docs
 	poetry run python scripts/generate-ref-pages.py
 	poetry run mkdocs build --site-dir site
 
-.PHONY: release
-release:
-	$(eval current_version := $(shell poetry run tbump current-version))
-	@echo "Current version is $(current_version)"
-	$(eval new_version := $(shell python -c "import semver; print(semver.bump_patch('$(current_version)'))"))
-	@echo "New version is $(new_version)"
-	poetry run tbump $(new_version)
 
 .PHONY: generate-models
 generate-models:
-	curl https://v3.docs.derive.xyz/openapi.json | poetry run python scripts/pretty-json.py > specs/openapi.json
-	curl https://v3.docs.derive.xyz/websocket.asyncapi.json | poetry run python scripts/pretty-json.py > specs/websocket.json
-	curl https://v3.docs.derive.xyz/subscriptions.asyncapi.json | poetry run python scripts/pretty-json.py > specs/subscriptions.json
+	curl https://docs.derive.xyz/openapi.json | poetry run python scripts/pretty-json.py > specs/openapi.json
+	curl https://docs.derive.xyz/websocket.asyncapi.json | poetry run python scripts/pretty-json.py > specs/websocket.json
+	curl https://docs.derive.xyz/subscriptions.asyncapi.json | poetry run python scripts/pretty-json.py > specs/subscriptions.json
 	poetry run python scripts/patch_spec.py specs/openapi.json
 	poetry run python scripts/extract-asyncapi-schemas.py
 	poetry run python scripts/generate_models.py
