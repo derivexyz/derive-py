@@ -1,51 +1,43 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Dependency Workflows
-# Controls when the action will run.
+name: Bump version
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-  pull_request_target:
-    types:
-      - opened
+  push:
     branches:
-      - 'main'
-      - 'master'
-    paths:
-      - 'pyproject.toml'
+      - dev
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+# set permissions for the workflow
+permissions:
+  contents: write
+  packages: write
+  id-token: write
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+
 jobs:
-  check_deps:
-    strategy:
-      matrix:
-        python-versions:
-        - 3.11
-        os:
-        - ubuntu-24.04
-    runs-on: ubuntu-24.04
-    env:
-      PYTHONPATH: .
+  bump-version:
+    runs-on: ubuntu-latest
+    ## NOT on a specific commit
+    # NOT IF THE LAST COMMIT IS A RELEASE COMMIT
+    if: "!contains(github.event.head_commit.message, 'Bump version to v')"
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-versions }}
-
-      - name: Install ci dependencies
+          python-version: ${{ matrix.python-version }}
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ matrix.poetry-version }}
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+          virtualenvs-path: ~/my-custom-path
+          installer-parallel: true
+      - name: Bump Version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          make are_deps_dirty && exit 0
-          python -m pip install --upgrade pip
-          pip install poetry tox-gh-actions tox-poetry
+          make dev-version
 
-      - name: Install application deps
-        run: |
-          make are_deps_dirty && exit 0
-          poetry install
-
-      - name: Lock application deps
-        run: |
-          make are_deps_dirty || poetry lock
-          echo "No change in dependencies not locking."
