@@ -52,6 +52,7 @@ class VaultAction(IntEnum):
     CANCEL = 3
     MINT_SHARES = 4
     BURN_SHARES = 5
+    FORCE_BURN = 6
 
 
 class ProtocolScope(StrEnum):
@@ -138,7 +139,7 @@ class EthereumJSONRPCErrorCode(IntEnum):
 
 
 class DeriveJSONRPCErrorCode(IntEnum):
-    # https://docs.derive.xyz/reference/error-codes
+    # https://docs.derive.xyz/error-codes
     NO_ERROR = 0
     RATE_LIMIT_EXCEEDED = -32000
     CONCURRENT_WS_CLIENTS_LIMIT_EXCEEDED = -32100

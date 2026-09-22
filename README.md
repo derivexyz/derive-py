@@ -1,12 +1,26 @@
+<div align="center">
+
 # derive-py
 
 [![PyPI](https://img.shields.io/pypi/v/derive-py)](https://pypi.org/project/derive-py/)
 [![CI](https://github.com/derivexyz/derive-py/actions/workflows/common_check.yaml/badge.svg)](https://github.com/derivexyz/derive-py/actions/workflows/common_check.yaml)
-[![Licence](https://img.shields.io/pypi/l/derive-py)](https://github.com/derivexyz/derive-py/blob/main/LICENSE)
+[![Licence](https://img.shields.io/github/license/derivexyz/derive-py)](https://github.com/derivexyz/derive-py/blob/main/LICENSE)
 
-Python client for the [Derive](https://derive.xyz) v3 exchange API: market data,
-orders, RFQs, transfers, withdrawals, deposits, vaults and session keys over HTTP
-or WebSocket, synchronously or asynchronously, plus a `drv` command line tool.
+**Official Python SDK for the Derive Protocol**
+
+Market data, orders, RFQs, transfers, withdrawals, deposits, vaults and session
+keys over HTTP or WebSocket, synchronously or asynchronously, plus a `drv`
+command line tool.
+
+[Documentation](https://docs.derive.xyz/) ·
+[Quickstart](#quickstart) ·
+[Examples](#examples) ·
+[CLI](#cli) ·
+[Contributing](#contributors)
+
+</div>
+
+---
 
 ## Documentation
 
@@ -22,9 +36,6 @@ first, then come back for the Python bindings.
   [openapi.json](https://docs.derive.xyz/openapi.json),
   [websocket.asyncapi.json](https://docs.derive.xyz/websocket.asyncapi.json),
   [subscriptions.asyncapi.json](https://docs.derive.xyz/subscriptions.asyncapi.json)
-
-Sibling SDKs: [derive-ts](https://github.com/derivexyz/derive-ts),
-[derive-rs](https://github.com/derivexyz/derive-rs).
 
 ## Install
 
@@ -301,6 +312,19 @@ This client library is developed with support from Derive, who host it under the
 organization. Requests include default `referral_code` and `client` identifiers.
 All code is open source and auditable.
 
+## Resources
+
+- [Derive](https://derive.xyz)
+- [Protocol documentation](https://docs.derive.xyz)
+- [Discord](https://discord.gg/derive)
+- [X / Twitter](https://twitter.com/derivexyz)
+- Sibling SDKs: [derive-ts](https://github.com/derivexyz/derive-ts), [derive-rs](https://github.com/derivexyz/derive-rs)
+
 ## Licence
 
 MIT, see [LICENSE](https://github.com/derivexyz/derive-py/blob/main/LICENSE).
+
+## Disclaimer
+
+This software is provided as-is, without warranty. Trading derivatives involves
+substantial risk of loss.

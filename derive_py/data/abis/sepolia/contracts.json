@@ -1,30 +1,30 @@
 {
     "ACTION_MANAGER": {
-        "address": "0x1b4f369b585D40a27F66775844FC265151f278A4",
-        "implementation": "0xC4e837b37132c85E2D17e85653e974aDb4d31630"
+        "address": "0xd3625eCf97E5554C62A48Ac1c9284C9dCeFceB68",
+        "implementation": "0xdFB882fDa2BcdB74358506D56D14E746c76eF864"
     },
     "VAPP": {
-        "address": "0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393",
-        "implementation": "0x6355Cd9EaeF6372d8561a7a72104cf544bEE1a66"
+        "address": "0x1573bde26338A9E6AA358638679A796c81E33246",
+        "implementation": "0x3fBcEB634d2582791B462059D946800c9f41bEfB"
     },
     "WITHDRAWAL_OUTBOX": {
-        "address": "0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988",
-        "implementation": "0x24a3b09AACc5CD1739D591a64a999323C14a46B3"
+        "address": "0xFbB62CE2BbFdFdc8a60DDC22115aC29cf91B4566",
+        "implementation": "0xdBC22b75506FED598b1A114Ba51b9Ca005dE8B65"
     },
     "SPOT_VAULT": {
-        "address": "0xB20790d63f648feA1A23948CDF1B8769DF78a173",
-        "implementation": "0x613eEE858A17Ae0CE2dAF62361171E19177Adbe1"
+        "address": "0x3FB79aafCD401CDD19e3d729241545955DDE0D48",
+        "implementation": "0xc02CdE0d7b7B34C02AAa6cF753D8b4453297236c"
     },
     "SPOT_VAULT_IMPLEMENTATION": {
-        "address": "0x613eEE858A17Ae0CE2dAF62361171E19177Adbe1"
+        "address": "0xc02CdE0d7b7B34C02AAa6cF753D8b4453297236c"
     },
     "WITHDRAWAL_OUTBOX_IMPLEMENTATION": {
-        "address": "0x24a3b09AACc5CD1739D591a64a999323C14a46B3"
+        "address": "0xdBC22b75506FED598b1A114Ba51b9Ca005dE8B65"
     },
     "VAPP_IMPLEMENTATION": {
-        "address": "0x6355Cd9EaeF6372d8561a7a72104cf544bEE1a66"
+        "address": "0x3fBcEB634d2582791B462059D946800c9f41bEfB"
     },
     "ACTION_MANAGER_IMPLEMENTATION": {
-        "address": "0xC4e837b37132c85E2D17e85653e974aDb4d31630"
+        "address": "0xdFB882fDa2BcdB74358506D56D14E746c76eF864"
     }
 }

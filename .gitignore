@@ -1,135 +1,44 @@
+# Everything hidden is ignored, then re-included deliberately. This covers
+# .env, .nix-venv, .tmp, .direnv and every tool cache and editor directory in
+# one line, which is most of what the old list spelled out by hand.
+**/.*
 
-specs/openapi.patched.json
-specs/websocket-channels.json
+!.env.template
+!.github
+!.gitignore
+!.gitmodules
+!**/.gitkeep
 
-ethereum_private_key.txt
+# Claude Code: share project config, keep personal overrides out
+!.claude
+.claude/*
+!.claude/CLAUDE.md
+!.claude/settings.json
 
-benchmarks/.baselines
-
-.envrc
-.direnv
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-.ruff_cache/
-
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-env/
+# Packaging
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# dotenv
-.env
-
-# virtualenv
-.venv
 venv/
-ENV/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Test and coverage artefacts that are not hidden
+htmlcov/
+coverage.xml
+*.log
 
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-
-# IDE settings
-.vscode/
-.idea/
-
-# mkdocs build dir
-site/
-.history
-
-*trader
-
-node_modules
-/.nix-venv
-
-# generated API reference pages, rebuilt by `make docs`
+# Generated, rebuilt by `make`
+specs/openapi.patched.json
+specs/websocket-channels.json
 docs/reference/
+site/
+
+# Key material, never
+*private_key.txt
+
+node_modules/

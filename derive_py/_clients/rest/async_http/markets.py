@@ -9,13 +9,11 @@ from derive_py._clients.utils import async_fetch_all_pages_of_instrument_type, i
 from derive_py.config import INT64_MAX
 from derive_py.data_types import LoggerType, RiskUniverseID
 from derive_py.data_types.generated_models import (
-    Asset,
     AssetType,
     BatchStatus,
     Currency,
     GetAllInstrumentsRequest,
     GetAllInstrumentsResponse,
-    GetAssetsRequest,
     GetCurrencyRequest,
     GetInstrumentRequest,
     GetLatestSignedFeedsRequest,
@@ -208,18 +206,6 @@ class MarketOperations:
         """Returns a sorted list of the names of every currently live instrument."""
 
         result = await self._public_api.rpc.get_all_live_instruments(None)
-        return result
-
-    async def get_assets(self, *, asset_type: AssetType, currency: str, expired: bool = False) -> list[Asset]:
-        """Returns the assets of a given asset_type (option, perp, or erc20) for a currency."""
-
-        params = GetAssetsRequest(
-            asset_type=asset_type,
-            currency=currency,
-            expired=expired,
-        )
-
-        result = await self._public_api.rpc.get_assets(params)
         return result
 
     async def get_latest_signed_feeds(

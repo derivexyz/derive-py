@@ -26,6 +26,7 @@ from derive_py._web3.action_signing import (
     VaultCancelModuleData,
     VaultCreateModuleData,
     VaultDepositModuleData,
+    VaultForceBurnModuleData,
     VaultMintSharesModuleData,
     VaultWithdrawModuleData,
     WhitelistedRecipientModuleData,
@@ -44,6 +45,7 @@ from .expected import (
     EXPECTED_VAULT_CANCEL,
     EXPECTED_VAULT_CREATE,
     EXPECTED_VAULT_DEPOSIT,
+    EXPECTED_VAULT_FORCE_BURN,
     EXPECTED_VAULT_MINT_SHARES,
     EXPECTED_VAULT_WITHDRAW,
     EXPECTED_WHITELISTED_RECIPIENTS,
@@ -67,6 +69,7 @@ from .expected import (
     VAULT_BENCHMARK_ASSET,
     VAULT_COOLDOWN_SEC,
     VAULT_DEPOSIT_ASSET,
+    VAULT_HOLDER,
     VAULT_INITIAL_DEPOSIT,
     VAULT_INITIAL_SHARE_PRICE_USD,
     VAULT_MANAGEMENT_FEE_BPS,
@@ -290,6 +293,10 @@ def vault_burn() -> VaultBurnSharesModuleData:
     )
 
 
+def vault_force_burn() -> VaultForceBurnModuleData:
+    return VaultForceBurnModuleData(holder=VAULT_HOLDER)
+
+
 ALL_VAULT_BUILDERS = {
     VaultAction.CREATE: vault_create,
     VaultAction.DEPOSIT: vault_deposit,
@@ -297,6 +304,7 @@ ALL_VAULT_BUILDERS = {
     VaultAction.CANCEL: vault_cancel,
     VaultAction.MINT_SHARES: vault_mint,
     VaultAction.BURN_SHARES: vault_burn,
+    VaultAction.FORCE_BURN: vault_force_burn,
 }
 
 
@@ -324,9 +332,13 @@ def test_vault_burn_shares():
     assert as_hex(vault_burn()) == EXPECTED_VAULT_BURN_SHARES
 
 
+def test_vault_force_burn():
+    assert as_hex(vault_force_burn()) == EXPECTED_VAULT_FORCE_BURN
+
+
 @pytest.mark.parametrize("kind", list(VaultAction), ids=lambda kind: kind.name)
 def test_vault_kind_word_is_exact(kind):
-    """Word 0 is the protocol's only discriminator between the six vault
+    """Word 0 is the protocol's only discriminator between the seven vault
     actions, all of which are signed under the same module address. Since the
     canonical-ABI change the server rejects dirty high bytes rather than
     truncating them, so the whole word is pinned, not just its low byte."""
@@ -350,6 +362,7 @@ def test_vault_kinds_are_distinct():
         (VaultAction.CANCEL, 2),
         (VaultAction.MINT_SHARES, 3),
         (VaultAction.BURN_SHARES, 3),
+        (VaultAction.FORCE_BURN, 2),
     ],
     ids=lambda value: value.name if isinstance(value, VaultAction) else str(value),
 )

@@ -6,9 +6,9 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from derive_py._web3.action_signing import TransferSpotExternalModuleData, TransferSpotModuleData
+from derive_py._web3.deposits import resolve_collateral
 from derive_py.data_types import ChecksumAddress
 from derive_py.data_types.generated_models import (
-    AssetType,
     GetCollateralsRequest,
     PrivateGetCollateralsResponse,
     PrivateTransferSpotExternalRequest,
@@ -19,6 +19,11 @@ from derive_py.data_types.generated_models import (
 
 if TYPE_CHECKING:
     from .subaccount import Subaccount
+
+#: Spot assets sit at sub-id 0 by construction; the sub-id discriminates option
+#: series sharing one asset address. Matches derive-ts, which defaults it and
+#: never resolves it (src/api/spotTransfers.ts, src/codecs/trade.ts).
+SPOT_SUB_ID = 0
 
 
 class CollateralOperations:
@@ -41,6 +46,23 @@ class CollateralOperations:
         result = await self._subaccount._private_api.rpc.get_collaterals(params)
         return result
 
+    async def _resolve_asset_address(self, *, asset_name: str) -> ChecksumAddress:
+        """Protocol asset address the transfer signs over.
+
+        The exchange rebuilds the signed payload from `asset_name` using the
+        deposit-enabled asset's address, so any other address of the same
+        currency signs something that can never verify. resolve_collateral
+        enforces that by rejecting a collateral with no underlying ERC-20.
+        """
+
+        risk_universes = (
+            self._subaccount.markets._risk_universes_cache or await self._subaccount.markets.get_risk_universes()
+        )
+        collateral = resolve_collateral(
+            risk_universes, manager_id=self._subaccount.state.manager_id, asset_name=asset_name
+        )
+        return collateral.protocol_asset_address
+
     async def transfer_spot(
         self,
         *,
@@ -49,6 +71,7 @@ class CollateralOperations:
         to_subaccount_id: int = 0,
         new_subaccount_manager: int = 0,
         max_fee_usd: Decimal = Decimal("0"),
+        sub_id: int = SPOT_SUB_ID,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
     ) -> PrivateTransferSpotResponse:
@@ -65,17 +88,14 @@ class CollateralOperations:
 
         subaccount_id = self._subaccount.id
 
-        assets = await self._subaccount.markets.get_assets(asset_type=AssetType.erc20, currency=asset_name)
-        if not len(assets) == 1:
-            raise RuntimeError(f"Expected exactly one asset for {asset_name}, got {assets}")
-        asset = assets[0]
+        asset_address = await self._resolve_asset_address(asset_name=asset_name)
 
         module_data = TransferSpotModuleData(
             to_subaccount_id=to_subaccount_id,
             new_subaccount_manager=new_subaccount_manager,
             asset_name=asset_name,
-            asset=asset.address,
-            sub_id=int(asset.sub_id),
+            asset=asset_address,
+            sub_id=sub_id,
             amount=amount,
             max_fee_usd=max_fee_usd,
         )
@@ -97,7 +117,7 @@ class CollateralOperations:
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
-            sub_id=int(asset.sub_id),
+            sub_id=sub_id,
             subaccount_id=subaccount_id,
             to_subaccount_id=to_subaccount_id,
         )
@@ -114,6 +134,7 @@ class CollateralOperations:
         to_subaccount_id: int = 0,
         new_subaccount_manager: int = 0,
         max_fee_usd: Decimal,
+        sub_id: int = SPOT_SUB_ID,
         nonce: Optional[int] = None,
         signature_expiry_sec: Optional[int] = None,
     ) -> PrivateTransferSpotExternalResponse:
@@ -131,17 +152,14 @@ class CollateralOperations:
         subaccount_id = self._subaccount.id
         recipient = ChecksumAddress(recipient_address)
 
-        assets = await self._subaccount.markets.get_assets(asset_type=AssetType.erc20, currency=asset_name)
-        if not len(assets) == 1:
-            raise RuntimeError(f"Expected exactly one asset for {asset_name}, got {assets}")
-        asset = assets[0]
+        asset_address = await self._resolve_asset_address(asset_name=asset_name)
 
         module_data = TransferSpotExternalModuleData(
             to_subaccount_id=to_subaccount_id,
             new_subaccount_manager=new_subaccount_manager,
-            asset=asset.address,
+            asset=asset_address,
             asset_name=asset_name,
-            sub_id=int(asset.sub_id),
+            sub_id=sub_id,
             amount=amount,
             max_fee_usd=max_fee_usd,
             recipient=recipient,
@@ -165,7 +183,7 @@ class CollateralOperations:
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
-            sub_id=int(asset.sub_id),
+            sub_id=sub_id,
             subaccount_id=subaccount_id,
             to_subaccount_id=to_subaccount_id,
         )

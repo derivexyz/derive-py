@@ -18,7 +18,7 @@ second address to send to and this example stops after the internal transfer.
 The FALLBACK risk universe holds collateral that could not be applied to its
 intended target. It trades nothing, so it is a valid transfer SOURCE and
 never a valid target:
-https://v3.docs.derive.xyz/trading/managers-and-risk-universes
+https://docs.derive.xyz/trading/managers-and-risk-universes
 
 max_fee_usd on the external transfer is a cap signed into the action, not a
 target. The exchange charges its own fee and the request fails rather than
@@ -49,11 +49,11 @@ EXTERNAL_MAX_FEE_USD = Decimal("5")
 # owner-authenticated client cannot enumerate another wallet's subaccounts, so
 # this cannot be discovered. Running against a different wallet needs its own
 # id here, created via the new_subaccount_manager path shown below.
-RECIPIENT_SUBACCOUNT_ID = 75736
+RECIPIENT_SUBACCOUNT_ID = 86292
 
 # Realistic. Off-chain balances often move before L1 confirms, so a timeout
 # here is not a failure. The example test suite shortens this.
-SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "30"))
+SETTLEMENT_TIMEOUT_SEC = int(os.getenv("DERIVE_EXAMPLE_TIMEOUT_SEC", "10"))
 
 client = HTTPClient.from_env()
 log = client.logger

@@ -3,13 +3,13 @@
 Expected values in expected.py are captured from the corresponding *_debug
 endpoint on testnet and frozen. Regenerate with:
 
-    python -m scripts.get-action-signing-test-data
+    poetry run python scripts/get-action-signing-test-data.py
 
 Every non-vault encoder here was confirmed byte-identical to the server's,
 including session key and whitelisted recipients, which are canonical
 abi.encode with dynamic arrays.
 
-The vault module has NO *_debug endpoint, so its six encoders are captured
+The vault module has NO *_debug endpoint, so its seven encoders are captured
 differently, in three tiers:
 
   A. deposit, withdraw  - submitted for real. The request body carries no data
@@ -20,9 +20,11 @@ differently, in three tiers:
   B. cancel             - no data read-back, but the request history carries a
      user_action_hash. Verified to hash strength IF the hash convention
      discovered during the deposit round trip applies.
-  C. create, mint, burn - no read-back at all. Locally computed from derive-ts
+  C. create, mint, burn, force burn
+                        - no read-back at all. Locally computed from derive-ts
      codecs/vault.ts; acceptance by the live endpoint is the only other signal,
-     and creating a vault costs $11k and can only be done once.
+     and creating a vault costs $11k and can only be done once. Force burn is
+     never submitted here at all: it would evict a real shareholder.
 
 Vault cases cannot reuse the pinned NONCE and EXPIRY: vault nonces are accepted
 only from 60 days before to 1 hour after the server clock, and vault expiries
@@ -65,6 +67,7 @@ from derive_py._web3.action_signing import (
     VaultCancelModuleData,
     VaultCreateModuleData,
     VaultDepositModuleData,
+    VaultForceBurnModuleData,
     VaultMintSharesModuleData,
     VaultWithdrawModuleData,
     WhitelistedRecipientModuleData,
@@ -80,7 +83,11 @@ EXPECTED_PATH = Path(__file__).parent.parent / "tests" / "test_action_signing" /
 
 NONCE = 1754472862000000000
 EXPIRY = 1893456000  # 2030-01-01, inside every documented maximum
-OTHER_SUBACCOUNT_ID = 75726
+#: Transfer destination: the wallet's second subaccount, mirroring
+#: TRANSFER_TO_SUBACCOUNT in tests/conftest.py. Refresh both when the test
+#: wallet is rotated, or the captured transfer encodes a subaccount this wallet
+#: no longer owns, which the debug endpoint signs off on without complaint.
+OTHER_SUBACCOUNT_ID = 86286
 RECIPIENT = "0x0000000000000000000000000000000000000001"
 USDC_ASSET_NAME = "USDC"
 
@@ -94,6 +101,10 @@ VAULT_SHARE_PRICE = "1.02"
 # opaque bytes32; using a live hash would make the constant unreproducible
 # without adding anything to what the encoding test proves.
 VAULT_USER_ACTION_HASH = "0x" + "d1" * 32
+# Synthetic too. Force burn is the one vault action this script never submits:
+# it would evict a real shareholder at mark, irreversibly, so the holder is
+# pinned rather than taken from a live vault's share register.
+VAULT_HOLDER = "0x0000000000000000000000000000000000000001"
 VAULT_MANAGER_ID = 1
 VAULT_INITIAL_DEPOSIT = "15000"
 VAULT_MANAGEMENT_FEE_BPS = 100
@@ -108,16 +119,17 @@ VAULT_INITIAL_SHARE_PRICE_USD = "1"
 VAULT_SIGNATURE_TTL_SEC = 7 * 24 * 3600
 
 CONFIG_CLIENT = load_client_config()
-CONFIG = CONFIGS[CONFIG_CLIENT.env]
+CONFIG = CONFIGS[CONFIG_CLIENT.chain]
 WALLET = CONFIG_CLIENT.wallet
 SUBACCOUNT_ID = CONFIG_CLIENT.subaccount_id
+SESSION_KEY = CONFIG_CLIENT.session_key.get_secret_value()
 W3 = Web3()
-SIGNER = W3.eth.account.from_key(CONFIG_CLIENT.session_key)
+SIGNER = W3.eth.account.from_key(SESSION_KEY)
 
 HEADER_TEMPLATE = '''"""Expected ABI encodings for the action-signing tests.
 
 GENERATED FILE - do not edit by hand.
-Regenerate with:  python -m scripts.get_test_data
+Regenerate with:  poetry run python scripts/get-action-signing-test-data.py
 
 Each value is the `encoded_data` the server returned for the inputs pinned in
 that script, split one 32-byte word per line so a dropped character is visible.
@@ -125,8 +137,8 @@ that script, split one 32-byte word per line so a dropped character is visible.
 EXPECTED_WHITELISTED_RECIPIENTS may be locally computed: that action has no
 debug endpoint, so its only reference is derive-ts codecs/whitelistedRecipients.ts.
 
-The vault module has no debug endpoint either. Of its six encodings, these were
-verified against the server in this run:
+The vault module has no debug endpoint either. Of its seven encodings, these
+were verified against the server in this run:
 {verified}
 Every other EXPECTED_VAULT_* value below is locally computed from derive-ts
 codecs/vault.ts and is pinned only against accidental change.
@@ -138,7 +150,7 @@ codecs/vault.ts and is pinned only against accidental change.
 def post(path: str, payload: dict, *, private: bool = False) -> dict:
     headers = dict(PUBLIC_HEADERS)
     if private:
-        headers |= sign_rest_auth_header(W3, WALLET, CONFIG_CLIENT.session_key)
+        headers |= sign_rest_auth_header(W3, WALLET, SESSION_KEY)
     response = requests.post(f"{CONFIG.base_url}/{path}", json=payload, headers=headers, timeout=30)
     body = response.json()
     if "result" not in body:
@@ -576,7 +588,7 @@ def verify_cancel_hash(action: SignedAction, module_data: ModuleData, convention
 
 
 def run_vault(*, allow_create: bool) -> tuple[dict[str, Any], set[str]]:
-    """Capture the six vault encodings. Returns (constants, server-verified names)."""
+    """Capture the seven vault encodings. Returns (constants, server-verified names)."""
 
     check_vault_scopes(need_curator=allow_create)
     vault = discover_vault(allow_create=allow_create)
@@ -617,6 +629,7 @@ def run_vault(*, allow_create: bool) -> tuple[dict[str, Any], set[str]]:
     cancel = VaultCancelModuleData(vault_subaccount_id=vault_subaccount_id)
     mint = VaultMintSharesModuleData(share_price=Decimal(VAULT_SHARE_PRICE), user_action_hash=VAULT_USER_ACTION_HASH)
     burn = VaultBurnSharesModuleData(share_price=Decimal(VAULT_SHARE_PRICE), user_action_hash=VAULT_USER_ACTION_HASH)
+    force_burn = VaultForceBurnModuleData(holder=VAULT_HOLDER)
 
     captured = {
         "VAULT_SUBACCOUNT_ID": vault_subaccount_id,
@@ -627,6 +640,7 @@ def run_vault(*, allow_create: bool) -> tuple[dict[str, Any], set[str]]:
         "VAULT_SHARES_TO_BURN": VAULT_SHARES_TO_BURN,
         "VAULT_SHARE_PRICE": VAULT_SHARE_PRICE,
         "VAULT_USER_ACTION_HASH": VAULT_USER_ACTION_HASH,
+        "VAULT_HOLDER": VAULT_HOLDER,
         "VAULT_INITIAL_DEPOSIT": VAULT_INITIAL_DEPOSIT,
         "VAULT_MANAGEMENT_FEE_BPS": VAULT_MANAGEMENT_FEE_BPS,
         "VAULT_PERFORMANCE_FEE_BPS": VAULT_PERFORMANCE_FEE_BPS,
@@ -640,6 +654,7 @@ def run_vault(*, allow_create: bool) -> tuple[dict[str, Any], set[str]]:
         "EXPECTED_VAULT_CANCEL": "0x" + cancel.to_abi_encoded().hex(),
         "EXPECTED_VAULT_MINT_SHARES": "0x" + mint.to_abi_encoded().hex(),
         "EXPECTED_VAULT_BURN_SHARES": "0x" + burn.to_abi_encoded().hex(),
+        "EXPECTED_VAULT_FORCE_BURN": "0x" + force_burn.to_abi_encoded().hex(),
     }
     verified: set[str] = set()
     if vault is None:
@@ -737,7 +752,7 @@ def main() -> None:
     if args.skip_vault and args.vault_only:
         parser.error("--skip-vault and --vault-only are mutually exclusive")
 
-    print(f"environment: {CONFIG_CLIENT.env.name}")
+    print(f"chain:       {CONFIG_CLIENT.chain.name}")
     print(f"owner:       {WALLET}")
     print(f"signer:      {SIGNER.address}")
     print(f"subaccount:  {SUBACCOUNT_ID}\n")

@@ -5,21 +5,15 @@
                 "internalType": "address",
                 "name": "_verifiableApp",
                 "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_wrappedEthAsset",
+                "type": "address"
             }
         ],
         "stateMutability": "nonpayable",
         "type": "constructor"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            }
-        ],
-        "name": "AssetAlreadyRegistered",
-        "type": "error"
     },
     {
         "inputs": [],
@@ -43,6 +37,22 @@
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "deferredId",
+                "type": "uint256"
+            }
+        ],
+        "name": "DeferredWithdrawalMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DustWithdrawal",
+        "type": "error"
+    },
+    {
         "inputs": [],
         "name": "EnforcedPause",
         "type": "error"
@@ -53,14 +63,8 @@
         "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "guardianId",
-                "type": "uint256"
-            }
-        ],
-        "name": "GuardianWithdrawalMismatch",
+        "inputs": [],
+        "name": "InvalidBucketConfig",
         "type": "error"
     },
     {
@@ -70,12 +74,27 @@
     },
     {
         "inputs": [],
+        "name": "InvalidRecipient",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "InvalidStaticPrice",
         "type": "error"
     },
     {
         "inputs": [],
-        "name": "NativeEthNotConfigured",
+        "name": "InvalidWrappedEthAsset",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "MinGuardianRefillTimeNotMet",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NativeEthNotRegistrable",
         "type": "error"
     },
     {
@@ -96,12 +115,12 @@
     },
     {
         "inputs": [],
-        "name": "NotGuardianOrOwner",
+        "name": "NotInitializing",
         "type": "error"
     },
     {
         "inputs": [],
-        "name": "NotInitializing",
+        "name": "NotPauser",
         "type": "error"
     },
     {
@@ -145,6 +164,16 @@
     {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "RefillRateExceedsCapacity",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "RegisterNewAssetWithSamePrice",
         "type": "error"
     },
     {
@@ -197,12 +226,17 @@
     },
     {
         "inputs": [],
-        "name": "WrappedEthAssetAlreadySet",
+        "name": "VaultNotEmpty",
         "type": "error"
     },
     {
         "inputs": [],
         "name": "ZeroAddress",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "ZeroMinRefillTime",
         "type": "error"
     },
     {
@@ -328,6 +362,19 @@
         "anonymous": false,
         "inputs": [
             {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "minimumRefillTime",
+                "type": "uint64"
+            }
+        ],
+        "name": "MinGuardianRefillTimeSet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
                 "indexed": true,
                 "internalType": "address",
                 "name": "previousOwner",
@@ -381,6 +428,25 @@
             {
                 "indexed": true,
                 "internalType": "address",
+                "name": "pauser",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "allowed",
+                "type": "bool"
+            }
+        ],
+        "name": "PauserSet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
                 "name": "asset",
                 "type": "address"
             },
@@ -413,7 +479,7 @@
             {
                 "indexed": true,
                 "internalType": "uint256",
-                "name": "guardianId",
+                "name": "deferredId",
                 "type": "uint256"
             },
             {
@@ -447,7 +513,7 @@
                 "type": "uint128"
             }
         ],
-        "name": "WithdrawalDiverted",
+        "name": "WithdrawalDeferred",
         "type": "event"
     },
     {
@@ -550,25 +616,6 @@
         "type": "event"
     },
     {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
-        ],
-        "name": "WrappedEthAssetSet",
-        "type": "event"
-    },
-    {
         "inputs": [],
         "name": "NATIVE_ETH",
         "outputs": [
@@ -576,6 +623,19 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "NATIVE_TRANSFER_GAS",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -595,13 +655,31 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "WRAPPED_ETH_ASSET",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "components": [
                     {
-                        "internalType": "bytes32",
-                        "name": "id",
-                        "type": "bytes32"
+                        "internalType": "uint8",
+                        "name": "source",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "nonceOrActionId",
+                        "type": "uint64"
                     },
                     {
                         "internalType": "uint64",
@@ -627,6 +705,11 @@
                 "internalType": "struct WithdrawalOutbox.Withdrawal",
                 "name": "w",
                 "type": "tuple"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "id",
+                "type": "bytes32"
             }
         ],
         "name": "_settle",
@@ -775,6 +858,81 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "asset",
+                "type": "address"
+            },
+            {
+                "internalType": "uint128",
+                "name": "amount",
+                "type": "uint128"
+            }
+        ],
+        "name": "chargeUsdValue",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint8",
+                        "name": "source",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "nonceOrActionId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "accountId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "asset",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "amount",
+                        "type": "uint128"
+                    }
+                ],
+                "internalType": "struct WithdrawalOutbox.Withdrawal",
+                "name": "w",
+                "type": "tuple"
+            }
+        ],
+        "name": "computeWithdrawalId",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
@@ -794,11 +952,91 @@
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "deferredId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "withdrawalId",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "address",
+                "name": "asset",
+                "type": "address"
+            },
+            {
+                "internalType": "uint64",
+                "name": "accountId",
+                "type": "uint64"
+            },
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "uint128",
+                "name": "amount",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint256",
+                "name": "gasLimit",
+                "type": "uint256"
+            }
+        ],
+        "name": "deferredProcess",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "deferredWithdrawalId",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "deferredWithdrawals",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "components": [
                     {
-                        "internalType": "bytes32",
-                        "name": "id",
-                        "type": "bytes32"
+                        "internalType": "uint8",
+                        "name": "source",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "nonceOrActionId",
+                        "type": "uint64"
                     },
                     {
                         "internalType": "uint64",
@@ -847,44 +1085,40 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "guardianId",
-                "type": "uint256"
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
             },
             {
-                "components": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "id",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "uint64",
-                        "name": "accountId",
-                        "type": "uint64"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "asset",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "recipient",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint128",
-                        "name": "amount",
-                        "type": "uint128"
-                    }
-                ],
-                "internalType": "struct WithdrawalOutbox.Withdrawal",
-                "name": "w",
-                "type": "tuple"
+                "internalType": "address",
+                "name": "asset",
+                "type": "address"
             }
         ],
-        "name": "guardianProcess",
+        "name": "guardianRefill",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "_capacity",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "_refillRate",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "_minGuardianRefill",
+                "type": "uint64"
+            }
+        ],
+        "name": "initialize",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -902,59 +1136,28 @@
                 "type": "address"
             }
         ],
-        "name": "guardianRefill",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "name": "lastGuardianRefillFor",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
         "inputs": [],
-        "name": "guardianWithdrawalId",
+        "name": "minGuardianRefill",
         "outputs": [
             {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "guardianWithdrawals",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "uint64",
-                "name": "_capacity",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint64",
-                "name": "_refillRate",
+                "name": "",
                 "type": "uint64"
             }
         ],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -980,6 +1183,25 @@
     {
         "inputs": [],
         "name": "paused",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "pausers",
         "outputs": [
             {
                 "internalType": "bool",
@@ -1119,6 +1341,35 @@
                 "type": "address"
             }
         ],
+        "name": "queueHeadAndTail",
+        "outputs": [
+            {
+                "internalType": "uint128",
+                "name": "",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "",
+                "type": "uint128"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "asset",
+                "type": "address"
+            }
+        ],
         "name": "queueLength",
         "outputs": [
             {
@@ -1174,6 +1425,57 @@
         "inputs": [
             {
                 "internalType": "address",
+                "name": "asset",
+                "type": "address"
+            }
+        ],
+        "name": "resolveAsset",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "contract SpotVault",
+                        "name": "vault",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "staticPriceX6",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "token",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "decimals",
+                        "type": "uint8"
+                    }
+                ],
+                "internalType": "struct WithdrawalOutbox.AssetConfig",
+                "name": "",
+                "type": "tuple"
+            },
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            },
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
                 "name": "recipient",
                 "type": "address"
             },
@@ -1214,6 +1516,37 @@
     {
         "inputs": [
             {
+                "internalType": "uint64",
+                "name": "minimumRefill",
+                "type": "uint64"
+            }
+        ],
+        "name": "setMinGuardianRefill",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pauser",
+                "type": "address"
+            },
+            {
+                "internalType": "bool",
+                "name": "allowed",
+                "type": "bool"
+            }
+        ],
+        "name": "setPauser",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "asset",
                 "type": "address"
@@ -1225,19 +1558,6 @@
             }
         ],
         "name": "setStaticPrice",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            }
-        ],
-        "name": "setWrappedEthAsset",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1306,67 +1626,6 @@
         "name": "unpause",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            },
-            {
-                "internalType": "uint128",
-                "name": "amount",
-                "type": "uint128"
-            }
-        ],
-        "name": "usdValue",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "a",
-                "type": "address"
-            }
-        ],
-        "name": "vaultAndTokenFor",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "vault",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "wrappedEthAsset",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {
