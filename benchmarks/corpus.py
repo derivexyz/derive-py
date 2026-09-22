@@ -22,7 +22,7 @@ import msgspec
 
 from benchmarks.synth import Synth, SynthConfig
 from derive_py._clients.websockets.api import PublicChannels
-from derive_py.data_types.channel_models import OrderbookSnapshot, PublicTrade, TickerSlimPayload
+from derive_py.data_types.channel_models import OrderbookPayloadDoc, PublicTrade, TickerSlimPayload
 from derive_py.data_types.generated_models import AssetType, Quote, SendQuoteRequest
 
 ENCODER = msgspec.json.Encoder()
@@ -79,7 +79,7 @@ def build_channels(seed: int = 0) -> dict[str, Channel]:
             (
                 f"orderbook_d{depth}",
                 f"orderbook.{INSTRUMENT}.1.{depth}",
-                OrderbookSnapshot,
+                OrderbookPayloadDoc,
                 depth,
                 (
                     lambda channels, handler, d=depth: channels.orderbook_group_depth_by_instrument_name(

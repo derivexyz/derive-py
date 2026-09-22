@@ -33,6 +33,7 @@ class PublicEndpoints:
     def __init__(self, base_url: str):
         self._base_url = base_url
 
+    margin_watch = Endpoint("public", "margin_watch")
     get_wallets_from_session_key = Endpoint("public", "get_wallets_from_session_key")
     order_quote = Endpoint("public", "order_quote")
     execute_quote_debug = Endpoint("public", "execute_quote_debug")
@@ -46,13 +47,13 @@ class PublicEndpoints:
     get_onchain_action_history = Endpoint("public", "get_onchain_action_history")
     get_pending_deposits = Endpoint("public", "get_pending_deposits")
     register_deposit_address = Endpoint("public", "register_deposit_address")
+    decode_action = Endpoint("public", "decode_action")
     getRateLimits = Endpoint("public", "getRateLimits")
     get_time = Endpoint("public", "get_time")
     get_transaction = Endpoint("public", "get_transaction")
     get_all_currencies = Endpoint("public", "get_all_currencies")
     get_all_instruments = Endpoint("public", "get_all_instruments")
     get_all_live_instruments = Endpoint("public", "get_all_live_instruments")
-    get_assets = Endpoint("public", "get_assets")
     get_currency = Endpoint("public", "get_currency")
     get_funding_rate_history = Endpoint("public", "get_funding_rate_history")
     get_index_chart_data = Endpoint("public", "get_index_chart_data")
@@ -65,8 +66,12 @@ class PublicEndpoints:
     get_tickers = Endpoint("public", "get_tickers")
     get_trade_history = Endpoint("public", "get_trade_history")
     get_tradingview_chart_data = Endpoint("public", "get_tradingview_chart_data")
+    get_maker_programs = Endpoint("public", "get_maker_programs")
     get_all_referral_codes = Endpoint("public", "get_all_referral_codes")
     get_referral_performance = Endpoint("public", "get_referral_performance")
+    get_maker_program_scores = Endpoint("public", "get_maker_program_scores")
+    get_margin = Endpoint("public", "get_margin")
+    set_socialization_feed_data = Endpoint("public", "set_socialization_feed_data")
     start_auction = Endpoint("public", "start_auction")
 
 
@@ -75,13 +80,16 @@ class PrivateEndpoints:
         self._base_url = base_url
 
     change_subaccount_label = Endpoint("private", "change_subaccount_label")
+    delete_subaccount = Endpoint("private", "delete_subaccount")
     get_all_portfolios = Endpoint("private", "get_all_portfolios")
     get_collaterals = Endpoint("private", "get_collaterals")
+    get_margin = Endpoint("private", "get_margin")
     get_positions = Endpoint("private", "get_positions")
     get_subaccount = Endpoint("private", "get_subaccount")
     get_subaccounts = Endpoint("private", "get_subaccounts")
     edit_session_key = Endpoint("private", "edit_session_key")
     session_keys = Endpoint("private", "session_keys")
+    set_session_key = Endpoint("private", "set_session_key")
     get_account = Endpoint("private", "get_account")
     cancel = Endpoint("private", "cancel")
     cancel_algo_order = Endpoint("private", "cancel_algo_order")
@@ -145,5 +153,5 @@ class PrivateEndpoints:
     transfer_spot_external = Endpoint("private", "transfer_spot_external")
     update_whitelisted_recipients = Endpoint("private", "update_whitelisted_recipients")
     withdraw = Endpoint("private", "withdraw")
+    get_subaccount_value_history = Endpoint("private", "get_subaccount_value_history")
     liquidate = Endpoint("private", "liquidate")
-    set_session_key = Endpoint("private", "set_session_key")

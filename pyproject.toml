@@ -10,7 +10,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/derivexyz/derive-py"
 repository = "https://github.com/derivexyz/derive-py"
-documentation = "https://v3.docs.derive.xyz/"
+documentation = "https://docs.derive.xyz/"
 keywords = ["derive", "trading", "options", "perpetuals", "defi", "ethereum"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,6 +20,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Office/Business :: Financial :: Investment",
   "Typing :: Typed",
 ]

@@ -17,11 +17,11 @@ Subaccount rather than the client:
     curator, settle client.fetch_subaccount(vault_id).vaults.mint_shares(...)
                     self.id IS the vault
 
-The settle approvals are the trap: mint_shares and burn_shares sign on the
-VAULT subaccount, not the curator's own, so they must be called on a Subaccount
-instantiated for the vault. Calling them through `client.vaults` while the
-active subaccount is your funding account signs a valid action against the
-wrong account and the exchange rejects it.
+The curator's signed actions are the trap: mint_shares, burn_shares and
+force_burn sign on the VAULT subaccount, not the curator's own, so they must be
+called on a Subaccount instantiated for the vault. Calling them through
+`client.vaults` while the active subaccount is your funding account signs a
+valid action against the wrong account and the exchange rejects it.
 
 Vault-keyed reads default `vault_subaccount_id` to self.id, so they read
 naturally from a vault's own Subaccount and still work for browsing anyone
@@ -41,6 +41,7 @@ from derive_py._web3.action_signing import (
     VaultCancelModuleData,
     VaultCreateModuleData,
     VaultDepositModuleData,
+    VaultForceBurnModuleData,
     VaultMintSharesModuleData,
     VaultWithdrawModuleData,
 )
@@ -598,6 +599,46 @@ class VaultOperations:
         result = await self._subaccount._private_api.rpc.burn_vault_shares(params)
         return result
 
+    async def force_burn(
+        self,
+        *,
+        holder: str,
+        nonce: Optional[int] = None,
+        signature_expiry_sec: Optional[int] = None,
+    ) -> VaultForceBurnResponse:
+        """
+        Redeem a holder's ENTIRE share balance at the current mark-to-market
+        price, with no request from them and no price quote from you.
+
+        Signed on THIS subaccount, which must be the vault, on the same terms as
+        the two settle approvals, and gated by the curator mint-and-burn scope.
+        Its use is ejecting holders who never submit their own withdrawal during
+        a winddown.
+
+        Unlike mint_shares and burn_shares it binds to no queued request, so
+        there is no user_action_hash to commit to and no price to quote: the
+        protocol marks the exit itself.
+        """
+
+        module_data = VaultForceBurnModuleData(holder=holder)
+        signed_action = _sign_settle(
+            self._subaccount,
+            module_data=module_data,
+            nonce=nonce,
+            signature_expiry_sec=signature_expiry_sec,
+        )
+
+        params = ForceBurnRequest(
+            subaccount_id=self._subaccount.id,
+            holder=module_data.to_json()["holder"],
+            nonce=signed_action.nonce,
+            signature=signed_action.signature,
+            signature_expiry_sec=signed_action.signature_expiry_sec,
+            signer=signed_action.signer,
+        )
+        result = await self._subaccount._private_api.rpc.force_burn(params)
+        return result
+
     # ------------------------------------------------------------------
     # Curator: unsigned, ownership-checked
     # ------------------------------------------------------------------
@@ -641,29 +682,18 @@ class VaultOperations:
 
         Unsigned; the reason is optional and capped at 20 characters. Use it to
         stop taking deposits during a winddown, alongside whitelist_only.
+
+        The vault is taken from the request id rather than from self, since the
+        queue row already names the vault it is queued against; a separate
+        argument could only ever disagree with it.
         """
 
-        params = RejectDepositRequestRequest(request_id=request_id, reason=unset_if_none(reason))
+        params = RejectDepositRequestRequest(
+            request_id=request_id,
+            subaccount_id=request_id.vault_subaccount_id,
+            reason=unset_if_none(reason),
+        )
         result = await self._subaccount._private_api.rpc.reject_deposit_request(params)
-        return result
-
-    async def force_burn(
-        self,
-        *,
-        holder: str,
-        vault_subaccount_id: Optional[int] = None,
-    ) -> VaultForceBurnResponse:
-        """
-        Redeem a holder's ENTIRE share balance at the current mark-to-market
-        price, with no request from them and no price quote from you.
-
-        Unsigned; an ownership check gates it to the vault's curator. Its use is
-        ejecting holders who never submit their own withdrawal during a
-        winddown.
-        """
-
-        params = ForceBurnRequest(subaccount_id=_resolve_vault_id(self._subaccount, vault_subaccount_id), holder=holder)
-        result = await self._subaccount._private_api.rpc.force_burn(params)
         return result
 
 

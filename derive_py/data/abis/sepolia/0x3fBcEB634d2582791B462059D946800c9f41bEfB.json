@@ -63,6 +63,96 @@
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "storedHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "anchorHeight",
+                "type": "uint64"
+            }
+        ],
+        "name": "CelestiaAnchorBehindStoredHead",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "storedTip",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "providedTip",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaBlobChainMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "headHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "uint64",
+                "name": "providedHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "providedHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadMismatch",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "prevHeight",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "newHeight",
+                "type": "uint64"
+            }
+        ],
+        "name": "CelestiaHeadNotAdvancing",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "oldestHeaderTime",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "blockTimestamp",
+                "type": "uint64"
+            }
+        ],
+        "name": "CelestiaHeaderStale",
+        "type": "error"
+    },
+    {
         "inputs": [],
         "name": "InvalidInitialization",
         "type": "error"
@@ -94,6 +184,11 @@
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "InvalidSubmitterStallTimeout",
+        "type": "error"
+    },
+    {
         "inputs": [
             {
                 "internalType": "uint128",
@@ -107,6 +202,11 @@
             }
         ],
         "name": "NewAccIndexBeforeConsumed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NoPendingAction",
         "type": "error"
     },
     {
@@ -171,17 +271,23 @@
     {
         "inputs": [
             {
-                "internalType": "bytes32",
-                "name": "current",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "provided",
-                "type": "bytes32"
+                "internalType": "uint256",
+                "name": "stalledAt",
+                "type": "uint256"
             }
         ],
-        "name": "VKeyMismatch",
+        "name": "SubmitterNotStalled",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "caller",
+                "type": "address"
+            }
+        ],
+        "name": "UnauthorizedBatchSubmitter",
         "type": "error"
     },
     {
@@ -294,6 +400,95 @@
         "anonymous": false,
         "inputs": [
             {
+                "indexed": true,
+                "internalType": "address",
+                "name": "submitter",
+                "type": "address"
+            }
+        ],
+        "name": "BatchSubmitterSet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "blobstream",
+                "type": "address"
+            }
+        ],
+        "name": "BlobstreamSet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "fromCommitment",
+                "type": "bytes32"
+            },
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "toCommitment",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaBlobChainAdvanced",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint64",
+                "name": "fromHeight",
+                "type": "uint64"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint64",
+                "name": "toHeight",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "toHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadAdvanced",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "CelestiaHeadBootstrapped",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
                 "indexed": false,
                 "internalType": "uint64",
                 "name": "version",
@@ -349,7 +544,27 @@
                 "internalType": "bytes32",
                 "name": "newRoot",
                 "type": "bytes32"
-            },
+            }
+        ],
+        "name": "RootRotated",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "timeout",
+                "type": "uint64"
+            }
+        ],
+        "name": "SubmitterStallTimeoutSet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
             {
                 "indexed": false,
                 "internalType": "bytes32",
@@ -357,7 +572,7 @@
                 "type": "bytes32"
             }
         ],
-        "name": "RootAndVKeyRotated",
+        "name": "VKeyRotated",
         "type": "event"
     },
     {
@@ -368,6 +583,19 @@
                 "internalType": "contract OnchainActionManager",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "MAX_DA_HEADER_AGE",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -394,13 +622,90 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "batchSubmitter",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "blobstream",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaLastCommitment",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaTrustedHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "celestiaTrustedHeight",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "clearBatchSubmitter",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "components": [
                     {
-                        "internalType": "bytes32",
-                        "name": "id",
-                        "type": "bytes32"
+                        "internalType": "uint8",
+                        "name": "source",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "nonceOrActionId",
+                        "type": "uint64"
                     },
                     {
                         "internalType": "uint64",
@@ -460,6 +765,29 @@
                 "internalType": "uint128",
                 "name": "",
                 "type": "uint128"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getCelestiaAnchor",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "lastCommitment",
+                "type": "bytes32"
             }
         ],
         "stateMutability": "view",
@@ -555,27 +883,92 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "newSubmitter",
+                "type": "address"
+            }
+        ],
+        "name": "setBatchSubmitter",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newBlobstream",
+                "type": "address"
+            }
+        ],
+        "name": "setBlobstream",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "height",
+                "type": "uint64"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "headerHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "lastCommitment",
+                "type": "bytes32"
+            }
+        ],
+        "name": "setCelestiaAnchor",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "bytes32",
                 "name": "expectedRoot",
                 "type": "bytes32"
             },
             {
                 "internalType": "bytes32",
-                "name": "expectedProgramVKey",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "bytes32",
                 "name": "newRoot",
                 "type": "bytes32"
-            },
+            }
+        ],
+        "name": "setRoot",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint64",
+                "name": "newTimeout",
+                "type": "uint64"
+            }
+        ],
+        "name": "setSubmitterStallTimeout",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
             {
                 "internalType": "bytes32",
                 "name": "newProgramVKey",
                 "type": "bytes32"
             }
         ],
-        "name": "setRootAndVKey",
+        "name": "setVKey",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -688,9 +1081,56 @@
             {
                 "components": [
                     {
+                        "internalType": "uint64",
+                        "name": "prevHeight",
+                        "type": "uint64"
+                    },
+                    {
                         "internalType": "bytes32",
-                        "name": "id",
+                        "name": "prevHash",
                         "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "newHeight",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "prevLastCommitment",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "newLastCommitment",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "oldestHeaderTime",
+                        "type": "uint64"
+                    }
+                ],
+                "internalType": "struct VerifiableApp.CelestiaProof",
+                "name": "da",
+                "type": "tuple"
+            },
+            {
+                "components": [
+                    {
+                        "internalType": "uint8",
+                        "name": "source",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "nonceOrActionId",
+                        "type": "uint64"
                     },
                     {
                         "internalType": "uint64",
@@ -726,6 +1166,19 @@
         "name": "submitBatch",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "submitterStallTimeout",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {

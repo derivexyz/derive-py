@@ -32,9 +32,7 @@ class AuctionDetails(Struct):
     estimated_discount_pnl: str
     estimated_mtm: str
     estimated_percent_bid: str
-    last_seen_trade_id: int
     margin_type: str
-    min_cash_transfer: str
     min_price_limit: str
     subaccount_balances: SubaccountBalances
     currency: str | None = None
@@ -80,12 +78,9 @@ class MarginWatchResult(Struct):
     valuation_timestamp: int
 
 
-OrderSnapshot: TypeAlias = tuple[str, str]
-
-
-class OrderbookSnapshot(Struct):
-    asks: list[OrderSnapshot]
-    bids: list[OrderSnapshot]
+class OrderbookPayloadDoc(Struct):
+    asks: list[list[str]]
+    bids: list[list[str]]
     instrument_name: str
     publish_id: int
     timestamp: int
@@ -93,13 +88,21 @@ class OrderbookSnapshot(Struct):
 
 class PublicTrade(Struct):
     direction: Direction
+    expected_rebate: str
+    extra_fee: str
     index_price: str
     instrument_name: str
+    liquidity_role: LiquidityRole
     mark_price: str
+    realized_pnl: str
+    realized_pnl_excl_fees: str
+    subaccount_id: int
     timestamp: int
     trade_amount: str
+    trade_fee: str
     trade_id: str
     trade_price: str
+    wallet: str
     quote_id: str | None = None
     rfq_id: str | None = None
 

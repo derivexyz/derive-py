@@ -32,6 +32,7 @@ import asyncio
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 
 from derive_py import WebSocketClient
+from derive_py.data_types import DeriveJSONRPCErrorCode
 from derive_py.data_types.generated_models import Direction, LegUnpricedParams, PricedLegParamsAndResponse
 from derive_py.exceptions import DeriveJSONRPCError
 
@@ -78,9 +79,11 @@ async def main() -> None:
             try:
                 poll = await subaccount.rfq.poll_rfqs(status="open")
             except DeriveJSONRPCError as e:
-                raise SystemExit(
-                    f"poll_rfqs failed: {e}\nIt requires RFQ-maker authorisation on subaccount {subaccount.id}."
-                ) from e
+                if e.rpc_error.code != DeriveJSONRPCErrorCode.UNAUTHORIZED_RQF_MAKER:
+                    raise
+                log.warning(f"poll_rfqs failed: {e}")
+                log.warning(f"Subaccount {subaccount.id} has no RFQ-maker authorisation; only the venue grants it.")
+                return
 
             fresh = [rfq for rfq in poll.rfqs if rfq.rfq_id not in quoted_rfq_ids]
             log.info(f"round {round_num}/{ROUNDS}: {len(poll.rfqs)} open RFQ(s), {len(fresh)} new")

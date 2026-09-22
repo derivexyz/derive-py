@@ -15,7 +15,7 @@ from .module_data import ModuleData
 
 @dataclass
 class VaultModuleData(ModuleData):
-    """Base for the six vault actions.
+    """Base for the seven vault actions.
 
     Transcribed from derive-ts codecs/vault.ts and checked against the byte
     vectors in its test/unit/vault-codec.test.ts. There is no vault *_debug
@@ -25,8 +25,8 @@ class VaultModuleData(ModuleData):
     Deposit and withdraw can still be checked after the fact: their request
     bodies carry no data bytes, so the server must rebuild the payload from the
     typed params to verify the signature, and returns its reconstruction as
-    signed_action.action.data on the live queue reads. Create, cancel, mint and
-    burn have no read-back; acceptance is the only signal.
+    signed_action.action.data on the live queue reads. Create, cancel, mint,
+    burn and force burn have no read-back; acceptance is the only signal.
     """
 
     KIND: ClassVar[VaultAction]
@@ -206,6 +206,31 @@ class VaultCancelModuleData(VaultModuleData):
 
     def to_json(self) -> dict:
         return {"vault_subaccount_id": self.vault_subaccount_id}
+
+
+@dataclass
+class VaultForceBurnModuleData(VaultModuleData):
+    """Curator eviction of one holder, signed on the VAULT subaccount.
+
+    Redeems the holder's ENTIRE share balance at the vault's current
+    mark-to-market price. Unlike mint and burn it quotes no price and binds to
+    no queued request, so there is no user_action_hash to commit to and nothing
+    the holder has to have signed first. Requires the curator
+    vault:curator_mint_and_burn scope.
+    """
+
+    holder: str
+
+    KIND: ClassVar[VaultAction] = VaultAction.FORCE_BURN
+
+    def to_abi_encoded(self) -> bytes:
+        return encode(
+            ["uint256", "address"],
+            [self.KIND, Web3.to_checksum_address(self.holder)],
+        )
+
+    def to_json(self) -> dict:
+        return {"holder": Web3.to_checksum_address(self.holder)}
 
 
 @dataclass

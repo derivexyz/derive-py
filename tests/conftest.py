@@ -27,6 +27,29 @@ def env_template_value(key: str) -> str:
     return value
 
 
+#: Second subaccount of the test wallet, the destination a position transfer
+#: moves into. Pinned here rather than in .env.template, which carries only
+#: what the client itself needs to connect. Update it when the test wallet is
+#: rotated; `tests/test_action_signing/expected.py` records the pair in use.
+TRANSFER_TO_SUBACCOUNT = 86286
+
+
+@pytest.fixture(scope="session")
+def transfer_subaccounts() -> tuple[int, int]:
+    """The subaccount pair a position transfer moves between, source first.
+
+    Both must sit in the SAME risk universe or the transfer is rejected, which
+    is why they travel as a pair rather than being picked off the wallet's
+    subaccount list.
+
+    A fixture and not a module constant: read at import time in this file, a
+    missing DERIVE_SUBACCOUNT_ID fails collection for the WHOLE suite, not just
+    for the two tests that transfer anything.
+    """
+
+    return int(env_template_value("DERIVE_SUBACCOUNT_ID")), TRANSFER_TO_SUBACCOUNT
+
+
 def pytest_collection_modifyitems(items):
     pytest_asyncio_tests = (item for item in items if is_async_test(item))
     session_scope_marker = pytest.mark.asyncio(loop_scope="session")

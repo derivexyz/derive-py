@@ -41,7 +41,7 @@ import asyncio
 
 from derive_py import WebSocketClient
 from derive_py.data_types import ConnectionState
-from derive_py.data_types.channel_models import OrderbookSnapshot, TickerSlimPayload
+from derive_py.data_types.channel_models import OrderbookPayloadDoc, TickerSlimPayload
 
 INSTRUMENT = "ETH-PERP"
 UPDATES_TO_SHOW = 5
@@ -80,7 +80,7 @@ async def main() -> None:
         if len(tickers) >= UPDATES_TO_SHOW:
             done.set()
 
-    def on_book(book: OrderbookSnapshot) -> None:
+    def on_book(book: OrderbookPayloadDoc) -> None:
         bid_price, bid_amount = book.bids[0] if book.bids else ("-", "-")
         ask_price, ask_amount = book.asks[0] if book.asks else ("-", "-")
         log.info(

@@ -3,7 +3,6 @@
 import pytest
 
 from derive_py.data_types.generated_models import (
-    Asset,
     AssetType,
     Currency,
     GetAllInstrumentsResponse,
@@ -54,20 +53,6 @@ async def test_markets_get_all_live_instruments(client_admin_wallet):
     all_live_instruments = await client_admin_wallet.markets.get_all_live_instruments()
     assert isinstance(all_live_instruments, list)
     assert all(isinstance(item, str) for item in all_live_instruments)
-
-
-@pytest.mark.asyncio
-async def test_markets_get_assets(client_admin_wallet):
-    asset_type = AssetType.option
-    currency = "ETH"
-    expired = False
-    assets = await client_admin_wallet.markets.get_assets(
-        asset_type=asset_type,
-        currency=currency,
-        expired=expired,
-    )
-    assert isinstance(assets, list)
-    assert all(isinstance(item, Asset) for item in assets)
 
 
 @pytest.mark.asyncio

@@ -12,23 +12,7 @@
     },
     {
         "inputs": [],
-        "name": "ActionTypeTooLarge",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "readyAt",
-                "type": "uint256"
-            }
-        ],
-        "name": "ForceWithdrawalNotReady",
+        "name": "FeeChargingTokensNotSupported",
         "type": "error"
     },
     {
@@ -38,7 +22,39 @@
     },
     {
         "inputs": [],
+        "name": "NativeEthDirectDepositNotSupported",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NativeTransferFailed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "NotInitializing",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnableInvalidOwner",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "OwnableUnauthorizedAccount",
         "type": "error"
     },
     {
@@ -47,35 +63,29 @@
         "type": "error"
     },
     {
-        "inputs": [],
-        "name": "TokenTransferFailed",
-        "type": "error"
-    },
-    {
         "inputs": [
             {
                 "internalType": "address",
-                "name": "asset",
+                "name": "token",
                 "type": "address"
             }
         ],
-        "name": "UnknownAsset",
+        "name": "SafeERC20FailedOperation",
         "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
-            }
-        ],
-        "name": "UnknownForcedWithdrawal",
+        "inputs": [],
+        "name": "UnexpectedNativePayment",
         "type": "error"
     },
     {
         "inputs": [],
         "name": "ZeroAddress",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "ZeroBalance",
         "type": "error"
     },
     {
@@ -95,9 +105,9 @@
             },
             {
                 "indexed": true,
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "actionType",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "indexed": false,
@@ -119,62 +129,6 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "actionId",
-                "type": "uint256"
-            }
-        ],
-        "name": "ForceWithdrawalExecuted",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "sender",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "queueTime",
-                "type": "uint256"
-            }
-        ],
-        "name": "ForceWithdrawalInitiated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
                 "indexed": false,
                 "internalType": "uint64",
                 "name": "version",
@@ -189,6 +143,44 @@
         "inputs": [
             {
                 "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferStarted",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
                 "internalType": "uint256",
                 "name": "actionId",
                 "type": "uint256"
@@ -201,9 +193,9 @@
             },
             {
                 "indexed": true,
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "actionType",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "indexed": false,
@@ -219,6 +211,25 @@
             }
         ],
         "name": "PublicActionQueued",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "WithdrawalFeeClaimed",
         "type": "event"
     },
     {
@@ -239,9 +250,9 @@
         "name": "ADMIN_ACTION_MIN_ID",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -252,9 +263,9 @@
         "name": "DEPOSIT_TO_NEW_SUBACCOUNT_TYPE",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -265,35 +276,9 @@
         "name": "DEPOSIT_TYPE",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "FORCED_WITHDRAWAL_DELAY",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "FORCE_WITHDRAWAL_TYPE",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -304,9 +289,9 @@
         "name": "MAX_RESERVED_ACTION_ID",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "",
-                "type": "uint256"
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -327,6 +312,19 @@
     },
     {
         "inputs": [],
+        "name": "WITHDRAWAL_FEE",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "WITHDRAWAL_OUTBOX",
         "outputs": [
             {
@@ -336,6 +334,26 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "WITHDRAWAL_TYPE",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "acceptOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -387,7 +405,7 @@
                     }
                 ],
                 "internalType": "struct OnchainActionManager.ActionAccs",
-                "name": "accs",
+                "name": "",
                 "type": "tuple"
             }
         ],
@@ -408,6 +426,25 @@
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "adminActionTimes",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -442,35 +479,14 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "delayedL1Operations",
-        "outputs": [
-            {
                 "internalType": "address",
-                "name": "sender",
+                "name": "recipient",
                 "type": "address"
-            },
-            {
-                "internalType": "uint64",
-                "name": "queueTime",
-                "type": "uint64"
-            },
-            {
-                "internalType": "uint256",
-                "name": "actionType",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bytes",
-                "name": "data",
-                "type": "bytes"
             }
         ],
-        "stateMutability": "view",
+        "name": "claimWithdrawalFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -526,7 +542,7 @@
             },
             {
                 "internalType": "address",
-                "name": "owner",
+                "name": "owner_",
                 "type": "address"
             }
         ],
@@ -544,24 +560,11 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
+                "internalType": "address",
+                "name": "_owner",
+                "type": "address"
             }
         ],
-        "name": "executeForceWithdrawal",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "actionId",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "initialize",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -570,40 +573,48 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "asset",
-                "type": "address"
-            },
-            {
                 "internalType": "uint256",
-                "name": "amount",
+                "name": "consumedPublicIndex",
                 "type": "uint256"
             },
             {
-                "internalType": "bytes",
-                "name": "data",
-                "type": "bytes"
+                "internalType": "uint256",
+                "name": "consumedAdminIndex",
+                "type": "uint256"
             }
         ],
-        "name": "initiateForceWithdrawal",
+        "name": "oldestPendingActionTime",
         "outputs": [
             {
-                "internalType": "uint256",
-                "name": "forcedId",
-                "type": "uint256"
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
     },
     {
         "inputs": [],
-        "name": "nextForcedWithdrawalId",
+        "name": "owner",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "address",
                 "name": "",
-                "type": "uint256"
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "pendingOwner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
             }
         ],
         "stateMutability": "view",
@@ -623,6 +634,25 @@
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "publicActionTimes",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -655,11 +685,18 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint64",
                 "name": "actionType",
-                "type": "uint256"
+                "type": "uint64"
             },
             {
                 "internalType": "bytes",
@@ -668,6 +705,70 @@
             }
         ],
         "name": "submit",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "actionId",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint64",
+                        "name": "subaccountId",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "protocolAsset",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "maxFeeUsdE18",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "amountInUnderlying",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "forceBatch",
+                        "type": "bool"
+                    }
+                ],
+                "internalType": "struct OnchainActionManager.WithdrawalParams",
+                "name": "params",
+                "type": "tuple"
+            }
+        ],
+        "name": "withdraw",
         "outputs": [
             {
                 "internalType": "uint256",
