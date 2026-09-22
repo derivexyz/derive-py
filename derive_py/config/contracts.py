@@ -15,11 +15,12 @@ VAULT_MODULE = ChecksumAddress("0x2885c174ebf5524aED9c721d60c12b1537685186")
 LIQUIDATION_MODULE = ChecksumAddress("0x66d23e59DaEEF13904eFA2D4B8658aeD05f59a92")
 CREATE_SESSION_KEY_MODULE = ChecksumAddress("0xe330CF64ff6EbF41699aad344Cb21d78db1D2bb6")
 
-# V3 contract addresses, verified against derive_py/data/abis/sepolia/contracts.json
-ACTION_MANAGER = ChecksumAddress("0x1b4f369b585D40a27F66775844FC265151f278A4")
-VAPP = ChecksumAddress("0x806A2f83d5E01a5526629c1A5FB4A4AAc60bc393")
-WITHDRAWAL_OUTBOX = ChecksumAddress("0x55B1A897E2ecbb4489218E961C64f3E6b1F0f988")
-SPOT_VAULT = ChecksumAddress("0xB20790d63f648feA1A23948CDF1B8769DF78a173")
+# V3 settlement contracts (Sepolia), per https://docs.derive.xyz/getting-started/contracts
+# derive_py/data/abis/sepolia/ is generated FROM these by scripts/download-abis.py.
+ACTION_MANAGER = ChecksumAddress("0xd3625eCf97E5554C62A48Ac1c9284C9dCeFceB68")
+VAPP = ChecksumAddress("0x1573bde26338A9E6AA358638679A796c81E33246")
+WITHDRAWAL_OUTBOX = ChecksumAddress("0xFbB62CE2BbFdFdc8a60DDC22115aC29cf91B4566")
+SPOT_VAULT = ChecksumAddress("0x3FB79aafCD401CDD19e3d729241545955DDE0D48")
 
 
 CONFIGS: dict[Chain, ChainConfig] = {

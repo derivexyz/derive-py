@@ -22,7 +22,7 @@ around two minutes, and the new subaccount id is not in the receipt, so
 this waits for the credit afterwards.
 
 Direct deposits only. The Standard and Instant deposit-address routes are a
-different mechanism: https://v3.docs.derive.xyz/getting-started/depositing
+different mechanism: https://docs.derive.xyz/getting-started/depositing
 
 Prerequisites: a Sepolia wallet holding ETH for gas and USDC to deposit.
 Copy .env.template to .env first.

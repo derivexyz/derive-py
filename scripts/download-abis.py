@@ -3,7 +3,7 @@
 """Download ABIs for Derive v3 settlement contracts, for every chain.
 
 Addresses come from derive_py.config.CONFIGS, which mirrors
-https://v3.docs.derive.xyz/getting-started/contracts
+https://docs.derive.xyz/getting-started/contracts
 """
 
 import json

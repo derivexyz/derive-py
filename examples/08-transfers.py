@@ -18,7 +18,7 @@ second address to send to and this example stops after the internal transfer.
 The FALLBACK risk universe holds collateral that could not be applied to its
 intended target. It trades nothing, so it is a valid transfer SOURCE and
 never a valid target:
-https://v3.docs.derive.xyz/trading/managers-and-risk-universes
+https://docs.derive.xyz/trading/managers-and-risk-universes
 
 max_fee_usd on the external transfer is a cap signed into the action, not a
 target. The exchange charges its own fee and the request fails rather than
