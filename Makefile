@@ -23,9 +23,12 @@ dev-version:
 	sed -i.bak \
 		's/^version *= *".*"/version = "'"$$NEW_VERSION"'"/' \
 		$(TOML_FILE); \
-	rm -f $(TOML_FILE).bak; \
+	sed -i.bak \
+		's/^current *= *".*"/current = "'"$$NEW_VERSION"'"/' \
+		tbump.toml; \
+	rm -f $(TOML_FILE).bak tbump.toml.bak; \
 	poetry lock; \
-	git add $(TOML_FILE) poetry.lock; \
+	git add $(TOML_FILE) tbump.toml poetry.lock; \
 	git commit -m "Bump version to v$$NEW_VERSION"; \
 	git push origin HEAD:$(DEV_BRANCH)
 
@@ -38,7 +41,8 @@ release:
 	git push origin "v$$VERSION"; \
 	gh release create "v$$VERSION" \
 		--title "v$$VERSION" \
-		--notes "Release v$$VERSION"
+		--notes "Release v$$VERSION" \
+		dist/*
 
 
 .PHONY: install
