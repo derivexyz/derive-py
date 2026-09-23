@@ -309,12 +309,16 @@ class DepositEntry(Struct):
     batch_status: BatchStatus
     batch_uuid: str
     fee: Decimal
+    is_fallback: bool
     new_subaccount: bool
     operation_id: str
     subaccount_id: int
     timestamp: int
     wallet: str
     action_id: int | None | UnsetType = UNSET
+    fallback_error_code: int | None | UnsetType = UNSET
+    fallback_error_data: str | None | UnsetType = UNSET
+    fallback_error_message: str | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
 
 
@@ -335,7 +339,8 @@ class EditSessionKeyRequest(Struct):
     offchain_scopes: list[str] | UnsetType = UNSET
 
 
-EmptyRequest: TypeAlias = None
+class EmptyRequest(Struct):
+    pass
 
 
 class Erc20Details(Struct):
@@ -394,7 +399,7 @@ class GetAllPortfoliosRequest(GetAccountRequest):
     pass
 
 
-class GetAllReferralCodesParams(Struct):
+class GetAllReferralCodesParams(EmptyRequest):
     pass
 
 
@@ -492,7 +497,7 @@ class GetMakerProgramScoresParams(Struct):
     program_name: str
 
 
-class GetMakerProgramsParams(GetAllReferralCodesParams):
+class GetMakerProgramsParams(EmptyRequest):
     pass
 
 
@@ -719,6 +724,19 @@ class LiquidityRole(StrEnum):
     taker = 'taker'
 
 
+class LiveAuction(Struct):
+    estimated_bid_price: str
+    estimated_discount_pnl: str
+    estimated_mtm: str
+    estimated_percent_bid: str
+    margin_type: str
+    min_price_limit: str
+    subaccount_balances: dict[str, str]
+    subaccount_id: int
+    timestamp: int
+    currency: str | None | UnsetType = UNSET
+
+
 class ManagerCollateral(Struct):
     address: str
     erc20: Erc20Details
@@ -788,6 +806,7 @@ class OnchainActionHistoryEntry(Struct):
     status: str
     updated_at: int
     error_code: int | None | UnsetType = UNSET
+    error_data: str | None | UnsetType = UNSET
     error_message: str | None | UnsetType = UNSET
     fallback_at: int | None | UnsetType = UNSET
     first_failed_at: int | None | UnsetType = UNSET
@@ -1158,6 +1177,10 @@ class PublicExecuteQuoteDebugRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
+
+
+class PublicGetLiveAuctionsResponse(Struct):
+    auctions: list[LiveAuction]
 
 
 class PublicGetWalletsFromSessionKeyResponse(Struct):

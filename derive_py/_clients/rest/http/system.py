@@ -5,6 +5,7 @@ from __future__ import annotations
 from derive_py._clients.rest.http.api import PublicAPI
 from derive_py.data_types import LoggerType
 from derive_py.data_types.generated_models import (
+    EmptyRequest,
     GetTransactionParams,
     GetTransactionResult,
     RateLimitResult,
@@ -29,13 +30,13 @@ class SystemOperations:
     def get_rate_limits(self) -> RateLimitResult:
         """Get the current rate limits."""
 
-        result = self._public_api.rpc.getRateLimits(None)
+        result = self._public_api.rpc.getRateLimits(EmptyRequest())
         return result
 
     def get_time(self) -> int:
         """Get the current server time in milliseconds since the UNIX epoch."""
 
-        result = self._public_api.rpc.get_time(None)
+        result = self._public_api.rpc.get_time(EmptyRequest())
         return result
 
     def get_transaction(self, *, op_uuid: str) -> GetTransactionResult:
