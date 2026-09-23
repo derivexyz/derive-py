@@ -12,6 +12,7 @@ from derive_py.data_types.generated_models import (
     AssetType,
     BatchStatus,
     Currency,
+    EmptyRequest,
     GetAllInstrumentsRequest,
     GetAllInstrumentsResponse,
     GetCurrencyRequest,
@@ -169,7 +170,7 @@ class MarketOperations:
     async def get_all_currencies(self) -> list[Currency]:
         """Get all active currencies with their spot price, spot price 24hrs ago."""
 
-        result = await self._public_api.rpc.get_all_currencies(None)
+        result = await self._public_api.rpc.get_all_currencies(EmptyRequest())
         return result
 
     async def get_instrument(self, *, instrument_name: str) -> Instrument:
@@ -205,7 +206,7 @@ class MarketOperations:
     async def get_all_live_instruments(self) -> list[str]:
         """Returns a sorted list of the names of every currently live instrument."""
 
-        result = await self._public_api.rpc.get_all_live_instruments(None)
+        result = await self._public_api.rpc.get_all_live_instruments(EmptyRequest())
         return result
 
     async def get_latest_signed_feeds(
@@ -227,7 +228,7 @@ class MarketOperations:
     async def get_risk_universes(self) -> list[RiskUniverse]:
         """List every universe with its managers and their accepted collaterals / instruments."""
 
-        self._risk_universes_cache = await self._public_api.rpc.get_risk_universes(None)
+        self._risk_universes_cache = await self._public_api.rpc.get_risk_universes(EmptyRequest())
         return self._risk_universes_cache
 
     async def get_ticker(self, *, instrument_name: str) -> TickerSlimSnapshot:

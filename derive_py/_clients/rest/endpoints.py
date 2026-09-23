@@ -33,16 +33,19 @@ class PublicEndpoints:
     def __init__(self, base_url: str):
         self._base_url = base_url
 
-    margin_watch = Endpoint("public", "margin_watch")
+    get_margin = Endpoint("public", "get_margin")
     get_wallets_from_session_key = Endpoint("public", "get_wallets_from_session_key")
     order_quote = Endpoint("public", "order_quote")
     execute_quote_debug = Endpoint("public", "execute_quote_debug")
     send_quote_debug = Endpoint("public", "send_quote_debug")
+    get_liquidation_history = Endpoint("public", "get_liquidation_history")
+    get_live_auctions = Endpoint("public", "get_live_auctions")
+    margin_watch = Endpoint("public", "margin_watch")
+    start_auction = Endpoint("public", "start_auction")
     get_vault = Endpoint("public", "get_vault")
     get_vault_action_history = Endpoint("public", "get_vault_action_history")
     get_vault_performance_history = Endpoint("public", "get_vault_performance_history")
     get_vaults = Endpoint("public", "get_vaults")
-    get_liquidation_history = Endpoint("public", "get_liquidation_history")
     withdraw_debug = Endpoint("public", "withdraw_debug")
     get_onchain_action_history = Endpoint("public", "get_onchain_action_history")
     get_pending_deposits = Endpoint("public", "get_pending_deposits")
@@ -66,13 +69,11 @@ class PublicEndpoints:
     get_tickers = Endpoint("public", "get_tickers")
     get_trade_history = Endpoint("public", "get_trade_history")
     get_tradingview_chart_data = Endpoint("public", "get_tradingview_chart_data")
+    get_maker_program_scores = Endpoint("public", "get_maker_program_scores")
     get_maker_programs = Endpoint("public", "get_maker_programs")
     get_all_referral_codes = Endpoint("public", "get_all_referral_codes")
     get_referral_performance = Endpoint("public", "get_referral_performance")
-    get_maker_program_scores = Endpoint("public", "get_maker_program_scores")
-    get_margin = Endpoint("public", "get_margin")
     set_socialization_feed_data = Endpoint("public", "set_socialization_feed_data")
-    start_auction = Endpoint("public", "start_auction")
 
 
 class PrivateEndpoints:
@@ -121,6 +122,7 @@ class PrivateEndpoints:
     rfq_get_best_quote = Endpoint("private", "rfq_get_best_quote")
     send_quote = Endpoint("private", "send_quote")
     send_rfq = Endpoint("private", "send_rfq")
+    liquidate = Endpoint("private", "liquidate")
     cancel_all_vault_requests = Endpoint("private", "cancel_all_vault_requests")
     get_live_vault_requests = Endpoint("private", "get_live_vault_requests")
     get_shareholder_vaults = Endpoint("private", "get_shareholder_vaults")
@@ -154,4 +156,3 @@ class PrivateEndpoints:
     update_whitelisted_recipients = Endpoint("private", "update_whitelisted_recipients")
     withdraw = Endpoint("private", "withdraw")
     get_subaccount_value_history = Endpoint("private", "get_subaccount_value_history")
-    liquidate = Endpoint("private", "liquidate")
