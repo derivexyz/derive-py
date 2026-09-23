@@ -54,11 +54,13 @@ class AuctionType(StrEnum):
 class BatchStatus(StrEnum):
     Batching = 'Batching'
     Executing = 'Executing'
+    Da = 'Da'
     Proving = 'Proving'
     Settling = 'Settling'
     Settled = 'Settled'
     BatchingError = 'BatchingError'
     ExecutingError = 'ExecutingError'
+    DaError = 'DaError'
     ProvingError = 'ProvingError'
     SettlingError = 'SettlingError'
     SettledError = 'SettledError'

@@ -4653,11 +4653,13 @@
         "enum": [
           "Batching",
           "Executing",
+          "Da",
           "Proving",
           "Settling",
           "Settled",
           "BatchingError",
           "ExecutingError",
+          "DaError",
           "ProvingError",
           "SettlingError",
           "SettledError"
@@ -11696,7 +11698,7 @@
             "format": "decimal"
           },
           "status": {
-            "description": "While the action is in the queue, one of: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce the action is in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
+            "description": "While the action is in the queue, one of: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce the action is in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Da\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
             "type": "string"
           },
           "subaccount_id": {
@@ -15258,7 +15260,7 @@
             "format": "decimal"
           },
           "status": {
-            "description": "While the action is in the queue, can be one of the following: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce action is applied in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
+            "description": "While the action is in the queue, can be one of the following: \"enqueued\" | \"sequencer_applied\" | \"user_cancel\" | \"curator_reject\" | \"protocol_reject\" | \"expired\".\n\nOnce action is applied in the protocol, the status takes on `BatchStatus` values: \"Batching\" | \"Executing\" | \"Da\" | \"Proving\" | \"Settling\" | \"Settled\" or an error.",
             "type": "string"
           },
           "user_action_hash": {

@@ -34,7 +34,7 @@ DEFAULT_RPC_ENDPOINTS: dict[Chain, tuple[str, ...]] = {
         "https://ethereum-rpc.publicnode.com",  # Allnodes
         "https://eth.drpc.org",  # DRPC
         "https://ethereum-json-rpc.stakely.io",  # Stakely
-        "https://eth.merkle.io",  # Merkle
+        # "https://eth.merkle.io",  # Merkle
     ),
 }
 
