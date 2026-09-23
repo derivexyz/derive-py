@@ -148,6 +148,7 @@ from derive_py.data_types.generated_models import (
     PrivateWithdrawResponse,
     ProgramResponse,
     PublicExecuteQuoteDebugRequest,
+    PublicGetLiveAuctionsResponse,
     PublicGetMarginRequest,
     PublicGetWalletsFromSessionKeyResponse,
     PublicMarginWatchResponse,
@@ -228,25 +229,23 @@ class AsyncPublicRPC:
     def headers(self) -> dict:
         return PUBLIC_HEADERS
 
-    async def margin_watch(
+    async def get_margin(
         self,
-        params: MarginWatchRequest,
-    ) -> PublicMarginWatchResponse:
+        params: PublicGetMarginRequest,
+    ) -> GetMarginResponse:
         """
-        Calculates the mark-to-market value and initial/maintenance margin for a given
-        subaccount, with per-position and per-collateral breakdowns, computed from live
-        feed data at request time. Margins are reported on the margin basis actually in
-        effect: when a delayed-liquidation override is active the response's
-        is_delayed_liquidation flag is true and the reported margins use the temporarily
-        lowered requirements. A maintenance margin below zero means the subaccount is
-        flagged for liquidation.
+        Calculates net initial and maintenance margin for a fully simulated portfolio
+        under a chosen margin type (SM or PM2; market selects the currency a PM2 manager
+        must cover), optionally with a further simulated state change layered on top.
+        Values are net margin — mark-to-market value minus the requirement — so positive
+        means healthy. Does not take open-order margin into account.
         """
 
-        url = self._endpoints.margin_watch
+        url = self._endpoints.get_margin
         data = encode_request(params)
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
-        result = decode_result(envelope, PublicMarginWatchResponse)
+        result = decode_result(envelope, GetMarginResponse)
 
         return result
 
@@ -329,6 +328,92 @@ class AsyncPublicRPC:
 
         return result
 
+    async def get_liquidation_history(
+        self,
+        params: GetLiquidationHistoryRequest,
+    ) -> LiquidationHistoryResult:
+        """
+        Returns a paginated history of liquidation auctions, newest first, for a single
+        subaccount or across all of them, optionally bounded by a start/end timestamp
+        window over the auction start. Each entry gives the auctioned subaccount,
+        whether the auction was solvent or insolvent, the fee charged at start, the
+        start and end timestamps, and the bids that filled it with the fraction of the
+        account each absorbed and the cash it moved.
+        """
+
+        url = self._endpoints.get_liquidation_history
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, LiquidationHistoryResult)
+
+        return result
+
+    async def get_live_auctions(
+        self,
+        params: EmptyRequest,
+    ) -> PublicGetLiveAuctionsResponse:
+        """
+        Returns every liquidation auction open right now, each priced for a maximal bid
+        at the moment of the response: the cash a bid would cost, the largest fraction
+        of the account it could take, the account's mark-to-market value, the expected
+        discount profit, and the balances on offer. Takes no parameters. This is the
+        polling counterpart to the auctions.watch channel and carries the same values;
+        both a solvent auction's price and the fraction on offer move with wall-clock
+        and with the account's mark, so a quote is only good for the instant it was
+        taken.
+        """
+
+        url = self._endpoints.get_live_auctions
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicGetLiveAuctionsResponse)
+
+        return result
+
+    async def margin_watch(
+        self,
+        params: MarginWatchRequest,
+    ) -> PublicMarginWatchResponse:
+        """
+        Calculates the mark-to-market value and initial/maintenance margin for a given
+        subaccount, with per-position and per-collateral breakdowns, computed from live
+        feed data at request time. Margins are reported on the margin basis actually in
+        effect: when a delayed-liquidation override is active the response's
+        is_delayed_liquidation flag is true and the reported margins use the temporarily
+        lowered requirements. A maintenance margin below zero means the subaccount is
+        flagged for liquidation.
+        """
+
+        url = self._endpoints.margin_watch
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicMarginWatchResponse)
+
+        return result
+
+    async def start_auction(
+        self,
+        params: PublicStartAuctionRequest,
+    ) -> PublicStartAuctionResponse:
+        """
+        Opens a Dutch-auction liquidation against a subaccount whose maintenance margin
+        is breached. Permissionless: it takes only the target subaccount and needs no
+        signer, nonce or session-key scope, and the engine validates the breach before
+        opening. Fails if an auction is already running on that account. The liquidation
+        keeper calls this automatically, so it is rarely needed by hand.
+        """
+
+        url = self._endpoints.start_auction
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicStartAuctionResponse)
+
+        return result
+
     async def get_vault(
         self,
         params: GetVaultRequest,
@@ -405,27 +490,6 @@ class AsyncPublicRPC:
 
         return result
 
-    async def get_liquidation_history(
-        self,
-        params: GetLiquidationHistoryRequest,
-    ) -> LiquidationHistoryResult:
-        """
-        Returns a paginated history of liquidation auctions, newest first, for a single
-        subaccount or across all of them, optionally bounded by a start/end timestamp
-        window over the auction start. Each entry gives the auctioned subaccount,
-        whether the auction was solvent or insolvent, the fee charged at start, the
-        start and end timestamps, and the bids that filled it with the fraction of the
-        account each absorbed and the cash it moved.
-        """
-
-        url = self._endpoints.get_liquidation_history
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, LiquidationHistoryResult)
-
-        return result
-
     async def withdraw_debug(
         self,
         params: PublicWithdrawDebugRequest,
@@ -479,6 +543,10 @@ class AsyncPublicRPC:
 
         - `never_escalate`: action failed its initial attempt but will retry until
         successful, never with fallback=true
+
+        A failed attempt is recorded in `error_code`, `error_message` and `error_data`,
+        and kept once the action is applied. `error_code` is a catalogued error code;
+        `error_data` carries the specifics, and is null for an internal error.
         """
 
         url = self._endpoints.get_onchain_action_history
@@ -912,6 +980,25 @@ class AsyncPublicRPC:
 
         return result
 
+    async def get_maker_program_scores(
+        self,
+        params: GetMakerProgramScoresParams,
+    ) -> GetMakerProgramScoresResponse:
+        """
+        Returns the wallet-level score breakdown for one maker-program epoch, including
+        square-rooted coverage and quality components, traded-volume multiplier, holder
+        boost, volume, and epoch totals. Scores, trades, program configuration, and the
+        temporary enrolled-wallet set are read from ClickHouse.
+        """
+
+        url = self._endpoints.get_maker_program_scores
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetMakerProgramScoresResponse)
+
+        return result
+
     async def get_maker_programs(
         self,
         params: GetMakerProgramsParams,
@@ -969,38 +1056,6 @@ class AsyncPublicRPC:
 
         return result
 
-    async def get_maker_program_scores(
-        self,
-        params: GetMakerProgramScoresParams,
-    ) -> GetMakerProgramScoresResponse:
-        """
-        public/get_maker_program_scores
-        """
-
-        url = self._endpoints.get_maker_program_scores
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, GetMakerProgramScoresResponse)
-
-        return result
-
-    async def get_margin(
-        self,
-        params: PublicGetMarginRequest,
-    ) -> GetMarginResponse:
-        """
-        public/get_margin
-        """
-
-        url = self._endpoints.get_margin
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, GetMarginResponse)
-
-        return result
-
     async def set_socialization_feed_data(
         self,
         params: PublicSetSocializationFeedDataRequest,
@@ -1014,22 +1069,6 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, OperationAckResponse)
-
-        return result
-
-    async def start_auction(
-        self,
-        params: PublicStartAuctionRequest,
-    ) -> PublicStartAuctionResponse:
-        """
-        public/start_auction
-        """
-
-        url = self._endpoints.start_auction
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PublicStartAuctionResponse)
 
         return result
 
@@ -1857,6 +1896,31 @@ class AsyncPrivateRPC:
 
         return result
 
+    async def liquidate(
+        self,
+        params: PrivateLiquidateRequest,
+    ) -> PrivateLiquidateResponse:
+        """
+        Bids on an open liquidation auction. Names the bidder's own subaccount, the
+        account being auctioned, the fraction of it to absorb as a whole percent (a
+        multiple of 0.01), and a signed limit price. The limit is compared against the
+        discounted price of the whole remaining account — the quote's
+        estimated_bid_price — not against the cash the bid actually moves, and it is
+        negative for an insolvent auction where the security module pays the bidder. The
+        realized fill is capped at the auction's current maximum proportion, so it can
+        land below the requested percent. Quote the auction first with
+        public/get_live_auctions or the auctions.watch channel: both the price and the
+        fraction on offer move with wall-clock and with the account's mark.
+        """
+
+        url = self._endpoints.liquidate
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateLiquidateResponse)
+
+        return result
+
     async def cancel_all_vault_requests(
         self,
         params: CancelVaultRequestRequest,
@@ -2169,7 +2233,10 @@ class AsyncPrivateRPC:
         exactly one), optionally bounded by a start/end timestamp window. Each entry
         reports the deposited amount as a decimal, the fee routed to the security module
         (the net credited amount is amount minus fee), and the resolved settlement batch
-        and status.
+        and status. A deposit that could not reach its target is credited to the
+        wallet's fallback subaccount instead: it reports `is_fallback: true` and the
+        rejection that caused it in `fallback_error_code`, `fallback_error_message` and
+        `fallback_error_data`.
         """
 
         url = self._endpoints.get_deposit_history
@@ -2498,22 +2565,6 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, SubaccountValueHistoryResult)
-
-        return result
-
-    async def liquidate(
-        self,
-        params: PrivateLiquidateRequest,
-    ) -> PrivateLiquidateResponse:
-        """
-        private/liquidate
-        """
-
-        url = self._endpoints.liquidate
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PrivateLiquidateResponse)
 
         return result
 
