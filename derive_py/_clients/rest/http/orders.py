@@ -225,7 +225,7 @@ class OrderOperations:
         """
 
         params = CancelByNonceRequest(
-            nonce=nonce,
+            nonce=str(nonce),
             instrument_name=instrument_name,
             subaccount_id=self._subaccount.id,
         )
@@ -345,7 +345,7 @@ class OrderOperations:
             is_atomic_signing=unset_if_none(is_atomic_signing),
             label=label,
             mmp=mmp,
-            nonce_to_cancel=unset_if_none(nonce_to_cancel),
+            nonce_to_cancel=unset_if_none(None if nonce_to_cancel is None else str(nonce_to_cancel)),
             order_id_to_cancel=unset_if_none(order_id_to_cancel),
             order_type=order_type,
             reduce_only=reduce_only,

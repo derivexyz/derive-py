@@ -77,6 +77,8 @@ from derive_py.data_types.generated_models import (
     GetLatestSignedFeedsResponse,
     GetLiquidationHistoryRequest,
     GetLiveBurnRequestsRequest,
+    GetLiveIncidentsParams,
+    GetLiveIncidentsResponse,
     GetLiveMintRequestsRequest,
     GetLiveVaultRequestsRequest,
     GetMakerProgramScoresParams,
@@ -92,6 +94,7 @@ from derive_py.data_types.generated_models import (
     GetOrderRequest,
     GetPendingDepositsParams,
     GetPendingDepositsResult,
+    GetPerpImpactTwapRequest,
     GetPositionsRequest,
     GetPublicTradeHistoryRequest,
     GetQuotesRequest,
@@ -141,6 +144,8 @@ from derive_py.data_types.generated_models import (
     PaginatedTradesResult,
     PaginatedVaultActionHistory,
     PaginatedVaultRequestHistory,
+    PendingDepositBridgeOrigin,
+    PerpImpactTwapResult,
     PerpSettlementHistoryResponse,
     PollQuotesRequest,
     PollRfqsRequest,
@@ -182,6 +187,7 @@ from derive_py.data_types.generated_models import (
     QuoteSendDebugResult,
     RateLimitResult,
     Referrer,
+    RegisterBridgeDepositParams,
     RegisterDepositAddressParams,
     RegisterDepositAddressResult,
     RejectDepositRequestRequest,
@@ -202,6 +208,7 @@ from derive_py.data_types.generated_models import (
     SessionKeysRequest,
     SetMmpConfigRequest,
     SetMmpConfigResponse,
+    SetSessionKeyDebugResponse,
     SetSessionKeyRequest,
     Subaccount,
     SubaccountValueHistoryResult,
@@ -209,9 +216,13 @@ from derive_py.data_types.generated_models import (
     Trade,
     TradingviewCandle,
     TransferHistoryResult,
+    TransferPositionsDebugResponse,
     TransferPositionsRequest,
     TransferPositionsResponse,
+    TransferSpotDebugResponse,
+    TransferSpotExternalDebugResponse,
     UpdateVaultInfoRequest,
+    UpdateWhitelistedRecipientsDebugResponse,
     UpdateWhitelistedRecipientsRequest,
     UpdateWhitelistedRecipientsResponse,
     Vault,
@@ -615,6 +626,24 @@ class PublicRPC:
 
         return result
 
+    async def get_live_incidents(
+        self,
+        params: GetLiveIncidentsParams,
+    ) -> GetLiveIncidentsResponse:
+        """
+        Returns every incident the exchange operators have declared and not yet
+        resolved, each with its label, message, severity (low, medium or high), whether
+        it was raised manually or by an automated monitor, and when it was raised. Takes
+        no parameters. Incidents are recorded and resolved by operators in ClickHouse; a
+        resolved incident disappears from this list.
+        """
+
+        method = "public/get_live_incidents"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, GetLiveIncidentsResponse)
+
+        return result
+
     async def get_time(
         self,
         params: EmptyRequest,
@@ -825,6 +854,21 @@ class PublicRPC:
 
         return result
 
+    async def get_perp_impact_twap(
+        self,
+        params: GetPerpImpactTwapRequest,
+    ) -> PerpImpactTwapResult:
+        """
+        Returns TWAPs of the perp mid, ask impact and bid impact prices minus spot for a
+        `currency` between `start_time` and `end_time` (unix seconds).
+        """
+
+        method = "public/get_perp_impact_twap"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, PerpImpactTwapResult)
+
+        return result
+
     async def get_risk_universes(
         self,
         params: EmptyRequest,
@@ -893,8 +937,10 @@ class PublicRPC:
         which overrides all other filters), `instrument_name`, `instrument_type`
         (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status
         name; unset returns trades in every batch state), and
-        `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement
-        status and transaction hash. Public endpoint.
+        `from_timestamp`/`to_timestamp`. Without `trade_id`, `subaccount_id` or
+        `instrument_name`, or whenever `batch_status` is set, the window is limited to
+        the 30 days ending at `to_timestamp` (or now). Each trade is enriched with its
+        settlement status and transaction hash. Public endpoint.
         """
 
         method = "public/get_trade_history"
@@ -1218,6 +1264,26 @@ class PrivateRPC:
         method = "private/set_session_key"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, PrivateSetSessionKeyResponse)
+
+        return result
+
+    async def set_session_key_debug(
+        self,
+        params: SetSessionKeyRequest,
+    ) -> SetSessionKeyDebugResponse:
+        """
+        Takes the same params as private/set_session_key and rebuilds the session-key
+        Action without executing anything, returning the EIP-712 encoded_data,
+        encoded_data_hashed, action_hash, typed_data_hash, domain_separator,
+        action_typehash, module, owner and expected_signer, plus the decoded session
+        key, expiry, protocol scopes and subaccounts. Byte-compare these against your
+        local computation to find why a signature is rejected. Requires a logged-in
+        session.
+        """
+
+        method = "private/set_session_key_debug"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, SetSessionKeyDebugResponse)
 
         return result
 
@@ -2268,6 +2334,27 @@ class PrivateRPC:
 
         return result
 
+    async def transfer_positions_debug(
+        self,
+        params: TransferPositionsRequest,
+    ) -> TransferPositionsDebugResponse:
+        """
+        Takes the same params as private/transfer_positions and rebuilds both the maker
+        and taker Actions without executing anything, returning for each side the
+        EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash,
+        domain_separator, action_typehash, module, owner and expected_signer, plus the
+        decoded action data (the maker's priced legs, and the taker's order_hash
+        committing to them). Byte-compare these against your local computation to find
+        why a signature is rejected. Requires a logged-in session; no transfer scope
+        needed.
+        """
+
+        method = "private/transfer_positions_debug"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, TransferPositionsDebugResponse)
+
+        return result
+
     async def transfer_spot(
         self,
         params: PrivateTransferSpotRequest,
@@ -2284,6 +2371,25 @@ class PrivateRPC:
         method = "private/transfer_spot"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, PrivateTransferSpotResponse)
+
+        return result
+
+    async def transfer_spot_debug(
+        self,
+        params: PrivateTransferSpotRequest,
+    ) -> TransferSpotDebugResponse:
+        """
+        Takes the same params as private/transfer_spot and rebuilds the transfer Action
+        without executing anything, returning the EIP-712 encoded_data,
+        encoded_data_hashed, action_hash, typed_data_hash, domain_separator,
+        action_typehash, module, owner and expected_signer, plus the decoded transfer
+        action data. Byte-compare these against your local computation to find why a
+        signature is rejected. Requires a logged-in session; no transfer scope needed.
+        """
+
+        method = "private/transfer_spot_debug"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, TransferSpotDebugResponse)
 
         return result
 
@@ -2307,6 +2413,26 @@ class PrivateRPC:
 
         return result
 
+    async def transfer_spot_external_debug(
+        self,
+        params: PrivateTransferSpotExternalRequest,
+    ) -> TransferSpotExternalDebugResponse:
+        """
+        Takes the same params as private/transfer_spot_external and rebuilds the
+        external transfer Action without executing anything, returning the EIP-712
+        encoded_data, encoded_data_hashed, action_hash, typed_data_hash,
+        domain_separator, action_typehash, module, owner and expected_signer, plus the
+        decoded transfer action data including the recipient address. Byte-compare these
+        against your local computation to find why a signature is rejected. Requires a
+        logged-in session; no transfer scope needed.
+        """
+
+        method = "private/transfer_spot_external_debug"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, TransferSpotExternalDebugResponse)
+
+        return result
+
     async def update_whitelisted_recipients(
         self,
         params: UpdateWhitelistedRecipientsRequest,
@@ -2322,6 +2448,25 @@ class PrivateRPC:
         method = "private/update_whitelisted_recipients"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, UpdateWhitelistedRecipientsResponse)
+
+        return result
+
+    async def update_whitelisted_recipients_debug(
+        self,
+        params: UpdateWhitelistedRecipientsRequest,
+    ) -> UpdateWhitelistedRecipientsDebugResponse:
+        """
+        Takes the same params as private/update_whitelisted_recipients and rebuilds the
+        whitelist Action without executing anything, returning the EIP-712 encoded_data,
+        encoded_data_hashed, action_hash, typed_data_hash, domain_separator,
+        action_typehash, module, owner and expected_signer, plus the decoded add and
+        remove address lists. Byte-compare these against your local computation to find
+        why a signature is rejected. Requires a logged-in session.
+        """
+
+        method = "private/update_whitelisted_recipients_debug"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, UpdateWhitelistedRecipientsDebugResponse)
 
         return result
 
@@ -2341,6 +2486,26 @@ class PrivateRPC:
         method = "private/withdraw"
         envelope = await self._session._send_request(method, params=params)
         result = decode_result(envelope, PrivateWithdrawResponse)
+
+        return result
+
+    async def register_bridge_deposit(
+        self,
+        params: RegisterBridgeDepositParams,
+    ) -> PendingDepositBridgeOrigin:
+        """
+        Reports a Li.Fi bridge into one of the caller's deposit addresses the moment its
+        source transaction is sent, so public/get_pending_deposits shows it as
+        `bridging` at once with the quoted amount, before Li.Fi indexes it. Takes the
+        source chain and transaction, the quote's transactionId, the deposit address,
+        the source and delivered tokens and the quoted toAmount. Idempotent per source
+        transaction. Display only: nothing is credited from it, and a registration Li.Fi
+        never confirms expires.
+        """
+
+        method = "private/register_bridge_deposit"
+        envelope = await self._session._send_request(method, params=params)
+        result = decode_result(envelope, PendingDepositBridgeOrigin)
 
         return result
 
@@ -2364,10 +2529,11 @@ class PrivateRPC:
     ) -> str:
         """
         WebSocket-only method that toggles cancel on disconnect for the authenticated
-        wallet. While enabled, dropping the WebSocket connection cancels the wallet's
-        open orders, trigger and algo orders, and quotes. Pass enabled true or false;
-        omitting it leaves the setting unchanged. Requires a session key with full trade
-        scope; returns "ok".
+        wallet. While enabled, dropping the WebSocket connection cancels the orders
+        placed with mmp true and the quotes sent on that connection. Orders without mmp
+        true, trigger orders, and algo orders are not cancelled. Pass enabled true or
+        false; omitting it leaves the setting unchanged. Requires a session key with
+        full trade scope over all subaccounts; returns "ok".
         """
 
         method = "private/set_cancel_on_disconnect"

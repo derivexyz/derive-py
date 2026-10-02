@@ -1,0 +1,30 @@
+{
+    "ACTION_MANAGER": {
+        "address": "0xE366CcA474968e33b777E13905829A3b800CFAD3",
+        "implementation": "0x370d06b5D6038e092d9B5ab3A36Ea5DCB813E009"
+    },
+    "VAPP": {
+        "address": "0xd330145C17fB6EF2a21ACf1275Ce683A305F58BB",
+        "implementation": "0xdFF4997D8B1Dc1BBCe0d1CFF21a413dB79d3537b"
+    },
+    "WITHDRAWAL_OUTBOX": {
+        "address": "0x7c743D79C9C595cE332314503d84cBBb4E85FA63",
+        "implementation": "0x2e101Bf62e11c002495AF0AcaC7BEB9adC7B2475"
+    },
+    "SPOT_VAULT": {
+        "address": "0x2e7dF4fAf35a1599979C7E764444e112d936ec42",
+        "implementation": "0x5D6d9D01a79625d5175D68A4B7Eb1fF390438245"
+    },
+    "SPOT_VAULT_IMPLEMENTATION": {
+        "address": "0x5D6d9D01a79625d5175D68A4B7Eb1fF390438245"
+    },
+    "WITHDRAWAL_OUTBOX_IMPLEMENTATION": {
+        "address": "0x2e101Bf62e11c002495AF0AcaC7BEB9adC7B2475"
+    },
+    "VAPP_IMPLEMENTATION": {
+        "address": "0xdFF4997D8B1Dc1BBCe0d1CFF21a413dB79d3537b"
+    },
+    "ACTION_MANAGER_IMPLEMENTATION": {
+        "address": "0x370d06b5D6038e092d9B5ab3A36Ea5DCB813E009"
+    }
+}

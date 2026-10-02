@@ -791,6 +791,7 @@
           "estimated_percent_bid",
           "margin_type",
           "min_price_limit",
+          "risk_universe_id",
           "subaccount_balances"
         ],
         "properties": {
@@ -815,6 +816,12 @@
           },
           "min_price_limit": {
             "type": "string"
+          },
+          "risk_universe_id": {
+            "description": "Risk universe of the auctioned account. A bid from a subaccount in any other universe is rejected.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
           },
           "subaccount_balances": {
             "description": "Balance per asset name, as a decimal string.",

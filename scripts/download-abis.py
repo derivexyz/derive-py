@@ -25,8 +25,8 @@ RATE_LIMIT_BACKOFF = 30  # seconds, per source, single retry
 
 EIP1967_SLOT = (int.from_bytes(Web3.keccak(text="eip1967.proxy.implementation")[:32], "big") - 1).to_bytes(32, "big")
 
-# Explicit rather than list(Chain), so Sepolia is always attempted first: it is
-# the one that currently resolves, and a mainnet RPC stall should not delay it.
+# Explicit rather than list(Chain), so the processing order is fixed and does
+# not follow enum declaration order.
 CHAINS = (Chain.SEPOLIA, Chain.ETHEREUM)
 
 # abidata.net network id, its own vocabulary and not Chain.network. Ethereum

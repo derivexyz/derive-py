@@ -152,7 +152,7 @@ class RFQOperations:
         params = CancelBatchRfqsRequest(
             subaccount_id=subaccount_id,
             label=unset_if_none(label),
-            nonce=unset_if_none(nonce),
+            nonce=unset_if_none(None if nonce is None else str(nonce)),
             rfq_id=unset_if_none(rfq_id),
         )
         result = self._subaccount._private_api.rpc.cancel_batch_rfqs(params)
@@ -244,7 +244,7 @@ class RFQOperations:
             direction=direction,
             legs=legs,
             max_fee=max_fee,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             rfq_id=rfq_id,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
@@ -286,7 +286,7 @@ class RFQOperations:
         params = CancelBatchQuotesRequest(
             subaccount_id=subaccount_id,
             label=unset_if_none(label),
-            nonce=unset_if_none(nonce),
+            nonce=unset_if_none(None if nonce is None else str(nonce)),
             quote_id=unset_if_none(quote_id),
             rfq_id=unset_if_none(rfq_id),
         )
@@ -408,7 +408,7 @@ class RFQOperations:
             direction=direction,
             legs=legs,
             max_fee=max_fee,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             quote_id=quote_id,
             rfq_id=rfq_id,
             signature=signed_action.signature,

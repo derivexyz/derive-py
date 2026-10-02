@@ -329,7 +329,7 @@ class Subaccount:
             amount_in_underlying=str(amount),
             max_fee_usd=max_fee_usd,
             force_batch=force_batch,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
