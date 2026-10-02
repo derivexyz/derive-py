@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import AsyncIterator
 from decimal import Decimal
-from typing import Iterator, Optional, cast
+from typing import Optional, cast
 
 from hexbytes import HexBytes
 
@@ -20,7 +21,8 @@ from derive_py._clients.rest.async_http.system import SystemOperations
 from derive_py._clients.rest.async_http.vaults import VaultOperations
 from derive_py._clients.utils import AuthContext
 from derive_py._web3.action_signing import ModuleData, SignedAction, WithdrawModuleData
-from derive_py._web3.deposits import Deposits, DepositStep, resolve_collateral
+from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
+from derive_py._web3.deposits import Deposits, resolve_collateral
 from derive_py.data_types import ChainConfig, ChecksumAddress, GasPriority, LoggerType, RiskUniverseID
 from derive_py.data_types.generated_models import (
     GetSubaccountRequest,
@@ -28,8 +30,6 @@ from derive_py.data_types.generated_models import (
     PrivateWithdrawResponse,
 )
 from derive_py.data_types.generated_models import Subaccount as SubaccountState
-from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
-from collections.abc import AsyncIterator
 
 
 @functools.total_ordering
