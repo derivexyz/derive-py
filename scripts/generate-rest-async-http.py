@@ -484,15 +484,22 @@ class AsyncTestConverter(cst.CSTTransformer):
             ),
         )
 
-        # Find the position to insert (after the last import)
+        # Find the position to insert (after the docstring and the last import).
+        # Only those move it: a module-level assignment such as a shared pytest
+        # marker is also a SimpleStatementLine, and inserting after one puts the
+        # import below code (E402) that ruff cannot fix.
         insert_pos = 0
         for i, statement in enumerate(updated_node.body):
-            if isinstance(statement, (cst.SimpleStatementLine, cst.Import, cst.ImportFrom)):
-                insert_pos = i + 1
-            elif isinstance(statement, cst.EmptyLine):
-                continue
-            else:
+            if not isinstance(statement, cst.SimpleStatementLine):
                 break
+            first = statement.body[0]
+            is_docstring = (
+                i == 0
+                and isinstance(first, cst.Expr)
+                and isinstance(first.value, (cst.SimpleString, cst.ConcatenatedString))
+            )
+            if is_docstring or any(isinstance(small, (cst.Import, cst.ImportFrom)) for small in statement.body):
+                insert_pos = i + 1
 
         new_body = list(updated_node.body)
         new_body.insert(insert_pos, pytest_import)
