@@ -55,9 +55,7 @@ class CollateralOperations:
         enforces that by rejecting a collateral with no underlying ERC-20.
         """
 
-        risk_universes = (
-            self._subaccount.markets._risk_universes_cache or await self._subaccount.markets.get_risk_universes()
-        )
+        risk_universes = self._subaccount.markets._risk_universes_cache or await self._subaccount.markets.get_risk_universes()
         collateral = resolve_collateral(
             risk_universes, manager_id=self._subaccount.state.manager_id, asset_name=asset_name
         )
@@ -113,7 +111,7 @@ class CollateralOperations:
             asset_name=asset_name,
             max_fee_usd=max_fee_usd,
             new_subaccount_manager=new_subaccount_manager,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,
@@ -178,7 +176,7 @@ class CollateralOperations:
             asset_name=asset_name,
             max_fee_usd=max_fee_usd,
             new_subaccount_manager=new_subaccount_manager,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             recipient_address=recipient,
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,

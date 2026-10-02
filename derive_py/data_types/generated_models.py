@@ -35,15 +35,19 @@ class AssetType(StrEnum):
 
 class AuctionBidEvent(Struct):
     amounts_liquidated: dict[str, str]
+    bidder_id: int
     cash_received: str
     discount_pnl: str
+    operation_id: str
     percent_liquidated: str
     positions_realized_pnl: dict[str, str]
     positions_realized_pnl_excl_fees: dict[str, str]
     realized_pnl: str
     realized_pnl_excl_fees: str
+    risk_universe_id: int
     timestamp: int
     tx_hash: str
+    unit_price: str
 
 
 class AuctionType(StrEnum):
@@ -92,7 +96,7 @@ class CancelAllTriggerOrdersRequest(CancelAllAlgoOrdersRequest):
 class CancelBatchQuotesRequest(Struct):
     subaccount_id: int
     label: str | UnsetType = UNSET
-    nonce: int | UnsetType = UNSET
+    nonce: str | UnsetType = UNSET
     quote_id: str | UnsetType = UNSET
     rfq_id: str | UnsetType = UNSET
 
@@ -104,7 +108,7 @@ class CancelBatchResult(Struct):
 class CancelBatchRfqsRequest(Struct):
     subaccount_id: int
     label: str | UnsetType = UNSET
-    nonce: int | UnsetType = UNSET
+    nonce: str | UnsetType = UNSET
     rfq_id: str | UnsetType = UNSET
 
 
@@ -133,7 +137,7 @@ class CancelByLabelResponse(CancelByInstrumentResponse):
 
 class CancelByNonceRequest(Struct):
     instrument_name: str
-    nonce: int
+    nonce: str
     subaccount_id: int
 
 
@@ -151,7 +155,7 @@ class CancelQuoteRequest(Struct):
     quote_id: str
     subaccount_id: int
     label: str | UnsetType = UNSET
-    nonce: int | UnsetType = UNSET
+    nonce: str | UnsetType = UNSET
     rfq_id: str | UnsetType = UNSET
 
 
@@ -181,7 +185,7 @@ class CancelTriggerOrderRequest(CancelAlgoOrderRequest):
 
 
 class CancelVaultRequestRequest(Struct):
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: Address
@@ -228,7 +232,7 @@ class CreateVaultRequest(Struct):
     manager_id: int
     max_fee_usd: Decimal
     max_slippage_bps: int
-    nonce: int
+    nonce: str
     performance_fee_bps: int
     signature: str
     signature_expiry_sec: int
@@ -291,7 +295,7 @@ class DecodeActionResponse(Struct):
 
 
 class DeleteSubaccountRequest(Struct):
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: str
@@ -301,6 +305,13 @@ class DeleteSubaccountRequest(Struct):
 class DeleteSubaccountResponse(Struct):
     op_uuid: str
     operation_id: int
+
+
+class DepositBridgeOrigin(Struct):
+    rail: str
+    source_chain_id: int
+    source_tx_hash: str
+    source_address: str | None | UnsetType = UNSET
 
 
 class DepositEntry(Struct):
@@ -316,9 +327,12 @@ class DepositEntry(Struct):
     timestamp: int
     wallet: str
     action_id: int | None | UnsetType = UNSET
+    bridge_origin: DepositBridgeOrigin | None | UnsetType = UNSET
     fallback_error_code: int | None | UnsetType = UNSET
     fallback_error_data: str | None | UnsetType = UNSET
     fallback_error_message: str | None | UnsetType = UNSET
+    l1_sender: str | None | UnsetType = UNSET
+    l1_tx_hash: str | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
 
 
@@ -354,9 +368,19 @@ class ExpirySettlementPrice(Struct):
     price: str | None | UnsetType = UNSET
 
 
+class ExternalTransferActionDataResponse(Struct):
+    amount: Decimal
+    asset: str
+    max_fee_usd: Decimal
+    new_subaccount_manager: int
+    recipient_address: str
+    sub_id: str
+    to_subaccount_id: int
+
+
 class ForceBurnRequest(Struct):
     holder: Address
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: Address
@@ -484,6 +508,10 @@ class GetLiveBurnRequestsRequest(Struct):
     subaccount_id: int
 
 
+class GetLiveIncidentsParams(EmptyRequest):
+    pass
+
+
 class GetLiveMintRequestsRequest(GetLiveBurnRequestsRequest):
     pass
 
@@ -547,6 +575,12 @@ class GetOrderRequest(CancelAlgoOrderRequest):
 
 class GetPendingDepositsParams(GetCuratedVaultsRequest):
     pass
+
+
+class GetPerpImpactTwapRequest(Struct):
+    currency: str
+    end_time: int
+    start_time: int
 
 
 class GetPositionsRequest(CancelAllAlgoOrdersRequest):
@@ -731,6 +765,7 @@ class LiveAuction(Struct):
     estimated_percent_bid: str
     margin_type: str
     min_price_limit: str
+    risk_universe_id: int
     subaccount_balances: dict[str, str]
     subaccount_id: int
     timestamp: int
@@ -777,6 +812,11 @@ class MmpConfigResult(Struct):
 class MmpScopeRequest(Struct):
     subaccount_id: int
     currency: str | UnsetType = UNSET
+
+
+class MonitorType(StrEnum):
+    manual = 'manual'
+    auto = 'auto'
 
 
 class OffchainAckResponse(Struct):
@@ -899,7 +939,7 @@ class OrderActionInputData(Struct):
     data: OrderActionDataResponse
     expiry: int
     module: str
-    nonce: int
+    nonce: str
     owner: str
     signer: str
     subaccount_id: int
@@ -939,21 +979,40 @@ class Pagination(Struct):
     num_pages: int
 
 
+class PendingDepositBridgeOrigin(Struct):
+    bridge_id: str
+    bridge_status: str
+    deposit_address: str
+    expected_amount: str
+    expires_at_ms: int
+    rail: str
+    source_chain_id: int
+    source_tx_hash: str
+    substatus: str
+    token: str
+    delivered_at_ms: int | None | UnsetType = UNSET
+    provider_transfer_id: str | None | UnsetType = UNSET
+    receiving_amount: str | None | UnsetType = UNSET
+    receiving_token: str | None | UnsetType = UNSET
+    receiving_tx_hash: str | None | UnsetType = UNSET
+    source_address: str | None | UnsetType = UNSET
+
+
 class PendingDepositEntry(Struct):
-    action_id: int
     action_type: str
-    amount: str
     asset: str
-    block_number: int
     deposit_type: str
-    log_index: int
     manager_id: int
     status: str
     subaccount_id: int
     timestamp: int
-    tx_hash: str
     updated_at_ms: int
-    credit_nonce: str | None | UnsetType = UNSET
+    action_id: int | None | UnsetType = UNSET
+    amount: str | None | UnsetType = UNSET
+    block_number: int | None | UnsetType = UNSET
+    bridge_to_l1: PendingDepositBridgeOrigin | None | UnsetType = UNSET
+    log_index: int | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
 
 
 class PerformanceResolution(StrEnum):
@@ -971,6 +1030,13 @@ class PerpFeedDataResponse(Struct):
     spot_diff_value: str
     timestamp: int
     type: str
+
+
+class PerpImpactTwapResult(Struct):
+    ask_impact_diff_twap: str
+    bid_impact_diff_twap: str
+    currency: str
+    mid_price_diff_twap: str
 
 
 class PerpSettlementEventResponse(Struct):
@@ -1079,7 +1145,7 @@ class PrivateGetSubaccountsResponse(Struct):
 
 class PrivateLiquidateRequest(Struct):
     liquidate_subaccount_id: int
-    nonce: int
+    nonce: str
     percent_of_acc: Decimal
     price_limit: Decimal
     signature: str
@@ -1107,7 +1173,7 @@ class PrivateTransferSpotExternalRequest(Struct):
     asset_name: str
     max_fee_usd: Decimal
     new_subaccount_manager: int
-    nonce: int
+    nonce: str
     recipient_address: str
     signature: str
     signature_expiry_sec: int
@@ -1126,7 +1192,7 @@ class PrivateTransferSpotRequest(Struct):
     asset_name: str
     max_fee_usd: Decimal
     new_subaccount_manager: int
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: str
@@ -1144,7 +1210,7 @@ class PrivateWithdrawRequest(Struct):
     asset_name: str
     force_batch: bool
     max_fee_usd: Decimal
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: str
@@ -1170,7 +1236,7 @@ class PublicExecuteQuoteDebugRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
-    nonce: int
+    nonce: str
     quote_id: str
     rfq_id: str
     signature: str
@@ -1230,7 +1296,7 @@ class PublicSendQuoteDebugRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
-    nonce: int
+    nonce: str
     rfq_id: str
     signature: str
     signature_expiry_sec: int
@@ -1290,7 +1356,7 @@ class PublicWithdrawDebugRequest(Struct):
     asset_name: str
     force_batch: bool
     max_fee_usd: Decimal
-    nonce: int
+    nonce: str
     signature_expiry_sec: int
     signer: str
     subaccount_id: int
@@ -1378,6 +1444,20 @@ class Referrer(Struct):
     receiving_wallet: str | None | UnsetType = UNSET
 
 
+class RegisterBridgeDepositParams(Struct):
+    bridge_token: str
+    bridge_token_decimals: int
+    deposit_address: str
+    expected_amount: str
+    rail: str
+    source_chain_id: int
+    source_token: str
+    source_tx_hash: str
+    wallet: str
+    provider_transfer_id: str | UnsetType = UNSET
+    tool: str | UnsetType = UNSET
+
+
 class RegisterDepositAddressParams(Struct):
     wallet: str
     manager_id: int | UnsetType = UNSET
@@ -1395,7 +1475,7 @@ class ReplaceQuoteRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
-    nonce: int
+    nonce: str
     rfq_id: str
     signature: str
     signature_expiry_sec: int
@@ -1405,7 +1485,7 @@ class ReplaceQuoteRequest(Struct):
     extra_fee: Decimal | UnsetType = Decimal('0')
     label: str | UnsetType = ''
     mmp: bool | UnsetType = False
-    nonce_to_cancel: int | UnsetType = UNSET
+    nonce_to_cancel: str | UnsetType = UNSET
     quote_id_to_cancel: str | UnsetType = UNSET
     referral_code: str | UnsetType = '0x9135BA0f495244dc0A5F029b25CDE95157Db89AD'
 
@@ -1413,7 +1493,7 @@ class ReplaceQuoteRequest(Struct):
 class RequestVaultDepositRequest(Struct):
     amount: Decimal
     deposit_spot_asset: Address
-    nonce: int
+    nonce: str
     signature: str
     signature_expiry_sec: int
     signer: Address
@@ -1422,7 +1502,7 @@ class RequestVaultDepositRequest(Struct):
 
 
 class RequestVaultWithdrawRequest(Struct):
-    nonce: int
+    nonce: str
     shares_to_burn: Decimal
     signature: str
     signature_expiry_sec: int
@@ -1463,6 +1543,23 @@ class RfqGetBestQuoteRequest(Struct):
     rfq_id: str | UnsetType = UNSET
 
 
+class RfqLegResponse(Struct):
+    amount: Decimal
+    asset_address: str
+    asset_sub_id: str
+    price: Decimal
+
+
+class RfqMakerActionDataResponse(Struct):
+    max_fee: Decimal
+    trades: list[RfqLegResponse]
+
+
+class RfqTakerActionDataResponse(Struct):
+    max_fee: Decimal
+    order_hash: str
+
+
 class RiskUniverseManager(Struct):
     collaterals: list[ManagerCollateral]
     instruments: list[str]
@@ -1490,7 +1587,7 @@ class SendQuoteRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
-    nonce: int
+    nonce: str
     rfq_id: str
     signature: str
     signature_expiry_sec: int
@@ -1549,6 +1646,37 @@ class SetMmpConfigResponse(Struct):
     subaccount_id: int
 
 
+class SetSessionKeyActionDataResponse(Struct):
+    expiry_sec: int
+    scopes: list[str]
+    session_key: str
+    subaccounts: list[int]
+
+
+class SetSessionKeyActionInputData(Struct):
+    data: SetSessionKeyActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class SetSessionKeyDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: SetSessionKeyActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
 class SetSessionKeyRequest(Struct):
     expiry_sec: int
     nonce: str
@@ -1585,6 +1713,12 @@ class SettledTrade(Struct):
     quote_id: str | None = None
     rfq_id: str | None = None
     batch_status: BatchStatus | None | UnsetType = UNSET
+
+
+class Severity(StrEnum):
+    low = 'low'
+    medium = 'medium'
+    high = 'high'
 
 
 class SignedTransferQuoteRequest(Struct):
@@ -1756,6 +1890,15 @@ class TradingviewCandle(Struct):
     volume_usd: str
 
 
+class TransferActionDataResponse(Struct):
+    amount: Decimal
+    asset: str
+    max_fee_usd: Decimal
+    new_subaccount_manager: int
+    sub_id: str
+    to_subaccount_id: int
+
+
 class TransferEntry(Struct):
     amount: Decimal
     asset: str
@@ -1776,10 +1919,106 @@ class TransferHistoryResult(Struct):
     transfers: list[TransferEntry]
 
 
+class TransferPositionsMakerActionInputData(Struct):
+    data: RfqMakerActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class TransferPositionsMakerDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: TransferPositionsMakerActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
 class TransferPositionsRequest(Struct):
     maker_params: SignedTransferQuoteRequest
     taker_params: SignedTransferQuoteRequest
     wallet: Address
+
+
+class TransferPositionsTakerActionInputData(Struct):
+    data: RfqTakerActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class TransferPositionsTakerDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: TransferPositionsTakerActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
+class TransferSpotActionInputData(Struct):
+    data: TransferActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class TransferSpotDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: TransferSpotActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
+class TransferSpotExternalActionInputData(Struct):
+    data: ExternalTransferActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class TransferSpotExternalDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: TransferSpotExternalActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
 
 
 class TriggerPriceType(StrEnum):
@@ -1807,9 +2046,38 @@ class UpdateVaultInfoRequest(Struct):
     whitelist_only: bool | UnsetType = UNSET
 
 
+class UpdateWhitelistedRecipientsActionDataResponse(Struct):
+    add: list[str]
+    remove: list[str]
+
+
+class UpdateWhitelistedRecipientsActionInputData(Struct):
+    data: UpdateWhitelistedRecipientsActionDataResponse
+    expiry: int
+    module: str
+    nonce: str
+    owner: str
+    signer: str
+    subaccount_id: int
+
+
+class UpdateWhitelistedRecipientsDebugResponse(Struct):
+    action_hash: str
+    action_typehash: str
+    domain_separator: str
+    encoded_data: str
+    encoded_data_hashed: str
+    expected_signer: str
+    input_data: UpdateWhitelistedRecipientsActionInputData
+    module: str
+    owner: str
+    typed_data_hash: str
+    recovered_signer: str | None | UnsetType = UNSET
+
+
 class UpdateWhitelistedRecipientsRequest(Struct):
     add: list[str]
-    nonce: int
+    nonce: str
     remove: list[str]
     signature: str
     signature_expiry_sec: int
@@ -1939,6 +2207,7 @@ class AuctionHistory(Struct):
     auction_type: AuctionType
     bids: list[AuctionBidEvent]
     fee: str
+    risk_universe_id: int
     start_timestamp: int
     subaccount_id: int
     tx_hash: str
@@ -1946,7 +2215,7 @@ class AuctionHistory(Struct):
 
 
 class BurnSharesRequest(Struct):
-    nonce: int
+    nonce: str
     request_id: VaultRequestId
     share_price: Decimal
     signature: str
@@ -1990,7 +2259,7 @@ class ExecuteQuoteRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
     max_fee: Decimal
-    nonce: int
+    nonce: str
     quote_id: str
     rfq_id: str
     signature: str
@@ -2069,6 +2338,14 @@ class GetWalletsFromSessionKeyRequest(Struct):
     scope: OffchainKeyScope | UnsetType = UNSET
 
 
+class IncidentResponse(Struct):
+    creation_timestamp_sec: int
+    label: str
+    message: str
+    monitor_type: MonitorType
+    severity: Severity
+
+
 class InterestHistoryResult(Struct):
     events: list[InterestPayment]
 
@@ -2093,7 +2370,7 @@ class LiquidationHistoryResult(Struct):
 
 class MintSharesRequest(Struct):
     deposit_hash: str
-    nonce: int
+    nonce: str
     request_id: VaultRequestId
     share_price: Decimal
     signature: str
@@ -2425,7 +2702,7 @@ class ReplaceOrderRequest(Struct):
     is_atomic_signing: bool | UnsetType = UNSET
     label: str | UnsetType = UNSET
     mmp: bool | UnsetType = UNSET
-    nonce_to_cancel: int | UnsetType = UNSET
+    nonce_to_cancel: str | UnsetType = UNSET
     order_id_to_cancel: str | UnsetType = UNSET
     order_type: OrderType | UnsetType = OrderType('limit')
     reduce_only: bool | UnsetType = UNSET
@@ -2510,6 +2787,11 @@ class Subaccount(Struct):
     subaccount_value: str
     vault_deposit_holds: list[VaultDepositHold]
     mm_credits: str | UnsetType = UNSET
+
+
+class TransferPositionsDebugResponse(Struct):
+    maker_result: TransferPositionsMakerDebugResponse
+    taker_result: TransferPositionsTakerDebugResponse
 
 
 class TransferPositionsResponse(Struct):
@@ -2613,6 +2895,10 @@ class GetLatestSignedFeedsResponse(Struct):
     rate_data: dict[str, dict[str, RateFeedDataResponse]]
     spot_data: dict[str, SpotFeedDataResponse]
     vol_data: dict[str, dict[str, VolFeedDataResponse]]
+
+
+class GetLiveIncidentsResponse(Struct):
+    incidents: list[IncidentResponse]
 
 
 class Instrument(Struct):

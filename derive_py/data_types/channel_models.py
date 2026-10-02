@@ -34,6 +34,7 @@ class AuctionDetails(Struct):
     estimated_percent_bid: str
     margin_type: str
     min_price_limit: str
+    risk_universe_id: int
     subaccount_balances: SubaccountBalances
     currency: str | None = None
 
