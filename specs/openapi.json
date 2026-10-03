@@ -66,7 +66,7 @@
     },
     {
       "name": "System",
-      "description": "Rate limits and transaction lookups."
+      "description": "Rate limits, transaction lookups, and live incidents."
     },
     {
       "name": "Market Data",
@@ -509,6 +509,42 @@
         },
         "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
         "x-rate-limit-class": "proven",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionKeyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/set_session_key_debug": {
+      "post": {
+        "tags": [
+          "Session Keys"
+        ],
+        "summary": "private/set_session_key_debug",
+        "operationId": "private_set_session_key_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetSessionKeyDebugResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Takes the same params as private/set_session_key and rebuilds the session-key Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded session key, expiry, protocol scopes and subaccounts. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session.",
+        "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
@@ -1339,7 +1375,7 @@
           }
         },
         "description": "Cancels one open quote owned by the subaccount, identified by quote_id (optionally further constrained by rfq_id, label, or nonce). Returns the cancelled quote, or a quote-not-found error if it does not exist or is no longer open. Requires an RFQ trade scope.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
           "content": {
@@ -1591,7 +1627,7 @@
           }
         },
         "description": "Maker-side call that atomically cancels an existing quote and submits a new signed quote for the same RFQ in one operation. You provide the new priced legs, direction, max fee, and EIP-712 signature, plus the quote to cancel (by quote_id or nonce_to_cancel). Returns the cancellation result together with the newly created quote. Requires trade scope for every instrument quoted.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
           "content": {
@@ -1663,7 +1699,7 @@
           }
         },
         "description": "Maker-side call that submits a priced, signed quote in response to an existing RFQ. You provide the priced legs, direction, max fee, an EIP-712 signature (signer, signature, nonce, expiry), and optional label or MMP flag. The quote's signature is verified and validated against the referenced RFQ before it is stored. Returns the created quote. Requires trade scope for every instrument quoted.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
           "content": {
@@ -3119,6 +3155,42 @@
         }
       }
     },
+    "/private/transfer_positions_debug": {
+      "post": {
+        "tags": [
+          "Transfers & Withdrawals"
+        ],
+        "summary": "private/transfer_positions_debug",
+        "operationId": "private_transfer_positions_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferPositionsDebugResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Takes the same params as private/transfer_positions and rebuilds both the maker and taker Actions without executing anything, returning for each side the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded action data (the maker's priced legs, and the taker's order_hash committing to them). Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferPositionsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/transfer_spot": {
       "post": {
         "tags": [
@@ -3143,6 +3215,42 @@
         },
         "description": "Submits a signed transfer of a single spot asset from one subaccount to another subaccount you own. You specify the source and destination subaccounts (or set new_subaccount_manager to create a new destination subaccount under a manager), the asset and its sub_id, the amount, a nonce, signer, signature with expiry, and the maximum USD sequencer fee. Requires a session key with a transfer permission and returns the operation id and uuid.",
         "x-rate-limit-class": "proven",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateTransferSpotRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/transfer_spot_debug": {
+      "post": {
+        "tags": [
+          "Transfers & Withdrawals"
+        ],
+        "summary": "private/transfer_spot_debug",
+        "operationId": "private_transfer_spot_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferSpotDebugResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Takes the same params as private/transfer_spot and rebuilds the transfer Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded transfer action data. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
+        "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
@@ -3191,6 +3299,42 @@
         }
       }
     },
+    "/private/transfer_spot_external_debug": {
+      "post": {
+        "tags": [
+          "Transfers & Withdrawals"
+        ],
+        "summary": "private/transfer_spot_external_debug",
+        "operationId": "private_transfer_spot_external_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferSpotExternalDebugResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Takes the same params as private/transfer_spot_external and rebuilds the external transfer Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded transfer action data including the recipient address. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateTransferSpotExternalRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/update_whitelisted_recipients": {
       "post": {
         "tags": [
@@ -3215,6 +3359,42 @@
         },
         "description": "Adds and/or removes recipient wallet addresses on an account's transfer whitelist via a signed, wallet-level action. Provide the owner wallet, signer, nonce, signature with expiry, and the add and remove address lists. This is an owner-or-admin operation (session keys need the admin scope); it returns the operation id, uuid, and the full whitelist after the update is applied.",
         "x-rate-limit-class": "proven",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhitelistedRecipientsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/update_whitelisted_recipients_debug": {
+      "post": {
+        "tags": [
+          "Transfers & Withdrawals"
+        ],
+        "summary": "private/update_whitelisted_recipients_debug",
+        "operationId": "private_update_whitelisted_recipients_debug",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWhitelistedRecipientsDebugResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Takes the same params as private/update_whitelisted_recipients and rebuilds the whitelist Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded add and remove address lists. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session.",
+        "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
           "content": {
@@ -3291,6 +3471,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PublicWithdrawDebugRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/register_bridge_deposit": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "private/register_bridge_deposit",
+        "operationId": "private_register_bridge_deposit",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingDepositBridgeOrigin"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Reports a Li.Fi bridge into one of the caller's deposit addresses the moment its source transaction is sent, so public/get_pending_deposits shows it as `bridging` at once with the quoted amount, before Li.Fi indexes it. Takes the source chain and transaction, the quote's transactionId, the deposit address, the source and delivered tokens and the quoted toAmount. Idempotent per source transaction. Display only: nothing is credited from it, and a registration Li.Fi never confirms expires.",
+        "x-rate-limit-class": "endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBridgeDepositParams"
               }
             }
           }
@@ -3392,7 +3608,7 @@
           }
         },
         "description": "A pre-requisite before using the `standard` deposit method as opposed to `direct` contract calls. Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
           "content": {
@@ -3471,6 +3687,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EmptyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_live_incidents": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "public/get_live_incidents",
+        "operationId": "public_get_live_incidents",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLiveIncidentsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns every incident the exchange operators have declared and not yet resolved, each with its label, message, severity (low, medium or high), whether it was raised manually or by an automated monitor, and when it was raised. Takes no parameters. Incidents are recorded and resolved by operators in ClickHouse; a resolved incident disappears from this list.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLiveIncidentsParams"
               }
             }
           }
@@ -3918,6 +4170,42 @@
         }
       }
     },
+    "/public/get_perp_impact_twap": {
+      "post": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "public/get_perp_impact_twap",
+        "operationId": "public_get_perp_impact_twap",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpImpactTwapResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns TWAPs of the perp mid, ask impact and bid impact prices minus spot for a `currency` between `start_time` and `end_time` (unix seconds).",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPerpImpactTwapRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/public/get_risk_universes": {
       "post": {
         "tags": [
@@ -4051,7 +4339,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns paginated, anonymized trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name; unset returns trades in every batch state), and `from_timestamp`/`to_timestamp`. Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
+        "description": "Returns paginated, anonymized trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name; unset returns trades in every batch state), and `from_timestamp`/`to_timestamp`. Without `trade_id`, `subaccount_id` or `instrument_name`, or whenever `batch_status` is set, the window is limited to the 30 days ending at `to_timestamp` (or now). Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -4562,23 +4850,33 @@
         "type": "object",
         "required": [
           "amounts_liquidated",
+          "bidder_id",
           "cash_received",
           "discount_pnl",
+          "operation_id",
           "percent_liquidated",
           "positions_realized_pnl",
           "positions_realized_pnl_excl_fees",
           "realized_pnl",
           "realized_pnl_excl_fees",
+          "risk_universe_id",
           "timestamp",
-          "tx_hash"
+          "tx_hash",
+          "unit_price"
         ],
         "properties": {
           "amounts_liquidated": {
-            "description": "Amounts of each asset that were closed. Always empty — see the module TODO; the protocol event does not carry the per-asset breakdown.",
+            "description": "Change in each of the liquidated account's balances from this bid, keyed by instrument name: a long position taken reads negative, a short one positive. Includes the slice of the account's cash; the bid's own price is `cash_received`, not an entry here. The bidder received the negation.",
             "type": "object",
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "bidder_id": {
+            "description": "The subaccount that won this slice.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
           },
           "cash_received": {
             "description": "Cash the liquidated account received for the slice: what the bidder paid in the solvent phase, and negative in the insolvent phase, where the security module pays the bidder instead.",
@@ -4586,6 +4884,10 @@
           },
           "discount_pnl": {
             "description": "Always \"0\" — see the module TODO.",
+            "type": "string"
+          },
+          "operation_id": {
+            "description": "Stable uuid of the bid operation: the `op_uuid` `private/liquidate` returned to the bidder.",
             "type": "string"
           },
           "percent_liquidated": {
@@ -4614,6 +4916,12 @@
             "description": "Always \"0\" — see the module TODO.",
             "type": "string"
           },
+          "risk_universe_id": {
+            "description": "Risk universe of both parties; a bid must come from the liquidatee's.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
           "timestamp": {
             "description": "When the sequencer applied the bid, unix ms.",
             "type": "integer",
@@ -4622,6 +4930,10 @@
           },
           "tx_hash": {
             "description": "Settling L1 transaction; empty until the bid's batch settles.",
+            "type": "string"
+          },
+          "unit_price": {
+            "description": "Price the bid filled at for the whole account; `cash_received` is this times `percent_liquidated`. Negative in the insolvent phase.",
             "type": "string"
           }
         }
@@ -4634,6 +4946,7 @@
           "auction_type",
           "bids",
           "fee",
+          "risk_universe_id",
           "start_timestamp",
           "subaccount_id",
           "tx_hash"
@@ -4664,6 +4977,12 @@
           "fee": {
             "description": "Liquidation fee charged at auction start; \"0\" for a phase opened by conversion to insolvent.",
             "type": "string"
+          },
+          "risk_universe_id": {
+            "description": "Risk universe of the liquidated subaccount.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
           },
           "start_timestamp": {
             "description": "Auction/phase clock start, unix ms.",
@@ -4724,9 +5043,7 @@
         ],
         "properties": {
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "request_id": {
             "$ref": "#/components/schemas/VaultRequestId"
@@ -4865,10 +5182,9 @@
           "nonce": {
             "default": null,
             "type": [
-              "integer",
+              "string",
               "null"
-            ],
-            "format": "int64"
+            ]
           },
           "quote_id": {
             "description": "Optional UUID v4 string",
@@ -4926,10 +5242,9 @@
           "nonce": {
             "default": null,
             "type": [
-              "integer",
+              "string",
               "null"
-            ],
-            "format": "int64"
+            ]
           },
           "rfq_id": {
             "description": "Optional UUID v4 string",
@@ -5037,8 +5352,7 @@
             "type": "string"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "subaccount_id": {
             "type": "integer",
@@ -5097,10 +5411,9 @@
           "nonce": {
             "default": null,
             "type": [
-              "integer",
+              "string",
               "null"
-            ],
-            "format": "int64"
+            ]
           },
           "quote_id": {
             "description": "UUID v4 string",
@@ -5198,9 +5511,7 @@
         ],
         "properties": {
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -5435,6 +5746,7 @@
             "format": "decimal"
           },
           "mmp": {
+            "description": "Tags the order for market maker protection. Only tagged orders are cancelled by cancel on disconnect.",
             "default": null,
             "type": [
               "boolean",
@@ -5599,9 +5911,7 @@
             "minimum": 0.0
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "performance_fee_bps": {
             "type": "integer",
@@ -5816,9 +6126,7 @@
         ],
         "properties": {
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "signature": {
             "type": "string"
@@ -5852,6 +6160,38 @@
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
+          }
+        }
+      },
+      "DepositBridgeOrigin": {
+        "description": "Where a credited deposit came from. Named apart from `PendingDepositBridgeOrigin` because schemars shares one namespace and would emit an order-dependent name.",
+        "type": "object",
+        "required": [
+          "rail",
+          "source_chain_id",
+          "source_tx_hash"
+        ],
+        "properties": {
+          "rail": {
+            "description": "Bridge protocol: `lifi` or `layerzero`.",
+            "type": "string"
+          },
+          "source_address": {
+            "description": "Their wallet on that chain, lower-cased; absent when the rail gave none.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_chain_id": {
+            "description": "Chain the user sent from.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "source_tx_hash": {
+            "description": "Their transaction on that chain.",
+            "type": "string"
           }
         }
       },
@@ -5894,6 +6234,17 @@
           "batch_uuid": {
             "type": "string"
           },
+          "bridge_origin": {
+            "description": "Absent for a plain L1 deposit, a bridge sent outside Derive's own quotes, or a sweep that credited several bridges at once.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepositBridgeOrigin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "fallback_error_code": {
             "description": "Error code for the deposit's failure to reach its target subaccount.",
             "type": [
@@ -5925,6 +6276,20 @@
             "description": "The deposit could not reach its target, so it was credited to the wallet's fallback subaccount instead.",
             "type": "boolean"
           },
+          "l1_sender": {
+            "description": "Who sent those funds on L1: the depositor's wallet, an exchange, or a bridge's relayer. Absent exactly when `l1_tx_hash` is.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "l1_tx_hash": {
+            "description": "The L1 transaction that moved the funds into the escrow. Absent when no tracked L1 row backs the deposit, or when one action credited several transfers at once.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "new_subaccount": {
             "type": "boolean"
           },
@@ -5937,11 +6302,13 @@
             "minimum": 0.0
           },
           "timestamp": {
+            "description": "Unix milliseconds.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
           },
           "tx_hash": {
+            "description": "The settlement batch's commit, `null` until the batch settles. Not the deposit's own L1 transaction: that is `l1_tx_hash`.",
             "type": [
               "string",
               "null"
@@ -6082,8 +6449,7 @@
             "format": "decimal"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "quote_id": {
             "description": "UUID v4 string",
@@ -6143,6 +6509,49 @@
           }
         }
       },
+      "ExternalTransferActionDataResponse": {
+        "type": "object",
+        "required": [
+          "amount",
+          "asset",
+          "max_fee_usd",
+          "new_subaccount_manager",
+          "recipient_address",
+          "sub_id",
+          "to_subaccount_id"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "max_fee_usd": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "new_subaccount_manager": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "recipient_address": {
+            "type": "string"
+          },
+          "sub_id": {
+            "type": "string"
+          },
+          "to_subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "ForceBurnRequest": {
         "description": "Fields common to every signed vault action. They appear alongside each endpoint's action-specific parameters in the same request object.",
         "type": "object",
@@ -6160,9 +6569,7 @@
             "$ref": "#/components/schemas/Address"
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -6939,6 +7346,24 @@
           }
         }
       },
+      "GetLiveIncidentsParams": {
+        "type": "object"
+      },
+      "GetLiveIncidentsResponse": {
+        "type": "object",
+        "required": [
+          "incidents"
+        ],
+        "properties": {
+          "incidents": {
+            "description": "List of ongoing incidents",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncidentResponse"
+            }
+          }
+        }
+      },
       "GetLiveMintRequestsRequest": {
         "type": "object",
         "required": [
@@ -7264,6 +7689,7 @@
         ],
         "properties": {
           "pending_deposits": {
+            "description": "L1 deposits, plus every bridge in flight or settled inside [`BRIDGE_HISTORY_WINDOW_MS`], each exactly once.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PendingDepositEntry"
@@ -7271,6 +7697,28 @@
           },
           "wallet": {
             "type": "string"
+          }
+        }
+      },
+      "GetPerpImpactTwapRequest": {
+        "description": "Parameters for `public/get_perp_impact_twap`. Timestamps are unix seconds, as either a JSON number or a string-encoded integer.",
+        "type": "object",
+        "required": [
+          "currency",
+          "end_time",
+          "start_time"
+        ],
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "end_time": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "start_time": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -8101,6 +8549,39 @@
           }
         }
       },
+      "IncidentResponse": {
+        "type": "object",
+        "required": [
+          "creation_timestamp_sec",
+          "label",
+          "message",
+          "monitor_type",
+          "severity"
+        ],
+        "properties": {
+          "creation_timestamp_sec": {
+            "description": "Timestamp of incident in UTC sec",
+            "type": "integer",
+            "format": "int64"
+          },
+          "label": {
+            "description": "Incident label",
+            "type": "string"
+          },
+          "message": {
+            "description": "Incident message",
+            "type": "string"
+          },
+          "monitor_type": {
+            "description": "Incident trigger type",
+            "$ref": "#/components/schemas/MonitorType"
+          },
+          "severity": {
+            "description": "Incident severity",
+            "$ref": "#/components/schemas/Severity"
+          }
+        }
+      },
       "IndexCandle": {
         "description": "Single spot OHLC candle in `public/get_index_chart_data`. `price` mirrors the close; `timestamp` and `timestamp_bucket` are the bucket start in UTC seconds.",
         "type": "object",
@@ -8430,6 +8911,7 @@
           "estimated_percent_bid",
           "margin_type",
           "min_price_limit",
+          "risk_universe_id",
           "subaccount_balances",
           "subaccount_id",
           "timestamp"
@@ -8465,6 +8947,12 @@
           "min_price_limit": {
             "description": "Cash required to buy `estimated_percent_bid` of the account — the `price_limit` to pass to `private/liquidate`. Scale it down in proportion if bidding less.",
             "type": "string"
+          },
+          "risk_universe_id": {
+            "description": "Risk universe of the auctioned account. A bid from a subaccount in any other universe is rejected.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
           },
           "subaccount_balances": {
             "description": "Balance per asset name. A bid acquires `estimated_percent_bid` of each.",
@@ -8572,9 +9060,7 @@
             "type": "string"
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "request_id": {
             "$ref": "#/components/schemas/VaultRequestId"
@@ -8669,6 +9155,13 @@
             "minimum": 0.0
           }
         }
+      },
+      "MonitorType": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "auto"
+        ]
       },
       "MultipleVaultRequestsResponse": {
         "description": "Returned by `get_live_mint_requests` / `get_live_burn_requests`: a FIFO page plus the queue's total live length (so the caller can paginate).",
@@ -9392,9 +9885,7 @@
             "type": "string"
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "owner": {
             "type": "string"
@@ -9831,27 +10322,127 @@
           }
         }
       },
+      "PendingDepositBridgeOrigin": {
+        "description": "Where a deposit came from. Named apart from `DepositBridgeOrigin` because schemars shares one namespace and would emit an order-dependent `BridgeOrigin2`.",
+        "type": "object",
+        "required": [
+          "bridge_id",
+          "bridge_status",
+          "deposit_address",
+          "expected_amount",
+          "expires_at_ms",
+          "rail",
+          "source_chain_id",
+          "source_tx_hash",
+          "substatus",
+          "token"
+        ],
+        "properties": {
+          "bridge_id": {
+            "description": "Unique with `rail`; changes if a registered source tx is replaced, so key on `provider_transfer_id` when present.",
+            "type": "string"
+          },
+          "bridge_status": {
+            "description": "`registered` (reported by the client, not yet confirmed by Li.Fi) `submitted` (in flight) `delivered` (landed on the destination chain) `matched` (joined to the L1 deposit) `failed` (the bridge refunded or could not fill — nothing reached the escrow) `expired` (unresolved past `expires_at_ms`; check the source chain) `unmatched` (delivered, but not credited within 24h; contact support)",
+            "type": "string"
+          },
+          "delivered_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "deposit_address": {
+            "description": "The escrow the bridge delivers to.",
+            "type": "string"
+          },
+          "expected_amount": {
+            "description": "Quoted amount expected to land, in `token` units (estimated until quoted); `receiving_amount` once delivered.",
+            "type": "string"
+          },
+          "expires_at_ms": {
+            "description": "When a still-`registered` or `submitted` bridge will be marked `expired`.",
+            "type": "integer",
+            "format": "int64"
+          },
+          "provider_transfer_id": {
+            "description": "The provider's own id for the bridge (Li.Fi: the quote's `transactionId`), stable through its lifecycle.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rail": {
+            "description": "Bridge protocol: `lifi` or `layerzero`.",
+            "type": "string"
+          },
+          "receiving_amount": {
+            "description": "What actually arrived, native units, as a decimal string.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receiving_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receiving_tx_hash": {
+            "description": "The bridge's delivery transaction on the destination chain.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_address": {
+            "description": "Their wallet on that chain, lower-cased; absent when the rail gave none.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_chain_id": {
+            "description": "Chain the user sent from.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "source_tx_hash": {
+            "description": "Their transaction on that chain.",
+            "type": "string"
+          },
+          "substatus": {
+            "description": "The rail's detail, or `TOKEN_MISMATCH` when the escrow cannot credit the token.",
+            "type": "string"
+          },
+          "token": {
+            "description": "The ERC20 expected to land in the escrow.",
+            "type": "string"
+          }
+        }
+      },
       "PendingDepositEntry": {
         "type": "object",
         "required": [
-          "action_id",
           "action_type",
-          "amount",
           "asset",
-          "block_number",
           "deposit_type",
-          "log_index",
           "manager_id",
           "status",
           "subaccount_id",
           "timestamp",
-          "tx_hash",
           "updated_at_ms"
         ],
         "properties": {
           "action_id": {
-            "description": "Per-queue id assigned by the `OnchainActionManager`.",
-            "type": "integer",
+            "description": "Per-queue id assigned by the `OnchainActionManager`. Absent while `bridging`.",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -9860,29 +10451,43 @@
             "type": "string"
           },
           "amount": {
-            "description": "Amount in the asset's native ERC-20 units, as a decimal string.",
-            "type": "string"
-          },
-          "asset": {
-            "type": "string"
-          },
-          "block_number": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          },
-          "credit_nonce": {
-            "description": "Deprecated",
+            "description": "Amount in the asset's native ERC-20 units, as a decimal string. While `bridging`, the estimated `bridge_to_l1.expected_amount` until the bridge delivers, then what it delivered.",
             "type": [
               "string",
               "null"
             ]
           },
+          "asset": {
+            "type": "string"
+          },
+          "block_number": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "bridge_to_l1": {
+            "description": "Where a bridged deposit came from; absent for a plain L1 deposit or a bridge sent without Derive's integrator code.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PendingDepositBridgeOrigin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "deposit_type": {
+            "description": "`standard` or `direct`.",
             "type": "string"
           },
           "log_index": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -9893,7 +10498,7 @@
             "minimum": 0.0
           },
           "status": {
-            "description": "`detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists)",
+            "description": "`bridging` (a bridge not yet recorded on L1; its detail is `bridge_to_l1.bridge_status`) `detected` (transfer seen at the tip, pre-confirmation) `pending` (escrow swept, awaiting confirmation) `confirmed` (sweep tx past the confirmation range) `reverted` (the sweep reorged out — or uncreditable: no valid destination exists)",
             "type": "string"
           },
           "subaccount_id": {
@@ -9902,12 +10507,16 @@
             "format": "int64"
           },
           "timestamp": {
-            "description": "Milliseconds when the tracker first picked up the deposit - approximates the block timestamp of `block_number`. Shared by all of a deposit's entries.",
+            "description": "Milliseconds when the tracker first picked up the deposit - approximates the block timestamp of `block_number`. Shared by all of a deposit's entries. While `bridging`, the bridge's source transaction time.",
             "type": "integer",
             "format": "int64"
           },
           "tx_hash": {
-            "type": "string"
+            "description": "The L1 deposit. Absent while `bridging`: key a bridging entry on `bridge_to_l1` (see `bridge_id`), since it gains `tx_hash`/`log_index` once the sweeper records the deposit.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updated_at_ms": {
             "type": "integer",
@@ -9998,6 +10607,30 @@
             "minimum": 0.0
           },
           "type": {
+            "type": "string"
+          }
+        }
+      },
+      "PerpImpactTwapResult": {
+        "description": "TWAPs of the perp mid, ask impact and bid impact prices minus spot.",
+        "type": "object",
+        "required": [
+          "ask_impact_diff_twap",
+          "bid_impact_diff_twap",
+          "currency",
+          "mid_price_diff_twap"
+        ],
+        "properties": {
+          "ask_impact_diff_twap": {
+            "type": "string"
+          },
+          "bid_impact_diff_twap": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "mid_price_diff_twap": {
             "type": "string"
           }
         }
@@ -10548,8 +11181,7 @@
             "minimum": 0.0
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "percent_of_acc": {
             "description": "Fraction of the account to liquidate (`\"1.0\"` = 100%), decimal string or JSON number. Must be a whole percent, i.e. a multiple of `\"0.01\"`.",
@@ -10557,7 +11189,7 @@
             "format": "decimal"
           },
           "price_limit": {
-            "description": "Signed limit price (`\"0\"` opts out), decimal string or JSON number.",
+            "description": "Max total cash paid for the filled portion; negative is a minimum payout in insolvent auctions. `\"0\"` opts out. Decimal string or JSON number.",
             "type": "string",
             "format": "decimal"
           },
@@ -10702,8 +11334,7 @@
             "minimum": 0.0
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "recipient_address": {
             "description": "Owner of the destination account/subaccount.",
@@ -10791,8 +11422,7 @@
             "minimum": 0.0
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "signature": {
             "type": "string"
@@ -10869,8 +11499,7 @@
             "format": "decimal"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "recipient": {
             "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted.\n\nA non-owner signer (session key) may only pay out to an address on the owner's `whitelisted_recipients`, unless the key holds `Admin`.",
@@ -11036,8 +11665,7 @@
             "format": "decimal"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "quote_id": {
             "description": "UUID v4 string",
@@ -11591,8 +12219,7 @@
             "format": "decimal"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "rfq_id": {
             "description": "UUID v4 string",
@@ -11970,8 +12597,7 @@
             "format": "decimal"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "recipient": {
             "description": "L1 address the funds are paid out to. Defaults to the subaccount's owner wallet when omitted — matching what `private/withdraw` reconstructs.",
@@ -12592,6 +13218,79 @@
           }
         }
       },
+      "RegisterBridgeDepositParams": {
+        "description": "What the client sent and was quoted.",
+        "type": "object",
+        "required": [
+          "bridge_token",
+          "bridge_token_decimals",
+          "deposit_address",
+          "expected_amount",
+          "rail",
+          "source_chain_id",
+          "source_token",
+          "source_tx_hash",
+          "wallet"
+        ],
+        "properties": {
+          "bridge_token": {
+            "description": "The ERC20 the bridge delivers on the destination chain.",
+            "type": "string"
+          },
+          "bridge_token_decimals": {
+            "description": "`bridge_token`'s decimals.",
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          },
+          "deposit_address": {
+            "description": "One of the wallet's escrows, from `public/register_deposit_address`.",
+            "type": "string"
+          },
+          "expected_amount": {
+            "description": "What the quote says will arrive, in `bridge_token`'s native units, as a decimal string (Li.Fi: `estimate.toAmount`).",
+            "type": "string"
+          },
+          "provider_transfer_id": {
+            "description": "The provider's own id for the transfer, kept if the source transaction is sped up or replaced: Li.Fi's quote `transactionId`.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rail": {
+            "description": "Bridge protocol: `lifi`. (`layerzero` is not registrable yet.)",
+            "type": "string"
+          },
+          "source_chain_id": {
+            "description": "Chain the bridge was sent from.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "source_token": {
+            "description": "The ERC20 sent on the source chain.",
+            "type": "string"
+          },
+          "source_tx_hash": {
+            "description": "The bridge transaction on that chain.",
+            "type": "string"
+          },
+          "tool": {
+            "description": "The route the provider chose (Li.Fi: the quote's `tool`). Internal only.",
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wallet": {
+            "description": "The session's wallet.",
+            "type": "string"
+          }
+        }
+      },
       "RegisterDepositAddressParams": {
         "type": "object",
         "required": [
@@ -12779,6 +13478,7 @@
             "format": "decimal"
           },
           "mmp": {
+            "description": "Tags the order for market maker protection. Only tagged orders are cancelled by cancel on disconnect.",
             "default": null,
             "type": [
               "boolean",
@@ -12791,10 +13491,9 @@
           "nonce_to_cancel": {
             "default": null,
             "type": [
-              "integer",
+              "string",
               "null"
-            ],
-            "format": "int64"
+            ]
           },
           "order_id_to_cancel": {
             "description": "Optional UUID v4 string",
@@ -12979,16 +13678,14 @@
             "type": "boolean"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "nonce_to_cancel": {
             "default": null,
             "type": [
-              "integer",
+              "string",
               "null"
-            ],
-            "format": "int64"
+            ]
           },
           "quote_id_to_cancel": {
             "description": "Optional UUID v4 string",
@@ -13048,9 +13745,7 @@
             "$ref": "#/components/schemas/Address"
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "signature": {
             "description": "0x-prefixed hex of the 65-byte EOA signature.",
@@ -13091,9 +13786,7 @@
         ],
         "properties": {
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "shares_to_burn": {
             "description": "Number of vault shares to burn, as a decimal string.",
@@ -13430,6 +14123,71 @@
           }
         }
       },
+      "RfqLegResponse": {
+        "type": "object",
+        "required": [
+          "amount",
+          "asset_address",
+          "asset_sub_id",
+          "price"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "asset_address": {
+            "type": "string"
+          },
+          "asset_sub_id": {
+            "type": "string"
+          },
+          "price": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          }
+        }
+      },
+      "RfqMakerActionDataResponse": {
+        "type": "object",
+        "required": [
+          "max_fee",
+          "trades"
+        ],
+        "properties": {
+          "max_fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "trades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RfqLegResponse"
+            }
+          }
+        }
+      },
+      "RfqTakerActionDataResponse": {
+        "type": "object",
+        "required": [
+          "max_fee",
+          "order_hash"
+        ],
+        "properties": {
+          "max_fee": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "order_hash": {
+            "description": "`keccak(abi.encode(maker_trades))` — the maker bundle hash the taker commits to.",
+            "type": "string"
+          }
+        }
+      },
       "RiskUniverse": {
         "description": "One risk universe: its display metadata, managers (each with what it lets you trade and deposit), and the Security Module absorbing the universe's losses. The universe-first mirror of `public/get_all_currencies` — pick a universe, pick a manager in it, and the `manager_id` is what you pass when depositing to a new subaccount.",
         "type": "object",
@@ -13611,8 +14369,7 @@
             "type": "boolean"
           },
           "nonce": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "referral_code": {
             "default": "",
@@ -13784,7 +14541,7 @@
         }
       },
       "SetMmpConfigRequest": {
-        "description": "`mmp_interval` and `mmp_frozen_time` are specified in milliseconds (rounded down to the nearest whole second).",
+        "description": "`mmp_interval` and `mmp_frozen_time` are specified in milliseconds (rounded up to the nearest whole second).",
         "type": "object",
         "required": [
           "currency",
@@ -13826,7 +14583,7 @@
         }
       },
       "SetMmpConfigResponse": {
-        "description": "Echoes the inbound params back: decimal-string limits, ms intervals.",
+        "description": "Echoes the stored config: decimal-string limits, ms intervals.",
         "type": "object",
         "required": [
           "currency",
@@ -13860,6 +14617,145 @@
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
+          }
+        }
+      },
+      "SetSessionKeyActionDataResponse": {
+        "type": "object",
+        "required": [
+          "expiry_sec",
+          "scopes",
+          "session_key",
+          "subaccounts"
+        ],
+        "properties": {
+          "expiry_sec": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "scopes": {
+            "description": "Protocol scope wire strings (e.g. `\"trade:orderbook:all\"`).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "session_key": {
+            "type": "string"
+          },
+          "subaccounts": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "SetSessionKeyActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SetSessionKeyActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "SetSessionKeyDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/SetSessionKeyActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
           }
         }
       },
@@ -14071,6 +14967,14 @@
             "type": "string"
           }
         }
+      },
+      "Severity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
       },
       "SignedAction": {
         "description": "An Action bundled with its ECDSA signature (65 bytes: r||s||v).",
@@ -14955,6 +15859,45 @@
           }
         }
       },
+      "TransferActionDataResponse": {
+        "type": "object",
+        "required": [
+          "amount",
+          "asset",
+          "max_fee_usd",
+          "new_subaccount_manager",
+          "sub_id",
+          "to_subaccount_id"
+        ],
+        "properties": {
+          "amount": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "max_fee_usd": {
+            "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
+            "type": "string",
+            "format": "decimal"
+          },
+          "new_subaccount_manager": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "sub_id": {
+            "type": "string"
+          },
+          "to_subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
       "TransferEntry": {
         "description": "`amount` and `fee` are decimal strings (e.g. `\"1.1\"`). `is_outgoing` marks the caller's side; on the sender's row `amount` is the gross debited and `fee` the in-kind fee, on the receiver's row `amount` is the net credited and `fee` is 0. `operation_id`/`batch_uuid` are stable uuids.",
         "type": "object",
@@ -15007,6 +15950,7 @@
             "type": "string"
           },
           "timestamp": {
+            "description": "Unix milliseconds.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
@@ -15038,6 +15982,127 @@
             "items": {
               "$ref": "#/components/schemas/TransferEntry"
             }
+          }
+        }
+      },
+      "TransferPositionsDebugResponse": {
+        "description": "`private/transfer_positions_debug` result: the maker and taker actions the route rebuilds, exactly as `private/transfer_positions` verifies them.",
+        "type": "object",
+        "required": [
+          "maker_result",
+          "taker_result"
+        ],
+        "properties": {
+          "maker_result": {
+            "$ref": "#/components/schemas/TransferPositionsMakerDebugResponse"
+          },
+          "taker_result": {
+            "$ref": "#/components/schemas/TransferPositionsTakerDebugResponse"
+          }
+        }
+      },
+      "TransferPositionsMakerActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RfqMakerActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "TransferPositionsMakerDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/TransferPositionsMakerActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
           }
         }
       },
@@ -15074,6 +16139,321 @@
           },
           "taker_quote": {
             "$ref": "#/components/schemas/Quote"
+          }
+        }
+      },
+      "TransferPositionsTakerActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RfqTakerActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "TransferPositionsTakerDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/TransferPositionsTakerActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
+          }
+        }
+      },
+      "TransferSpotActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransferActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "TransferSpotDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/TransferSpotActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
+          }
+        }
+      },
+      "TransferSpotExternalActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ExternalTransferActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "TransferSpotExternalDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/TransferSpotExternalActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
           }
         }
       },
@@ -15174,6 +16554,132 @@
           }
         }
       },
+      "UpdateWhitelistedRecipientsActionDataResponse": {
+        "type": "object",
+        "required": [
+          "add",
+          "remove"
+        ],
+        "properties": {
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateWhitelistedRecipientsActionInputData": {
+        "description": "The `Action` envelope a debug route rebuilt from the request inputs, plus its decoded action data — i.e. what the signature commits to.",
+        "type": "object",
+        "required": [
+          "data",
+          "expiry",
+          "module",
+          "nonce",
+          "owner",
+          "signer",
+          "subaccount_id"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpdateWhitelistedRecipientsActionDataResponse"
+          },
+          "expiry": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "module": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "signer": {
+            "type": "string"
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "UpdateWhitelistedRecipientsDebugResponse": {
+        "description": "Debug-route payload for one rebuilt action: the EIP-712 hashes plus the action input fields.",
+        "type": "object",
+        "required": [
+          "action_hash",
+          "action_typehash",
+          "domain_separator",
+          "encoded_data",
+          "encoded_data_hashed",
+          "expected_signer",
+          "input_data",
+          "module",
+          "owner",
+          "typed_data_hash"
+        ],
+        "properties": {
+          "action_hash": {
+            "description": "EIP-712 struct hash of the `Action`: `keccak256(abi.encode(action_typehash, …, encoded_data_hashed, …))`.",
+            "type": "string"
+          },
+          "action_typehash": {
+            "description": "`ACTION_TYPEHASH` — keccak of the `Action` struct type string; invariant across deployments.",
+            "type": "string"
+          },
+          "domain_separator": {
+            "description": "EIP-712 domain separator of the Matching contract for this deployment.",
+            "type": "string"
+          },
+          "encoded_data": {
+            "description": "ABI-encoded, module-specific action payload (the `data` bytes), 0x-hex.",
+            "type": "string"
+          },
+          "encoded_data_hashed": {
+            "description": "`keccak256(encoded_data)` — the value packed into the struct hash.",
+            "type": "string"
+          },
+          "expected_signer": {
+            "description": "The signer the signature is checked against.",
+            "type": "string"
+          },
+          "input_data": {
+            "description": "The rebuilt `Action` envelope and its decoded module-specific `data`.",
+            "$ref": "#/components/schemas/UpdateWhitelistedRecipientsActionInputData"
+          },
+          "module": {
+            "description": "Per-action module contract address bound into the signed struct.",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Wallet that owns the subaccount the action applies to.",
+            "type": "string"
+          },
+          "recovered_signer": {
+            "description": "null on the debug routes (no signature is checked there); on a signature-mismatch error this is the address actually recovered.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "typed_data_hash": {
+            "description": "Final EIP-712 digest the client signs: `keccak256(0x1901 || domain_separator || action_hash)`.",
+            "type": "string"
+          }
+        }
+      },
       "UpdateWhitelistedRecipientsRequest": {
         "type": "object",
         "required": [
@@ -15194,9 +16700,7 @@
             }
           },
           "nonce": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
+            "type": "string"
           },
           "remove": {
             "description": "Recipient wallet addresses to remove from the whitelist.",
@@ -15895,7 +17399,7 @@
         }
       },
       "WithdrawalEntry": {
-        "description": "`amount` and `fee` are decimal strings (e.g. `\"1.1\"`); the net sent to the recipient is `amount - fee`. `wallet` is the account owner; `recipient` is the L1 destination. `asset` is the protocol asset (the native-ETH sentinel for ETH); `erc20_address` is the on-chain ERC20 the funds settle against (WETH for native ETH). `operation_id`/`batch_uuid` are the stable uuids.",
+        "description": "`amount` and `fee` are decimal strings (e.g. `\"1.1\"`); the net sent to the recipient is `amount - fee`. `wallet` is the account owner; `recipient` is the L1 destination. `asset` is the currency name (e.g. `\"USDC\"`); `erc20_address` is the on-chain ERC20 the funds settle against (WETH for native ETH). `operation_id`/`batch_uuid` are the stable uuids.",
         "type": "object",
         "required": [
           "amount",
@@ -15945,6 +17449,7 @@
             "minimum": 0.0
           },
           "timestamp": {
+            "description": "Unix milliseconds.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0

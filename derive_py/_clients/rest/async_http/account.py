@@ -236,7 +236,7 @@ class LightAccount:
         params = UpdateWhitelistedRecipientsRequest(
             add=add,
             remove=remove,
-            nonce=signed_action.nonce,
+            nonce=str(signed_action.nonce),
             signature=signed_action.signature,
             signature_expiry_sec=signed_action.signature_expiry_sec,
             signer=signed_action.signer,

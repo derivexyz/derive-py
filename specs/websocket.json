@@ -81,7 +81,7 @@
         }
       },
       "title": "Enable or disable cancel on disconnect",
-      "description": "WebSocket-only method that toggles cancel on disconnect for the authenticated wallet. While enabled, dropping the WebSocket connection cancels the wallet's open orders, trigger and algo orders, and quotes. Pass enabled true or false; omitting it leaves the setting unchanged. Requires a session key with full trade scope; returns \"ok\".",
+      "description": "WebSocket-only method that toggles cancel on disconnect for the authenticated wallet. While enabled, dropping the WebSocket connection cancels the orders placed with mmp true and the quotes sent on that connection. Orders without mmp true, trigger orders, and algo orders are not cancelled. Pass enabled true or false; omitting it leaves the setting unchanged. Requires a session key with full trade scope over all subaccounts; returns \"ok\".",
       "tags": [
         {
           "name": "Methods"

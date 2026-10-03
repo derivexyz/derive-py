@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from derive_py.config.constants import ZERO_ADDRESS
 from derive_py.data_types import Chain, ChainConfig, ChecksumAddress, DeriveContractAddresses
 
 # V3_MODULE_ADDRESSES. Chain-independent: a signed action's `module` field
@@ -27,14 +26,10 @@ SEPOLIA_VAPP = ChecksumAddress("0x1573bde26338A9E6AA358638679A796c81E33246")
 SEPOLIA_WITHDRAWAL_OUTBOX = ChecksumAddress("0xFbB62CE2BbFdFdc8a60DDC22115aC29cf91B4566")
 SEPOLIA_SPOT_VAULT = ChecksumAddress("0x3FB79aafCD401CDD19e3d729241545955DDE0D48")
 
-# Mainnet settlement contracts are not published yet, so these are placeholders
-# and every on-chain path on Chain.ETHEREUM fails until they are. Zero rather
-# than the testnet addresses, which would silently send funds to the wrong
-# deployment; derive-ts holds the same placeholder in config/networks.ts.
-MAINNET_ACTION_MANAGER = ChecksumAddress(ZERO_ADDRESS)
-MAINNET_VAPP = ChecksumAddress(ZERO_ADDRESS)
-MAINNET_WITHDRAWAL_OUTBOX = ChecksumAddress(ZERO_ADDRESS)
-MAINNET_SPOT_VAULT = ChecksumAddress(ZERO_ADDRESS)
+MAINNET_ACTION_MANAGER = ChecksumAddress("0xE366CcA474968e33b777E13905829A3b800CFAD3")
+MAINNET_VAPP = ChecksumAddress("0xd330145C17fB6EF2a21ACf1275Ce683A305F58BB")
+MAINNET_WITHDRAWAL_OUTBOX = ChecksumAddress("0x7c743D79C9C595cE332314503d84cBBb4E85FA63")
+MAINNET_SPOT_VAULT = ChecksumAddress("0x2e7dF4fAf35a1599979C7E764444e112d936ec42")
 
 
 CONFIGS: dict[Chain, ChainConfig] = {

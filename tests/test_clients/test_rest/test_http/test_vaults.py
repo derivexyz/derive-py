@@ -29,9 +29,19 @@ from derive_py.data_types.generated_models import (
     VaultSharesResponse,
     VaultsResponse,
 )
+from derive_py.exceptions import DeriveJSONRPCError
 from tests.conftest import assert_api_calls
 
 DEPOSIT_AMOUNT = Decimal("10")
+
+# Both history endpoints return -32603 Internal error on testnet for any input,
+# so the failure is server-side. Strict, so a fix upstream turns these red and
+# the marker gets removed rather than outliving the bug.
+SERVER_INTERNAL_ERROR = pytest.mark.xfail(
+    raises=DeriveJSONRPCError,
+    strict=True,
+    reason="Derive testnet returns -32603 Internal error for this endpoint",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -59,6 +69,7 @@ def test_vaults_get_defaults_to_this_subaccount(client_admin_wallet, curated_vau
     assert vault.protocol.subaccount_id == curated_vault
 
 
+@SERVER_INTERNAL_ERROR
 def test_vaults_action_history(client_admin_wallet, any_vault):
     with assert_api_calls(client_admin_wallet, expected=1):
         history = client_admin_wallet.vaults.action_history(
@@ -115,6 +126,7 @@ def test_vaults_list_live_requests(client_admin_wallet):
     assert isinstance(live, MultipleVaultRequestsResponse)
 
 
+@SERVER_INTERNAL_ERROR
 def test_vaults_request_history(client_admin_wallet):
     with assert_api_calls(client_admin_wallet, expected=1):
         history = client_admin_wallet.vaults.request_history(page=1, page_size=10)
