@@ -59,6 +59,7 @@ from derive_py.exceptions import (
     VaultRequestFailed,
     VaultRequestTimeout,
 )
+from derive_py.keystore import keystore_address, keystore_password, load_keystore, resolve_keystore
 
 if TYPE_CHECKING:
     from websockets import Data
@@ -385,6 +386,9 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     DERIVE_SUBACCOUNT_ID gives a public-only client; the first two together give
     a signer; DERIVE_SUBACCOUNT_ID additionally needs both.
 
+    DERIVE_KEYSTORE, a keystore name or path, supplies the key when DERIVE_SESSION_KEY
+    is unset. A keystore holds an owner key, so DERIVE_WALLET then defaults to its address.
+
     Raises:
       ValueError on an invalid value or an incomplete signer.
     """
@@ -394,6 +398,11 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
 
     session_key = session_key_path.read_text().strip() if session_key_path else os.environ.get("DERIVE_SESSION_KEY")
     wallet_str = os.environ.get("DERIVE_WALLET")
+
+    if not session_key and (keystore := os.environ.get("DERIVE_KEYSTORE")):
+        path = resolve_keystore(keystore)
+        session_key = HexBytes(load_keystore(path, keystore_password(path)).key).to_0x_hex()
+        wallet_str = wallet_str or keystore_address(path)
     subaccount_id_str = os.environ.get("DERIVE_SUBACCOUNT_ID")
     chain_name = os.environ.get("DERIVE_ETH_CHAIN", Chain.SEPOLIA.name).upper()
 
@@ -408,7 +417,8 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
             if value
         ]
         msg = f"Incomplete signer configuration, only {', '.join(given)} set: DERIVE_SESSION_KEY and DERIVE_WALLET "
-        msg += "go together, and DERIVE_SUBACCOUNT_ID needs both. Set none of them for a public-only client."
+        msg += "go together, or DERIVE_KEYSTORE alone for an owner key, and DERIVE_SUBACCOUNT_ID needs a signer. "
+        msg += "Set none of them for a public-only client."
         msg += f"\nSearched for .env at: {dotenv_path.absolute()}"
         raise ValueError(msg)
 

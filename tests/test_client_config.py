@@ -10,9 +10,11 @@ from pydantic import SecretStr, ValidationError
 
 from derive_py._clients.utils import load_client_config
 from derive_py.data_types import Chain, ChecksumAddress, ClientConfig
+from derive_py.keystore import create_keystore
 
 KEY = "0x" + "11" * 32
 WALLET = ChecksumAddress(Account.from_key(KEY).address)
+PASSWORD = "correct horse battery staple"
 
 
 @pytest.fixture
@@ -88,3 +90,34 @@ def test_full_env_loads_signer_and_subaccount(tmp_path: Path) -> None:
 def test_incomplete_env_is_rejected(tmp_path: Path, env: dict[str, str]) -> None:
     with pytest.raises(ValueError, match="Incomplete signer configuration"):
         load_client_config(env_file=write_env(tmp_path, env))
+
+
+@pytest.fixture(scope="module")
+def owner_keystore(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    path = tmp_path_factory.mktemp("keystores") / "owner.json"
+    create_keystore(path, PASSWORD, private_key=KEY)
+    return path
+
+
+@pytest.mark.usefixtures("clean_env")
+def test_keystore_alone_is_an_owner_signer(tmp_path: Path, owner_keystore: Path) -> None:
+    env = {"DERIVE_KEYSTORE": str(owner_keystore), "DERIVE_KEYSTORE_PASSWORD": PASSWORD}
+    config = load_client_config(env_file=write_env(tmp_path, env))
+    assert config.session_key is not None
+    assert HexBytes(config.session_key.get_secret_value()) == HexBytes(KEY)
+    assert config.wallet == WALLET
+
+
+@pytest.mark.usefixtures("clean_env")
+def test_keystore_with_wallet_keeps_that_wallet(tmp_path: Path, owner_keystore: Path) -> None:
+    other = ChecksumAddress(Account.from_key("0x" + "22" * 32).address)
+    env = {"DERIVE_KEYSTORE": str(owner_keystore), "DERIVE_KEYSTORE_PASSWORD": PASSWORD, "DERIVE_WALLET": other}
+    assert load_client_config(env_file=write_env(tmp_path, env)).wallet == other
+
+
+@pytest.mark.usefixtures("clean_env")
+def test_session_key_wins_over_keystore(tmp_path: Path) -> None:
+    env = {"DERIVE_SESSION_KEY": KEY, "DERIVE_WALLET": WALLET, "DERIVE_KEYSTORE": str(tmp_path / "absent.json")}
+    config = load_client_config(env_file=write_env(tmp_path, env))
+    assert config.session_key is not None
+    assert HexBytes(config.session_key.get_secret_value()) == HexBytes(KEY)
