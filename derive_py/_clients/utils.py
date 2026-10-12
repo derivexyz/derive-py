@@ -387,7 +387,8 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     a signer; DERIVE_SUBACCOUNT_ID additionally needs both.
 
     DERIVE_KEYSTORE, a keystore name or path, supplies the key when DERIVE_SESSION_KEY
-    is unset. A keystore holds an owner key, so DERIVE_WALLET then defaults to its address.
+    is unset. Without DERIVE_WALLET the keystore is taken to hold the owner key, so the
+    wallet is its address; set DERIVE_WALLET when it holds a session key.
 
     Raises:
       ValueError on an invalid value or an incomplete signer.
