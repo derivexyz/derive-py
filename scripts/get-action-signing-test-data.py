@@ -119,6 +119,8 @@ VAULT_INITIAL_SHARE_PRICE_USD = "1"
 VAULT_SIGNATURE_TTL_SEC = 7 * 24 * 3600
 
 CONFIG_CLIENT = load_client_config()
+if CONFIG_CLIENT.session_key is None or CONFIG_CLIENT.wallet is None or CONFIG_CLIENT.subaccount_id is None:
+    raise SystemExit("This script needs DERIVE_SESSION_KEY, DERIVE_WALLET and DERIVE_SUBACCOUNT_ID.")
 CONFIG = CONFIGS[CONFIG_CLIENT.chain]
 WALLET = CONFIG_CLIENT.wallet
 SUBACCOUNT_ID = CONFIG_CLIENT.subaccount_id
