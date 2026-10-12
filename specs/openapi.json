@@ -255,7 +255,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Calculates net initial and maintenance margin for a subaccount before and after an optional simulated state change (position and/or collateral deltas), and whether that change would pass the margin requirement. Values are net margin — mark-to-market value minus the requirement — so positive means healthy. Does not take open-order margin into account.",
+        "description": "Calculates net initial and maintenance margin for a subaccount before and after an optional simulated state change (position and/or collateral deltas), and whether that change would pass the margin requirement. Values are net margin — mark-to-market value minus the requirement — so positive means healthy. Does not take open-order margin into account. Margins use the subaccount's manager's params. Set is_delayed_liquidation to use its delayed-liquidation override instead, as order checks do; the request is rejected for a subaccount without one.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -407,6 +407,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PublicGetMarginRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_subaccounts": {
+      "post": {
+        "tags": [
+          "Subaccounts"
+        ],
+        "summary": "public/get_subaccounts",
+        "operationId": "public_get_subaccounts",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateGetSubaccountsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the wallet address and the sorted list of all subaccount IDs owned by that wallet. Yields an empty list if the wallet has no subaccounts. Public endpoint, no authentication required.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicGetSubaccountsRequest"
               }
             }
           }
@@ -1446,7 +1482,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Taker-side call that accepts a specific maker quote and settles the trade atomically. You reference the rfq_id and quote_id and supply the taker's priced legs, direction, max fee, and EIP-712 signature (signer, signature, nonce, expiry), with an optional taker-protection flag. The signature is verified and the taker fill, maker quote, and RFQ are updated together in one atomic step. Requires trade scope for every instrument in the legs.",
+        "description": "Taker-side call that accepts a specific maker quote and settles the trade atomically. You reference the rfq_id and quote_id and supply the taker's priced legs, direction, max fee, and EIP-712 signature (signer, signature, nonce, expiry), with an optional taker-protection flag. It does not check the RFQ's max_total_cost or min_total_cost. The signature is verified and the taker fill, maker quote, and RFQ are updated together in one atomic step. Requires trade scope for every instrument in the legs.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -1454,6 +1490,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ExecuteQuoteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/get_maker_rfq_history": {
+      "post": {
+        "tags": [
+          "RFQ"
+        ],
+        "summary": "private/get_maker_rfq_history",
+        "operationId": "private_get_maker_rfq_history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFQPollResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Maker-side history of RFQs the subaccount was eligible to quote, i.e. RFQs open to all makers or naming the maker's wallet as a counterparty, including ones the maker never quoted. Returns filled, cancelled and expired RFQs only; use private/poll_rfqs for open ones. Supports filtering by rfq_id, status, an originating RFQ subaccount, and an RFQ creation-time window, with pagination. Without from_timestamp, the window covers the 30 days before to_timestamp (or before now). Newest RFQs first. Returns the same public RFQ view as private/poll_rfqs, with fill rates unset. An RFQ appears here a few seconds after it leaves private/poll_rfqs.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetMakerRfqHistoryRequest"
               }
             }
           }
@@ -1662,7 +1734,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Taker-side dry run that evaluates a prospective RFQ (its legs and intended direction) without creating anything. Returns the best available maker quote if one exists, along with the expected fee, validity, projected liquidation prices, and realized-PnL estimate for taking it.",
+        "description": "Taker-side dry run that evaluates a prospective RFQ (its legs and intended direction) without creating anything. Returns the best available maker quote if one exists. It returns no quote when the best quote breaks the RFQ's max_total_cost or min_total_cost. The response also includes the expected fee, validity, projected liquidation prices, and realized-PnL estimate for taking it.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -1734,7 +1806,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount, inviting makers to quote it. You supply the legs (instrument, amount, and direction per leg) plus optional limits such as min/max total cost, a partial-fill step, a label, and a list of specific counterparties to restrict who can see it. Returns the created RFQ including its assigned id and validity window. Requires trade scope for every instrument in the legs.",
+        "description": "Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount, inviting makers to quote it. You supply the legs (instrument, amount, and direction per leg) plus optional min/max total cost limits that filter only the best quote, a partial-fill step, a label, and a list of specific counterparties to restrict who can see it. Returns the created RFQ including its assigned id and validity window. Requires trade scope for every instrument in the legs.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -1950,7 +2022,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Calculates the mark-to-market value and initial/maintenance margin for a given subaccount, with per-position and per-collateral breakdowns, computed from live feed data at request time. Margins are reported on the margin basis actually in effect: when a delayed-liquidation override is active the response's is_delayed_liquidation flag is true and the reported margins use the temporarily lowered requirements. A maintenance margin below zero means the subaccount is flagged for liquidation.",
+        "description": "Calculates the mark-to-market value and initial/maintenance margin for a given subaccount, with per-position and per-collateral breakdowns, computed from live feed data at request time. Margins use the subaccount's manager's params. Set is_delayed_liquidation to get them under the subaccount's delayed-liquidation override instead; the request is rejected for a subaccount without one. has_delayed_liquidation reports whether the subaccount has one. A maintenance margin below zero means the subaccount is flagged for liquidation.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -3477,6 +3549,42 @@
         }
       }
     },
+    "/private/get_withdraw_addresses": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "private/get_withdraw_addresses",
+        "operationId": "private_get_withdraw_addresses",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetWithdrawAddressesResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Lists the account's withdraw addresses from private/register_withdraw_address: its EVM ones (their recipient is the wallet) and every withdraw address on its whitelisted_recipients. Each entry gives the destination chain id, the address kind (evm or solana), the recipient as registered and whether it is whitelisted, which session keys need before they can withdraw to it. A Solana address that was registered but never whitelisted is not listed.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetWithdrawAddressesParams"
+              }
+            }
+          }
+        }
+      }
+    },
     "/private/register_bridge_deposit": {
       "post": {
         "tags": [
@@ -3507,6 +3615,42 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterBridgeDepositParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/private/register_withdraw_address": {
+      "post": {
+        "tags": [
+          "Onchain Actions"
+        ],
+        "summary": "private/register_withdraw_address",
+        "operationId": "private_register_withdraw_address",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterWithdrawAddressResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)"
+          }
+        },
+        "description": "Returns the Ethereum withdraw address that forwards a withdrawal of a forwarded token to a recipient on its home chain, and records it so the forwarder watches it. Takes the wallet, the destination chain id (a key of the route file's withdraw_forwarding section; Solana is 101, devnet 103) and the recipient. On an EVM chain the recipient must be the account wallet; on Solana it must be a base58 wallet address, which is screened. Repeated calls return the same address; new registrations are rate limited per rolling window. Withdraw to the returned address with private/withdraw. Session keys without unbounded Admin scope must first add it with private/update_whitelisted_recipients.",
+        "x-rate-limit-class": "endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterWithdrawAddressParams"
               }
             }
           }
@@ -3862,7 +4006,7 @@
             "description": "JSON-RPC error (see Error Codes)"
           }
         },
-        "description": "Returns a paginated list of full instrument definitions filtered by `instrument_type`, optional `currency`, and `expired` flag, with `page`/`page_size` (max 1000) controls and pagination metadata. Expired options are included when the `expired` flag is set. Public endpoint.",
+        "description": "Returns a paginated, name-descending list of full instrument definitions filtered by `instrument_type`, optional `currency` and optional `risk_universe_id`, with `page`/`page_size` (max 1000) controls and pagination metadata. For options, `expired` selects the listing: `false` returns live options, `true` returns only expired options. An option enters the expired listing up to a minute before it expires, so it does not drop out of both listings at expiry. Perps and spot ignore `expired`. An empty listing returns `instrument_not_found`; a page past the end returns the last page. An option's `settlement_price` here can lag settlement by a few minutes; `public/get_instrument` returns it at once. Public endpoint.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -4730,6 +4874,13 @@
         "maxLength": 42,
         "minLength": 42,
         "pattern": "^0x[0-9a-fA-F]{40}$"
+      },
+      "AddressKind": {
+        "type": "string",
+        "enum": [
+          "evm",
+          "solana"
+        ]
       },
       "AggregatedOrdersResult": {
         "type": "object",
@@ -6430,6 +6581,7 @@
             "$ref": "#/components/schemas/Direction"
           },
           "enable_taker_protection": {
+            "description": "If true, reject the execution with `QuoteTakerCostTooHigh` when the orderbook fills the same legs at a lower total cost. The check is skipped when the orderbook cannot fill every leg in full. The RFQ's `max_total_cost` and `min_total_cost` are not checked here.",
             "default": false,
             "type": "boolean"
           },
@@ -6637,6 +6789,27 @@
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
+          }
+        }
+      },
+      "ForwardedToken": {
+        "type": "object",
+        "required": [
+          "bridge_type",
+          "symbol",
+          "token"
+        ],
+        "properties": {
+          "bridge_type": {
+            "description": "`native-oft`, `oft` or `ccip`.",
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "token": {
+            "description": "Ethereum token to withdraw.",
+            "type": "string"
           }
         }
       },
@@ -7439,6 +7612,73 @@
       },
       "GetMakerProgramsParams": {
         "type": "object"
+      },
+      "GetMakerRfqHistoryRequest": {
+        "type": "object",
+        "required": [
+          "subaccount_id"
+        ],
+        "properties": {
+          "from_timestamp": {
+            "description": "Start of the RFQ creation-time window, in ms. Defaults to 30 days before the earlier of `to_timestamp` and now.",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "page_size": {
+            "default": 20,
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "rfq_id": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rfq_subaccount_id": {
+            "description": "Only RFQs sent from this taker subaccount.",
+            "default": null,
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "status": {
+            "description": "`filled`, `cancelled` or `expired`. Omit for all three.",
+            "default": null,
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RFQStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subaccount_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "to_timestamp": {
+            "description": "End of the RFQ creation-time window, in ms.",
+            "default": 9223372036854775807,
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       },
       "GetMarginResponse": {
         "description": "Result of `public/get_margin` / `private/get_margin`: net margin (MtM minus requirement; positive = healthy) before and after the simulated changes, as USD decimal strings.",
@@ -8508,6 +8748,32 @@
           }
         }
       },
+      "GetWithdrawAddressesParams": {
+        "type": "object",
+        "required": [
+          "wallet"
+        ],
+        "properties": {
+          "wallet": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "GetWithdrawAddressesResult": {
+        "type": "object",
+        "required": [
+          "withdraw_addresses"
+        ],
+        "properties": {
+          "withdraw_addresses": {
+            "description": "The account's EVM withdraw addresses (their recipient is the wallet) and every withdraw address on its `whitelisted_recipients`, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WithdrawAddressEntry"
+            }
+          }
+        }
+      },
       "GetWithdrawalHistoryRequest": {
         "description": "Parameters for `private/get_withdrawal_history`. Matches `get_deposit_history`: `subaccount_id` plus an optional `[start_timestamp, end_timestamp]` window in unix milliseconds. `wallet`, when set, takes precedence over `subaccount_id` and returns the whole wallet's withdrawals. Results are capped at 1000 rows.",
         "type": "object",
@@ -8638,6 +8904,7 @@
           "pro_rata_amount_step",
           "pro_rata_fraction",
           "quote_currency",
+          "risk_universe_id",
           "scheduled_activation",
           "scheduled_deactivation",
           "taker_fee_rate",
@@ -8726,6 +8993,12 @@
           },
           "quote_currency": {
             "type": "string"
+          },
+          "risk_universe_id": {
+            "description": "Only subaccounts in this risk universe can trade the instrument.",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
           },
           "scheduled_activation": {
             "type": "integer",
@@ -9023,6 +9296,11 @@
           "subaccount_id"
         ],
         "properties": {
+          "is_delayed_liquidation": {
+            "description": "`true` returns margins under the subaccount's delayed-liquidation override. Rejected for a subaccount without one.",
+            "default": false,
+            "type": "boolean"
+          },
           "subaccount_id": {
             "type": "integer",
             "format": "uint64",
@@ -10901,6 +11179,7 @@
             "type": "string"
           },
           "open_orders_margin": {
+            "description": "Uses the same params as `initial_margin`: the manager's, even for a subaccount with a delayed-liquidation override, unless `public/margin_watch` asks for the override.",
             "type": "string"
           },
           "pending_funding": {
@@ -11093,6 +11372,11 @@
           "subaccount_id"
         ],
         "properties": {
+          "is_delayed_liquidation": {
+            "description": "`true` margins under the subaccount's delayed-liquidation override, as order checks do. Rejected for a subaccount without one.",
+            "default": false,
+            "type": "boolean"
+          },
           "simulated_collateral_changes": {
             "description": "Optional collateral deltas to simulate deposits / withdrawals / spot trades.",
             "type": [
@@ -11843,6 +12127,17 @@
         },
         "additionalProperties": false
       },
+      "PublicGetSubaccountsRequest": {
+        "type": "object",
+        "required": [
+          "wallet"
+        ],
+        "properties": {
+          "wallet": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
       "PublicGetWalletsFromSessionKeyResponse": {
         "type": "object",
         "required": [
@@ -11858,11 +12153,12 @@
         }
       },
       "PublicMarginWatchResponse": {
-        "description": "Result of `public/margin_watch`: the margin state a liquidation watcher needs, computed on the margin basis actually in effect (a delayed- liquidation override, when installed, is already applied).",
+        "description": "Result of `public/margin_watch`: the margin state a liquidation watcher needs, under the subaccount's manager's params, or its delayed-liquidation override when the request asks for it.",
         "type": "object",
         "required": [
           "collaterals",
           "currency",
+          "has_delayed_liquidation",
           "initial_margin",
           "is_delayed_liquidation",
           "maintenance_margin",
@@ -11886,11 +12182,15 @@
               "type": "string"
             }
           },
+          "has_delayed_liquidation": {
+            "description": "`true` when the subaccount has a delayed-liquidation override.",
+            "type": "boolean"
+          },
           "initial_margin": {
             "type": "string"
           },
           "is_delayed_liquidation": {
-            "description": "`true` when a delayed-liquidation margin override is active, i.e. the margins above are computed on the temporarily lowered basis.",
+            "description": "`true` when the margins above use the delayed-liquidation override.",
             "type": "boolean"
           },
           "maintenance_margin": {
@@ -11905,6 +12205,15 @@
             "items": {
               "$ref": "#/components/schemas/Position"
             }
+          },
+          "regular_margin_flagged_sec": {
+            "description": "Unix seconds at which a subaccount with a delayed-liquidation override was first seen below its manager's maintenance margin. Its grace period before liquidation counts from here. Null otherwise.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
           },
           "risk_universe_id": {
             "type": "integer",
@@ -13348,6 +13657,66 @@
           }
         }
       },
+      "RegisterWithdrawAddressParams": {
+        "type": "object",
+        "required": [
+          "chain_id",
+          "recipient",
+          "wallet"
+        ],
+        "properties": {
+          "chain_id": {
+            "description": "Destination chain: a key of the route file's `withdraw_forwarding` section. Solana is 101 (devnet 103); every other chain is EVM.",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "recipient": {
+            "description": "Destination address. On an EVM chain it must be `wallet`. On Solana, a base58 wallet address (not a token or program-derived account).",
+            "type": "string"
+          },
+          "wallet": {
+            "description": "The account wallet.",
+            "type": "string"
+          }
+        }
+      },
+      "RegisterWithdrawAddressResult": {
+        "type": "object",
+        "required": [
+          "chain_id",
+          "recipient",
+          "recipient_display",
+          "routes",
+          "withdraw_address"
+        ],
+        "properties": {
+          "chain_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "recipient": {
+            "description": "`0x` bytes32 the factory forwards to.",
+            "type": "string"
+          },
+          "recipient_display": {
+            "description": "`recipient` normalised: checksummed on EVM, base58 on Solana.",
+            "type": "string"
+          },
+          "routes": {
+            "description": "The tokens this address forwards.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForwardedToken"
+            }
+          },
+          "withdraw_address": {
+            "description": "Withdraw a forwarded token to this Ethereum address to send it on to `recipient` on `chain_id`.",
+            "type": "string"
+          }
+        }
+      },
       "RejectDepositRequestRequest": {
         "type": "object",
         "required": [
@@ -13916,7 +14285,7 @@
             "format": "decimal"
           },
           "max_total_cost": {
-            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "description": "The `max_total_cost` sent with the RFQ, as a decimal string, or null. It filters the best quote only. See `private/send_rfq`.",
             "type": [
               "string",
               "null"
@@ -13924,7 +14293,7 @@
             "format": "decimal"
           },
           "min_total_cost": {
-            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "description": "The `min_total_cost` sent with the RFQ, as a decimal string, or null. It filters the best quote only. See `private/send_rfq`.",
             "type": [
               "string",
               "null"
@@ -14435,7 +14804,7 @@
             }
           },
           "max_total_cost": {
-            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "description": "Highest total cost you accept when you execute as buyer (`direction: buy`). Optional decimal string (e.g. `\"500\"`) or JSON number.\n\nTotal cost is in USD for the full RFQ size, from your side of the trade. A positive cost means you pay. A negative cost means you receive.\n\n`private/rfq_get_best_quote` and the `{subaccount_id}.best.quotes` channel skip quotes above this value. This is a quote filter only. `private/execute_quote` does not check it, and `private/poll_quotes` returns all quotes. Makers do not see this value.",
             "default": null,
             "type": [
               "string",
@@ -14444,7 +14813,7 @@
             "format": "decimal"
           },
           "min_total_cost": {
-            "description": "Optional decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits, or null; a string or JSON number is accepted",
+            "description": "Highest total cost you accept when you execute as seller (`direction: sell`). Optional decimal string (e.g. `\"-180\"`) or JSON number.\n\nIt uses the same sign as `max_total_cost`, so a sale that pays you has a negative cost. To set the smallest amount you will receive, send that amount as a negative number. For example, `-180` skips quotes that pay you less than 180. A positive value such as `180` skips only quotes that cost you more than 180.\n\nIt applies in the same places as `max_total_cost`. `private/execute_quote` does not check it. Makers do not see this value.",
             "default": null,
             "type": [
               "string",
@@ -15348,6 +15717,7 @@
             }
           },
           "open_orders_margin": {
+            "description": "Uses the manager's params, as `initial_margin` does, even for a subaccount with a delayed-liquidation override. Order checks use the override, so the two can differ. This is rare: an override usually loosens maintenance margin only, and this is an initial-margin figure.",
             "type": "string"
           },
           "positions": {
@@ -15366,6 +15736,7 @@
             "type": "string"
           },
           "projected_margin_change": {
+            "description": "Change in `maintenance_margin` a minute past the account's next option expiry, once the options expiring by then settle into cash at today's forward. `maintenance_margin + projected_margin_change < 0` signals liquidation right after that expiry. Excludes open orders; `\"0\"` for an account without an unexpired option.",
             "type": "string"
           },
           "risk_universe_id": {
@@ -17398,6 +17769,43 @@
           }
         }
       },
+      "WithdrawAddressEntry": {
+        "type": "object",
+        "required": [
+          "address_kind",
+          "chain_id",
+          "recipient",
+          "recipient_display",
+          "whitelisted",
+          "withdraw_address"
+        ],
+        "properties": {
+          "address_kind": {
+            "$ref": "#/components/schemas/AddressKind"
+          },
+          "chain_id": {
+            "description": "Destination chain. Solana is 101 (devnet 103).",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "recipient": {
+            "description": "`0x` bytes32 the factory forwards to.",
+            "type": "string"
+          },
+          "recipient_display": {
+            "description": "The recipient as registered: checksummed on EVM, base58 on Solana.",
+            "type": "string"
+          },
+          "whitelisted": {
+            "description": "On the account's `whitelisted_recipients`, so session keys may withdraw to it.",
+            "type": "boolean"
+          },
+          "withdraw_address": {
+            "type": "string"
+          }
+        }
+      },
       "WithdrawalEntry": {
         "description": "`amount` and `fee` are decimal strings (e.g. `\"1.1\"`); the net sent to the recipient is `amount - fee`. `wallet` is the account owner; `recipient` is the L1 destination. `asset` is the currency name (e.g. `\"USDC\"`); `erc20_address` is the on-chain ERC20 the funds settle against (WETH for native ETH). `operation_id`/`batch_uuid` are the stable uuids.",
         "type": "object",
@@ -17437,6 +17845,17 @@
             "type": "string",
             "format": "decimal"
           },
+          "forward": {
+            "description": "Present when `recipient` is a withdraw address: the forward to its home chain.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WithdrawalForward"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "operation_id": {
             "type": "string"
           },
@@ -17464,6 +17883,125 @@
             "type": "string"
           }
         }
+      },
+      "WithdrawalForward": {
+        "type": "object",
+        "required": [
+          "amount_forwarded",
+          "chain_id",
+          "recipient",
+          "status"
+        ],
+        "properties": {
+          "amount_forwarded": {
+            "description": "This withdrawal's share of what sent forwards carried. OFT dust stays at the withdraw address for the next forward, so slightly less may arrive.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "decimal"
+          },
+          "chain_id": {
+            "description": "The destination chain. Solana is 101 (devnet 103).",
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "destination_tx": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "forward_tx": {
+            "description": "The latest Ethereum `processWithdrawal` (or owner `recover`) tx that carried it.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hold_reason": {
+            "description": "`no_route`, `route_unavailable`, `external_only` or `dust`; set only when `held`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message_id": {
+            "description": "LayerZero guid or CCIP message id.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rail": {
+            "description": "`layerzero` or `ccip`; none before a forward is sent and for a recovery.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recipient": {
+            "description": "Who it forwards to: base58 on Solana, checksummed on EVM.",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WithdrawalForwardStatus"
+          }
+        }
+      },
+      "WithdrawalForwardStatus": {
+        "description": "Where a forward is, in lifecycle order. A withdrawal paid in parts shows its least advanced part.",
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "delivered"
+            ]
+          },
+          {
+            "description": "The outbox has not paid all of it yet: batching, queued or throttled.",
+            "type": "string",
+            "enum": [
+              "awaiting_payout"
+            ]
+          },
+          {
+            "description": "Paid to the withdraw address; the forward is not sent yet.",
+            "type": "string",
+            "enum": [
+              "pending"
+            ]
+          },
+          {
+            "description": "Not forwarding; see `hold_reason`. Show `route_unavailable` as delayed.",
+            "type": "string",
+            "enum": [
+              "held"
+            ]
+          },
+          {
+            "description": "Bridge message sent, not yet delivered.",
+            "type": "string",
+            "enum": [
+              "in_flight"
+            ]
+          },
+          {
+            "description": "The bridge reported a failure. An ops retry can still deliver it.",
+            "type": "string",
+            "enum": [
+              "failed"
+            ]
+          },
+          {
+            "description": "Pulled back by the owner for a manual refund.",
+            "type": "string",
+            "enum": [
+              "recovered"
+            ]
+          }
+        ]
       },
       "WithdrawalHistoryResult": {
         "type": "object",

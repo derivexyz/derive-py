@@ -2,7 +2,7 @@ import pytest
 
 from derive_py._clients.rest.http.client import HTTPClient
 from derive_py.data_types.generated_models import Vault
-from tests.conftest import ENV_TEMPLATE
+from tests.conftest import ENV_TEMPLATE, fresh_wallet_client_config, public_client_config
 
 
 @pytest.fixture(scope="session")
@@ -64,3 +64,23 @@ def history_scope(request, client_admin_wallet):
     if request.param == "wallet":
         return client_admin_wallet.account
     return client_admin_wallet.active_subaccount
+
+
+@pytest.fixture(scope="session")
+def client_public():
+    """Client with no signer: public data only."""
+
+    client = HTTPClient(public_client_config())
+    client.connect()
+    yield client
+    client.disconnect()
+
+
+@pytest.fixture(scope="session")
+def client_fresh_wallet():
+    """Client signing for a wallet with no Derive account, as before a first deposit."""
+
+    client = HTTPClient(fresh_wallet_client_config())
+    client.connect()
+    yield client
+    client.disconnect()

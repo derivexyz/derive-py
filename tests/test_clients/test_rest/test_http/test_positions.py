@@ -30,7 +30,13 @@ def test_position_transfer(client_admin_wallet, min_position_transfer, transfer_
     else:
         pytest.fail("No open positions found in either subaccount.")
 
-    positions_to_transfer = list(map(min_position_transfer, source_positions))
+    def _currency(position) -> str:
+        instrument = client_admin_wallet.markets.get_instrument(instrument_name=position.instrument_name)
+        return instrument.base_currency
+
+    transfer_currency = _currency(source_positions[0])
+    same_currency = [p for p in source_positions if _currency(p) == transfer_currency]
+    positions_to_transfer = list(map(min_position_transfer, same_currency))
 
     transfer_position_response: TransferPositionsResponse = source_account.positions.transfer(
         positions=positions_to_transfer,

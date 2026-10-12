@@ -25,13 +25,17 @@ from derive_py._clients.rest.async_http.system import SystemOperations
 from derive_py._clients.rest.async_http.vaults import VaultOperations
 from derive_py._clients.utils import (
     UnsubscribeResult,
+    is_account_not_found,
     load_client_config,
     make_auth,
+    require_auth,
+    require_subaccount_id,
 )
 from derive_py._clients.websockets.api import PrivateAPI, PublicAPI
 from derive_py._clients.websockets.session import StateCallback, WebSocketSession
-from derive_py._web3 import ContractRegistry, Deposits
+from derive_py._web3 import ContractRegistry, Deposits, make_web3
 from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
+from derive_py.config import CONFIGS
 from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
@@ -43,6 +47,7 @@ from derive_py.data_types import (
     WebSocketSessionConfig,
 )
 from derive_py.data_types.channel_models import LoginRequest, SetCancelOnDisconnectRequest
+from derive_py.exceptions import CredentialsRequired, DeriveJSONRPCError
 from derive_py.utils.logger import get_logger
 
 
@@ -57,10 +62,11 @@ class WebSocketClient:
         session_config: WebSocketSessionConfig | None = None,
     ):
         logger = logger if logger is not None else get_logger()
-        auth = make_auth(client_config, logger=logger)
+        w3 = make_web3(client_config.chain, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
 
-        self._auth = auth
-        self._config = auth.config
+        self._auth = make_auth(client_config, w3=w3)
+        self._authenticated = False
+        self._config = CONFIGS[client_config.chain]
         self._subaccount_id = client_config.subaccount_id
 
         self._logger = logger
@@ -74,7 +80,7 @@ class WebSocketClient:
         )
 
         self._public_api = PublicAPI(session=self._session)
-        self._private_api = PrivateAPI(session=self._session)
+        self._private_api = PrivateAPI(session=self._session) if self._auth else None
 
         self._markets = MarketOperations(public_api=self._public_api, logger=self._logger)  # type: ignore
         self._system = SystemOperations(public_api=self._public_api, logger=self._logger)  # type: ignore
@@ -82,15 +88,15 @@ class WebSocketClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        self._contract_registry = ContractRegistry(w3=auth.w3, chain=client_config.chain)
-        self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
+        self._contract_registry = ContractRegistry(w3=w3, chain=client_config.chain)
+        self._deposits = Deposits(self._contract_registry, w3=w3, logger=self._logger)
 
         self._logger.info(
             dedent(f"""
                         Initialized WebSocketClient for:
-                            wallet:     {auth.wallet}
+                            wallet:     {self._auth.wallet if self._auth else "none, public data only"}
                             subaccount: {client_config.subaccount_id}
-                            signer:     {auth.account.address}
+                            signer:     {self._auth.account.address if self._auth else "none"}
                             environment {client_config.chain.name} """)
         )
 
@@ -106,7 +112,11 @@ class WebSocketClient:
 
     async def connect(self, *, on_state_change: StateCallback | None = None) -> None:
         """
-        Connect to Derive via WebSocket, authenticate, and load account state.
+        Connect to Derive via WebSocket and fetch market instruments. With a signer,
+        also authenticate and load account state.
+
+        A wallet with no Derive account yet stays unauthenticated rather than failing:
+        its first deposit creates the account, after which call `authenticate()`.
 
         Args:
             on_state_change: Called on every connection state transition. Also
@@ -116,8 +126,10 @@ class WebSocketClient:
         if on_state_change is not None:
             self._session.on_state_change = on_state_change
         await self._session.open()
-        await self._authenticate()
-        await self._initialize_account_and_markets()
+        logged_in = self._auth is not None and await self._try_login()
+        await self._markets.fetch_all_instruments(expired=False)
+        if logged_in:
+            await self._load_account()
 
         if self._light_account is not None and self._light_account.state.cancel_on_disconnect:
             self._warn_if_cancel_on_disconnect_unwatched()
@@ -149,23 +161,44 @@ class WebSocketClient:
     def on_state_change(self, callback: StateCallback | None) -> None:
         self._session.on_state_change = callback
 
+    async def authenticate(self) -> None:
+        """
+        Log in with the configured signer and load account state. `connect()` does this
+        already; call it after a first deposit has created the account.
+        """
+        await self._authenticate()
+        await self._load_account()
+
+    async def _try_login(self) -> bool:
+        try:
+            await self._authenticate()
+        except DeriveJSONRPCError as e:
+            if not is_account_not_found(e):
+                raise
+            wallet = require_auth(self._auth).wallet
+            self._logger.info(f"Wallet {wallet} has no Derive account yet; a deposit creates one.")
+            return False
+        return True
+
     async def _authenticate(self) -> None:
         """
         Perform WebSocket authentication via `public/login`.
         """
-        login_dict = self._auth.sign_ws_login()
+        auth = require_auth(self._auth)
+        login_dict = auth.sign_ws_login()
         login_params = LoginRequest(
             wallet=login_dict["wallet"],
             timestamp=int(login_dict["timestamp"]),
             signature=login_dict["signature"],
         )
         subaccount_ids = await self._public_api.rpc.login(login_params)
+        self._authenticated = True
         self._logger.info(f"WebSocket authenticated; accessible subaccounts: {subaccount_ids}")
 
         # Validate subaccount
-        if self._subaccount_id not in subaccount_ids:
+        if self._subaccount_id is not None and self._subaccount_id not in subaccount_ids:
             self._logger.warning(
-                f"Subaccount {self._subaccount_id} does not exist for wallet {self._auth.wallet}. "
+                f"Subaccount {self._subaccount_id} does not exist for wallet {auth.wallet}. "
                 f"Available subaccounts: {subaccount_ids}"
             )
 
@@ -195,15 +228,14 @@ class WebSocketClient:
         """
         if enabled:
             self._warn_if_cancel_on_disconnect_unwatched()
-        params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=self._auth.wallet)
-        return await self._private_api.rpc.set_cancel_on_disconnect(params)
+        params = SetCancelOnDisconnectRequest(enabled=enabled, wallet=require_auth(self._auth).wallet)
+        return await self.private_api.rpc.set_cancel_on_disconnect(params)
 
-    async def _initialize_account_and_markets(self) -> None:
-        """Initialize account and fetch market data."""
+    async def _load_account(self) -> None:
+        """Load the account, and the configured subaccount when it exists."""
         self._light_account = await self._instantiate_account()
-        await self._markets.fetch_all_instruments(expired=False)
 
-        if self._subaccount_id in self._light_account.state.subaccount_ids:
+        if self._subaccount_id is not None and self._subaccount_id in self._light_account.state.subaccount_ids:
             subaccount = await self._instantiate_subaccount(self._subaccount_id)
             self._subaccounts[subaccount.id] = subaccount
 
@@ -217,6 +249,8 @@ class WebSocketClient:
 
     async def _handle_before_resubscribe(self) -> None:
         """Called before resubscribing - perform re-authentication here."""
+        if not self._authenticated:
+            return
         self._logger.info("Re-authenticating after reconnection")
         await self._authenticate()
         self._logger.info("Re-authentication successful")
@@ -225,6 +259,7 @@ class WebSocketClient:
         """Close WebSocket connection and clear cached state. Idempotent."""
 
         await self._session.close()
+        self._authenticated = False
         self._light_account = None
         self._subaccounts.clear()
         self._markets._erc20_instruments_cache.clear()
@@ -235,25 +270,25 @@ class WebSocketClient:
     async def _instantiate_account(self) -> LightAccount:
         """Instantiate account using WebSocket API."""
         return await LightAccount.from_api(
-            auth=self._auth,
+            auth=require_auth(self._auth),
             config=self._config,
             logger=self._logger,
             public_api=self._public_api,  # type: ignore
-            private_api=self._private_api,  # type: ignore
+            private_api=self.private_api,  # type: ignore
         )
 
     async def _instantiate_subaccount(self, subaccount_id: int) -> Subaccount:
         """Instantiate subaccount using WebSocket API."""
         return await Subaccount.from_api(
             subaccount_id=subaccount_id,
-            auth=self._auth,
+            auth=require_auth(self._auth),
             config=self._config,
             logger=self._logger,
             markets=self._markets,
             system=self._system,
             deposits=self._deposits,
             public_api=self._public_api,  # type: ignore
-            private_api=self._private_api,  # type: ignore
+            private_api=self.private_api,  # type: ignore
         )
 
     @property
@@ -268,23 +303,28 @@ class WebSocketClient:
 
     @property
     def private_api(self) -> PrivateAPI:
-        """Direct access to the private API for requests."""
+        """Direct access to the private API for requests. Needs a signer."""
 
+        if self._private_api is None:
+            raise CredentialsRequired("private_api needs a signer: set session_key and wallet in ClientConfig.")
         return self._private_api
 
     @property
     def account(self) -> LightAccount:
         """Get the LightAccount instance."""
 
+        require_auth(self._auth)
         if self._light_account is None:
-            raise RuntimeError("Account not initialized. Call connect() first.")
+            raise RuntimeError(
+                "Account not initialized: call connect(), or authenticate() once the first deposit is credited."
+            )
         return self._light_account
 
     @property
     def active_subaccount(self) -> Subaccount:
         """Get the currently active subaccount."""
 
-        if (subaccount := self._subaccounts.get(self._subaccount_id)) is None:
+        if (subaccount := self._subaccounts.get(require_subaccount_id(self._subaccount_id))) is None:
             raise RuntimeError("Specified subaccount not initialized. Call connect() first.")
         return subaccount
 
@@ -299,6 +339,7 @@ class WebSocketClient:
     ) -> AsyncIterator[AsyncDepositStep]:
         """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
 
+        auth = require_auth(self._auth)
         risk_universes = self._markets._risk_universes_cache or await self._markets.get_risk_universes()
 
         sync_plan = self._deposits.plan_new_subaccount(
@@ -307,9 +348,9 @@ class WebSocketClient:
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,
-            from_address=ChecksumAddress(self._auth.account.address),
-            owner=self._auth.wallet,
-            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            from_address=ChecksumAddress(auth.account.address),
+            owner=auth.wallet,
+            private_key=cast(HexBytes, auth.account.key).to_0x_hex(),
             gas_priority=gas_priority,
         )
 
@@ -399,7 +440,7 @@ class WebSocketClient:
     @property
     def private_channels(self):
         """Access private channel subscriptions."""
-        return self._private_api.channels
+        return self.private_api.channels
 
     @property
     def subscriptions(self) -> tuple[str, ...]:

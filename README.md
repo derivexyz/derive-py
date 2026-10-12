@@ -47,19 +47,44 @@ Python 3.11 or newer.
 
 ## Configure
 
-Credentials come from the environment, or from a `.env` file in the working
-directory (default), or from a custom path.
+Configuration comes from the environment, or from a `.env` file in the working
+directory (default), or from a custom path. Keep private keys out of it: store
+them in an encrypted keystore and let `.env` name the keystore. A plaintext
+`DERIVE_SESSION_KEY` still works, for the shared testnet keys in `.env.template`,
+for unattended runs where a secrets manager injects it, and for existing setups.
+There is no password variable on purpose: a keystore whose password sits next
+to it in `.env` protects nothing.
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `DERIVE_WALLET` | yes | The owner wallet, your own EOA or multisig |
-| `DERIVE_SESSION_KEY` | yes | Private key of the signer, a session key or the owner |
-| `DERIVE_SUBACCOUNT_ID` | yes | Subaccount the client acts on by default |
-| `DERIVE_ETH_CHAIN` | no | `SEPOLIA` or `ETHEREUM`, defaults to `SEPOLIA` |
-| `DERIVE_ETH_RPC_ENDPOINTS` | no | Comma separated L1 RPC URLs, only used by the deposit flows |
+All variables are optional:
+
+| You set | You get |
+| --- | --- |
+| nothing | Public data only: markets and system. Anything account-scoped raises `CredentialsRequired` |
+| `DERIVE_KEYSTORE` | The owner key, decrypted from a keystore; the wallet is its address |
+| `DERIVE_KEYSTORE` and `DERIVE_WALLET` | A session key from a keystore, acting for that wallet |
+| `DERIVE_SESSION_KEY` and `DERIVE_WALLET` | A plaintext session key, or owner key, acting for that wallet |
+| any signer above, plus `DERIVE_SUBACCOUNT_ID` | A default subaccount, so `client.orders` and the like work |
+
+| Variable | Notes |
+| --- | --- |
+| `DERIVE_WALLET` | The owner wallet, your own EOA or multisig |
+| `DERIVE_SESSION_KEY` | Private key of the signer, a session key or the owner. Takes precedence over `DERIVE_KEYSTORE` |
+| `DERIVE_KEYSTORE` | Keystore name in `~/.derive-py/keystores`, or a path. Web3 Secret Storage, as geth and foundry use. The password is prompted for, so this needs a terminal |
+| `DERIVE_KEYSTORE_DIR` | Where keystore names resolve, for example `~/.foundry/keystores` |
+| `DERIVE_SUBACCOUNT_ID` | Subaccount the client acts on by default |
+| `DERIVE_ETH_CHAIN` | `SEPOLIA` or `ETHEREUM`, defaults to `SEPOLIA` |
+| `DERIVE_ETH_RPC_ENDPOINTS` | Comma separated L1 RPC URLs, only used by the deposit flows |
 
 `from_env()` takes a `session_key_path` if you would rather keep the key in a
 file than in the environment, and an `env_file` to point at a `.env` elsewhere.
+Without `from_env()`, `HTTPClient(ClientConfig(chain=Chain.ETHEREUM))` is a
+public-data client.
+
+A wallet with no Derive account yet is valid: `connect()` succeeds, and the
+first deposit creates the account. `examples/01-deposit.py` walks through it,
+from creating an owner keystore to a funded subaccount, and
+`examples/02-session-keys.py` then registers a session key in its own keystore,
+so day-to-day trading never needs the owner key.
 
 `.env.template` holds working testnet credentials. They are published on purpose
 so the examples run with no setup, and they are worthless: never reuse that key
@@ -108,6 +133,14 @@ rather than paying setup on every call, so it is the one to reach for when
 latency matters. Its `connect()` is mandatory, since there is no transport
 before it. Both HTTP clients open their session lazily on first use, so they
 need `connect()` only for credential validation and cached state.
+
+When its connection drops, `WebSocketClient` fails requests in flight with
+`RequestAbandoned`, reconnects with backoff, logs in again and resubscribes
+every channel, and keeps retrying until `disconnect()`. Messages sent during the
+outage are not replayed. If you subscribe, pass `on_state_change` to `connect()`
+and re-read anything built from the stream when it reports `CONNECTED` after
+`RECONNECTING`; `examples/04-subscribe.py` shows how. Subscribing without one logs
+a warning, once.
 
 All three expose the same operations:
 

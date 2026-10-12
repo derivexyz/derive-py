@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "derive-py"
-version = "0.1.4"
+version = "0.1.5"
 description = "Python client for the Derive v3 API"
 authors = [
   "8baller <8baller@station.codes>",
@@ -21,13 +21,14 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Office/Business :: Financial :: Investment",
   "Typing :: Typed",
 ]
 packages = [{ include = "derive_py" }]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.15"
+python = ">=3.11,<3.16"
 requests = ">=2.31"
 rich-click = ">=1.7.1"
 python-dotenv = ">=0.14"
