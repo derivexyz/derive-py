@@ -1,9 +1,38 @@
+import asyncio
+import contextlib
+
 import pytest
 import pytest_asyncio
 
 from derive_py._clients.websockets.client import WebSocketClient
+from derive_py.data_types import ConnectionState
 from derive_py.data_types.generated_models import Vault
 from tests.conftest import ENV_TEMPLATE, fresh_wallet_client_config, public_client_config
+
+SHARED_CLIENTS = ("client_admin_wallet", "client_public", "client_fresh_wallet")
+RECONNECT_WAIT_SEC = 30.0
+
+
+async def _until_reconnected(client: WebSocketClient) -> None:
+    while client.connection_state is ConnectionState.RECONNECTING:
+        await asyncio.sleep(0.1)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _reconnected(request: pytest.FixtureRequest) -> None:
+    """Let a dropped shared client reconnect before the next test uses it.
+
+    The session event loop only runs during async tests, so a reconnect started
+    by a drop stalls through rerun delays and sync tests, and its handshake times
+    out on resume. Waiting here, with the loop running, lets it finish: a drop
+    then costs the one test that hit it a rerun, not every test after it.
+    """
+
+    for name in SHARED_CLIENTS:
+        if name in request.fixturenames:
+            client: WebSocketClient = request.getfixturevalue(name)
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(_until_reconnected(client), RECONNECT_WAIT_SEC)
 
 
 @pytest_asyncio.fixture(scope="session")
