@@ -23,6 +23,11 @@ class AccountFeeInfo(Struct):
 Address: TypeAlias = str
 
 
+class AddressKind(StrEnum):
+    evm = 'evm'
+    solana = 'solana'
+
+
 class AlgoType(StrEnum):
     twap = 'twap'
 
@@ -387,6 +392,12 @@ class ForceBurnRequest(Struct):
     subaccount_id: int
 
 
+class ForwardedToken(Struct):
+    bridge_type: str
+    symbol: str
+    token: str
+
+
 class FundingRateCandle(Struct):
     close: str
     currency: str
@@ -720,6 +731,10 @@ class GetVaultsRequest(Struct):
     page_size: int | UnsetType = 100
 
 
+class GetWithdrawAddressesParams(GetAccountRequest):
+    pass
+
+
 class GetWithdrawalHistoryRequest(GetDepositHistoryRequest):
     pass
 
@@ -786,8 +801,9 @@ class MarginType(StrEnum):
     PM2 = 'PM2'
 
 
-class MarginWatchRequest(CancelAllAlgoOrdersRequest):
-    pass
+class MarginWatchRequest(Struct):
+    subaccount_id: int
+    is_delayed_liquidation: bool | UnsetType = False
 
 
 class MarketType(StrEnum):
@@ -1249,6 +1265,10 @@ class PublicGetLiveAuctionsResponse(Struct):
     auctions: list[LiveAuction]
 
 
+class PublicGetSubaccountsRequest(GetAccountRequest):
+    pass
+
+
 class PublicGetWalletsFromSessionKeyResponse(Struct):
     wallets: list[str]
 
@@ -1256,6 +1276,7 @@ class PublicGetWalletsFromSessionKeyResponse(Struct):
 class PublicMarginWatchResponse(Struct):
     collaterals: list[Collateral]
     currency: list[str]
+    has_delayed_liquidation: bool
     initial_margin: str
     is_delayed_liquidation: bool
     maintenance_margin: str
@@ -1265,6 +1286,7 @@ class PublicMarginWatchResponse(Struct):
     subaccount_id: int
     subaccount_value: str
     valuation_timestamp: int
+    regular_margin_flagged_sec: int | None | UnsetType = UNSET
 
 
 class PublicOracleSignatureDataParams(Struct):
@@ -1469,6 +1491,20 @@ class RegisterDepositAddressResult(Struct):
     wallet: str
     manager_id: int | None | UnsetType = UNSET
     subaccount_id: int | None | UnsetType = UNSET
+
+
+class RegisterWithdrawAddressParams(Struct):
+    chain_id: int
+    recipient: str
+    wallet: str
+
+
+class RegisterWithdrawAddressResult(Struct):
+    chain_id: int
+    recipient: str
+    recipient_display: str
+    routes: list[ForwardedToken]
+    withdraw_address: str
 
 
 class ReplaceQuoteRequest(Struct):
@@ -2166,23 +2202,23 @@ class VolSVIParamDataResponse(PublicVolSVIParamDataParams):
     pass
 
 
-class WithdrawalEntry(Struct):
-    amount: Decimal
-    asset: str
-    batch_status: BatchStatus
-    batch_uuid: str
-    erc20_address: str
-    fee: Decimal
-    operation_id: str
+class WithdrawAddressEntry(Struct):
+    address_kind: AddressKind
+    chain_id: int
     recipient: str
-    subaccount_id: int
-    timestamp: int
-    wallet: str
-    tx_hash: str | None | UnsetType = UNSET
+    recipient_display: str
+    whitelisted: bool
+    withdraw_address: str
 
 
-class WithdrawalHistoryResult(Struct):
-    withdrawals: list[WithdrawalEntry]
+class WithdrawalForwardStatus(StrEnum):
+    delivered = 'delivered'
+    awaiting_payout = 'awaiting_payout'
+    pending = 'pending'
+    held = 'held'
+    in_flight = 'in_flight'
+    failed = 'failed'
+    recovered = 'recovered'
 
 
 class Action(Struct):
@@ -2300,6 +2336,17 @@ class GetMakerProgramScoresResponse(Struct):
     total_volume: str
 
 
+class GetMakerRfqHistoryRequest(Struct):
+    subaccount_id: int
+    from_timestamp: int | UnsetType = UNSET
+    page: int | UnsetType = 1
+    page_size: int | UnsetType = 20
+    rfq_id: str | UnsetType = UNSET
+    rfq_subaccount_id: int | UnsetType = UNSET
+    status: RFQStatus | UnsetType = UNSET
+    to_timestamp: int | UnsetType = 9223372036854775807
+
+
 class GetOnchainActionHistoryResponse(Struct):
     actions: list[OnchainActionHistoryEntry]
     pagination: Pagination
@@ -2336,6 +2383,10 @@ class GetVaultPerformanceHistoryRequest(Struct):
 class GetWalletsFromSessionKeyRequest(Struct):
     public_session_key: str
     scope: OffchainKeyScope | UnsetType = UNSET
+
+
+class GetWithdrawAddressesResult(Struct):
+    withdraw_addresses: list[WithdrawAddressEntry]
 
 
 class IncidentResponse(Struct):
@@ -2504,6 +2555,7 @@ class PerpDetails(Struct):
 
 class PrivateGetMarginRequest(Struct):
     subaccount_id: int
+    is_delayed_liquidation: bool | UnsetType = False
     simulated_collateral_changes: list[SimulatedCollateralRequest] | UnsetType = UNSET
     simulated_position_changes: list[SimulatedPositionRequest] | UnsetType = UNSET
 
@@ -2862,6 +2914,18 @@ class VolFeedDataResponse(Struct):
     vol_data: VolSVIParamDataResponse
 
 
+class WithdrawalForward(Struct):
+    chain_id: int
+    recipient: str
+    status: WithdrawalForwardStatus
+    amount_forwarded: Decimal | None = None
+    destination_tx: str | None | UnsetType = UNSET
+    forward_tx: str | None | UnsetType = UNSET
+    hold_reason: str | None | UnsetType = UNSET
+    message_id: str | None | UnsetType = UNSET
+    rail: str | None | UnsetType = UNSET
+
+
 class AggregatedOrdersResult(Struct):
     orders: list[Order]
     subaccount_id: int
@@ -2917,6 +2981,7 @@ class Instrument(Struct):
     pro_rata_amount_step: str
     pro_rata_fraction: str
     quote_currency: str
+    risk_universe_id: int
     scheduled_activation: int
     scheduled_deactivation: int
     taker_fee_rate: str
@@ -2944,6 +3009,26 @@ class PublicSetFeedDataRequest(Struct):
 class PublicSetSocializationFeedDataRequest(Struct):
     feeds: PublicSetFeedDataRequest
     universe_id: int
+
+
+class WithdrawalEntry(Struct):
+    amount: Decimal
+    asset: str
+    batch_status: BatchStatus
+    batch_uuid: str
+    erc20_address: str
+    fee: Decimal
+    operation_id: str
+    recipient: str
+    subaccount_id: int
+    timestamp: int
+    wallet: str
+    forward: WithdrawalForward | None | UnsetType = UNSET
+    tx_hash: str | None | UnsetType = UNSET
+
+
+class WithdrawalHistoryResult(Struct):
+    withdrawals: list[WithdrawalEntry]
 
 
 class GetAllInstrumentsResponse(Struct):

@@ -10,6 +10,7 @@ import json
 import sys
 import time
 from collections.abc import Callable, Iterable
+from pathlib import Path
 
 import requests
 from web3 import Web3
@@ -173,7 +174,18 @@ def process_chain(chain: Chain, logger: LoggerType) -> list[str]:
         proxy_mapping_path.write_text(json.dumps(proxy_mapping, indent=4))
         logger.info(f"Saved proxy mapping: {proxy_mapping_path}")
 
+    if not failures:
+        prune_superseded(abi_dir, keep={entry["address"] for entry in manifest.values()}, logger=logger)
+
     return failures
+
+
+def prune_superseded(abi_dir: Path, *, keep: set[str], logger: LoggerType) -> None:
+    """Delete ABIs no manifest entry points at, such as an implementation replaced by a proxy upgrade."""
+    for abi_path in sorted(abi_dir.glob("0x*.json")):
+        if abi_path.stem not in keep:
+            abi_path.unlink()
+            logger.info(f"Removed superseded ABI: {abi_path}")
 
 
 def main() -> int:
