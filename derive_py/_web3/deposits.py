@@ -213,7 +213,7 @@ class Deposits:
             owner=owner,
             gas_priority=gas_priority,
         )
-        description = f"Deposit {amount} {asset_name} to a new {margin_type} subaccount in {risk_universe_id}"
+        description = f"Deposit {amount} {asset_name} to a new {margin_type} subaccount in {risk_universe_id.name}"
         yield self._step("deposit", description, deposit_tx, private_key)
 
     def plan_deposit(
