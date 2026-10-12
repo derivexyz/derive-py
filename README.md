@@ -134,6 +134,14 @@ latency matters. Its `connect()` is mandatory, since there is no transport
 before it. Both HTTP clients open their session lazily on first use, so they
 need `connect()` only for credential validation and cached state.
 
+When its connection drops, `WebSocketClient` fails requests in flight with
+`RequestAbandoned`, reconnects with backoff, logs in again and resubscribes
+every channel, and keeps retrying until `disconnect()`. Messages sent during the
+outage are not replayed. If you subscribe, pass `on_state_change` to `connect()`
+and re-read anything built from the stream when it reports `CONNECTED` after
+`RECONNECTING`; `examples/04-subscribe.py` shows how. Subscribing without one logs
+a warning, once.
+
 All three expose the same operations:
 
 | Attribute | What it does |
