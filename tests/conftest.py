@@ -9,9 +9,12 @@ from unittest.mock import patch
 
 import pytest
 from dotenv import dotenv_values
+from eth_account import Account
+from hexbytes import HexBytes
+from pydantic import SecretStr
 from pytest_asyncio import is_async_test
 
-from derive_py.data_types import PositionTransfer
+from derive_py.data_types import Chain, ChecksumAddress, ClientConfig, PositionTransfer
 
 REPO_ROOT = Path(__file__).parent.parent
 ENV_TEMPLATE = REPO_ROOT / ".env.template"
@@ -82,3 +85,20 @@ def min_position_transfer():
     """Smallest transferable slice of a position. Sync, usable from async tests."""
 
     return _min_position_transfer
+
+
+def public_client_config() -> ClientConfig:
+    """No signer: market and system data only."""
+
+    return ClientConfig(chain=Chain.SEPOLIA)
+
+
+def fresh_wallet_client_config() -> ClientConfig:
+    """A brand-new owner key whose wallet has never deposited, so has no Derive account."""
+
+    account = Account.create()
+    return ClientConfig(
+        chain=Chain.SEPOLIA,
+        session_key=SecretStr(HexBytes(account.key).to_0x_hex()),
+        wallet=ChecksumAddress(account.address),
+    )

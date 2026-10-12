@@ -13,6 +13,14 @@ class NotConnectedError(RuntimeError):
     """Raised when the client hasn't connected (call connect())."""
 
 
+class CredentialsRequired(RuntimeError):
+    """Raised when a public-only client, one without session_key and wallet, is asked for account data."""
+
+
+class NoActiveSubaccount(RuntimeError):
+    """Raised when a subaccount-scoped operation is used on a client configured without subaccount_id."""
+
+
 class DeriveJSONRPCError(Exception):
     """Raised when a Derive JSON-RPC error payload is returned."""
 

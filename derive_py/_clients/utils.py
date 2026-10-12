@@ -18,7 +18,6 @@ from hexbytes import HexBytes
 from pydantic import SecretStr
 from web3 import Web3
 
-from derive_py._web3 import make_web3
 from derive_py._web3.action_signing import (
     ModuleData,
     SignedAction,
@@ -32,6 +31,7 @@ from derive_py.data_types import (
     ChainConfig,
     ChecksumAddress,
     ClientConfig,
+    DeriveJSONRPCErrorCode,
     LoggerType,
     PositionTransfer,
     RiskUniverseID,
@@ -51,7 +51,9 @@ from derive_py.data_types.generated_models import (
     VaultRequestId,
 )
 from derive_py.exceptions import (
+    CredentialsRequired,
     DeriveJSONRPCError,
+    NoActiveSubaccount,
     SettlementFailed,
     SettlementTimeout,
     VaultRequestFailed,
@@ -232,12 +234,31 @@ class AuthContext:
         return action
 
 
-def make_auth(client_config: ClientConfig, *, logger: LoggerType) -> AuthContext:
-    """Build the auth context, deriving the session account from the key."""
-    chain_config = CONFIGS[client_config.chain]
+def make_auth(client_config: ClientConfig, *, w3: Web3) -> AuthContext | None:
+    """Build the auth context from the configured signer, or None for a public-only client."""
+    if client_config.session_key is None or client_config.wallet is None:
+        return None
     account = Account.from_key(client_config.session_key.get_secret_value())
-    w3 = make_web3(client_config.chain, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
-    return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=chain_config)
+    return AuthContext(w3=w3, wallet=client_config.wallet, account=account, config=CONFIGS[client_config.chain])
+
+
+def require_auth(auth: AuthContext | None) -> AuthContext:
+    """The auth context, or CredentialsRequired for a public-only client."""
+    if auth is None:
+        raise CredentialsRequired("This needs a signer: set session_key and wallet in ClientConfig.")
+    return auth
+
+
+def require_subaccount_id(subaccount_id: int | None) -> int:
+    """The configured subaccount id, or NoActiveSubaccount when none was set."""
+    if subaccount_id is None:
+        raise NoActiveSubaccount("No subaccount_id configured. Use fetch_subaccount(id) or fetch_subaccounts().")
+    return subaccount_id
+
+
+def is_account_not_found(error: DeriveJSONRPCError) -> bool:
+    """A wallet that has never deposited has no account; its first deposit creates one."""
+    return error.rpc_error.code == DeriveJSONRPCErrorCode.ACCOUNT_NOT_FOUND
 
 
 def log_session_key_status(
@@ -360,8 +381,12 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     """
     Load and validate client config from .env and optional session-key file.
 
+    Every variable is optional. None of DERIVE_SESSION_KEY, DERIVE_WALLET and
+    DERIVE_SUBACCOUNT_ID gives a public-only client; the first two together give
+    a signer; DERIVE_SUBACCOUNT_ID additionally needs both.
+
     Raises:
-      ValueError on missing/invalid config.
+      ValueError on an invalid value or an incomplete signer.
     """
 
     dotenv_path = env_file or Path.cwd() / ".env"
@@ -372,28 +397,28 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     subaccount_id_str = os.environ.get("DERIVE_SUBACCOUNT_ID")
     chain_name = os.environ.get("DERIVE_ETH_CHAIN", Chain.SEPOLIA.name).upper()
 
-    missing = []
-    if not session_key:
-        missing.append("DERIVE_SESSION_KEY")
-    if not wallet_str:
-        missing.append("DERIVE_WALLET")
-    if not subaccount_id_str:
-        missing.append("DERIVE_SUBACCOUNT_ID")
-
-    if missing:
-        msg = "Missing required configuration: " + ", ".join(missing)
+    if bool(session_key) != bool(wallet_str) or (subaccount_id_str and not session_key):
+        given = [
+            name
+            for name, value in (
+                ("DERIVE_SESSION_KEY", session_key),
+                ("DERIVE_WALLET", wallet_str),
+                ("DERIVE_SUBACCOUNT_ID", subaccount_id_str),
+            )
+            if value
+        ]
+        msg = f"Incomplete signer configuration, only {', '.join(given)} set: DERIVE_SESSION_KEY and DERIVE_WALLET "
+        msg += "go together, and DERIVE_SUBACCOUNT_ID needs both. Set none of them for a public-only client."
         msg += f"\nSearched for .env at: {dotenv_path.absolute()}"
         raise ValueError(msg)
 
-    assert session_key and wallet_str and subaccount_id_str, "type-checker"
-
     try:
-        wallet_checksum = ChecksumAddress(wallet_str)
+        wallet_checksum = ChecksumAddress(wallet_str) if wallet_str else None
     except Exception as e:
         raise ValueError(f"Invalid wallet address: {e}")
 
     try:
-        subaccount_id = int(subaccount_id_str)
+        subaccount_id = int(subaccount_id_str) if subaccount_id_str else None
     except Exception:
         raise ValueError(f"Invalid subaccount ID '{subaccount_id_str}': must be an integer")
 
@@ -408,7 +433,7 @@ def load_client_config(session_key_path: Optional[Path] = None, env_file: Option
     rpc_endpoints = tuple(part.strip() for part in raw_endpoints.split(",") if part.strip()) if raw_endpoints else None
 
     return ClientConfig(
-        session_key=SecretStr(session_key),
+        session_key=SecretStr(session_key) if session_key else None,
         wallet=wallet_checksum,
         subaccount_id=subaccount_id,
         chain=chain,
