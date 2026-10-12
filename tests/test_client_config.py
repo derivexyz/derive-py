@@ -1,6 +1,7 @@
 """Which credential combinations ClientConfig and load_client_config accept."""
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -100,8 +101,11 @@ def owner_keystore(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.mark.usefixtures("clean_env")
-def test_keystore_alone_is_an_owner_signer(tmp_path: Path, owner_keystore: Path) -> None:
-    env = {"DERIVE_KEYSTORE": str(owner_keystore), "DERIVE_KEYSTORE_PASSWORD": PASSWORD}
+def test_keystore_alone_is_an_owner_signer(
+    tmp_path: Path, owner_keystore: Path, type_passwords: Callable[..., None]
+) -> None:
+    type_passwords(PASSWORD)
+    env = {"DERIVE_KEYSTORE": str(owner_keystore)}
     config = load_client_config(env_file=write_env(tmp_path, env))
     assert config.session_key is not None
     assert HexBytes(config.session_key.get_secret_value()) == HexBytes(KEY)
@@ -109,9 +113,12 @@ def test_keystore_alone_is_an_owner_signer(tmp_path: Path, owner_keystore: Path)
 
 
 @pytest.mark.usefixtures("clean_env")
-def test_keystore_with_wallet_keeps_that_wallet(tmp_path: Path, owner_keystore: Path) -> None:
+def test_keystore_with_wallet_keeps_that_wallet(
+    tmp_path: Path, owner_keystore: Path, type_passwords: Callable[..., None]
+) -> None:
+    type_passwords(PASSWORD)
     other = ChecksumAddress(Account.from_key("0x" + "22" * 32).address)
-    env = {"DERIVE_KEYSTORE": str(owner_keystore), "DERIVE_KEYSTORE_PASSWORD": PASSWORD, "DERIVE_WALLET": other}
+    env = {"DERIVE_KEYSTORE": str(owner_keystore), "DERIVE_WALLET": other}
     assert load_client_config(env_file=write_env(tmp_path, env)).wallet == other
 
 

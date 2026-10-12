@@ -2,6 +2,8 @@
 Conftest for derive tests
 """
 
+import io
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
@@ -102,3 +104,20 @@ def fresh_wallet_client_config() -> ClientConfig:
         session_key=SecretStr(HexBytes(account.key).to_0x_hex()),
         wallet=ChecksumAddress(account.address),
     )
+
+
+class _Terminal(io.StringIO):
+    def isatty(self) -> bool:
+        return True
+
+
+@pytest.fixture
+def type_passwords(monkeypatch: pytest.MonkeyPatch) -> Callable[..., None]:
+    """Pretend stdin is a terminal on which these passwords are typed, in order."""
+
+    def typed(*passwords: str) -> None:
+        answers: Iterator[str] = iter(passwords)
+        monkeypatch.setattr("sys.stdin", _Terminal())
+        monkeypatch.setattr("derive_py.keystore.getpass", lambda prompt: next(answers))
+
+    return typed

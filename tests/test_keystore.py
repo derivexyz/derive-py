@@ -2,6 +2,7 @@
 
 import io
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -62,16 +63,29 @@ def test_paths_are_kept(tmp_path: Path) -> None:
     assert resolve_keystore("~/owner.json") == Path.home() / "owner.json"
 
 
-def test_password_from_environment(monkeypatch: pytest.MonkeyPatch, keystore: Path) -> None:
-    monkeypatch.setenv("DERIVE_KEYSTORE_PASSWORD", PASSWORD)
+def test_password_is_prompted_for(type_passwords: Callable[..., None], keystore: Path) -> None:
+    type_passwords(PASSWORD)
     assert keystore_password(keystore) == PASSWORD
 
 
+def test_differing_confirmation_is_an_error(type_passwords: Callable[..., None], keystore: Path) -> None:
+    type_passwords(PASSWORD, "typo")
+    with pytest.raises(ValueError, match="differ"):
+        keystore_password(keystore, confirm=True)
+
+
 def test_password_without_terminal_is_an_error(monkeypatch: pytest.MonkeyPatch, keystore: Path) -> None:
-    monkeypatch.delenv("DERIVE_KEYSTORE_PASSWORD", raising=False)
     monkeypatch.setattr("sys.stdin", io.StringIO())
-    with pytest.raises(ValueError, match="DERIVE_KEYSTORE_PASSWORD"):
+    with pytest.raises(ValueError, match="DERIVE_SESSION_KEY"):
         keystore_password(keystore)
+
+
+def test_password_is_never_read_from_environment(
+    monkeypatch: pytest.MonkeyPatch, type_passwords: Callable[..., None], keystore: Path
+) -> None:
+    monkeypatch.setenv("DERIVE_KEYSTORE_PASSWORD", "from-env")
+    type_passwords(PASSWORD)
+    assert keystore_password(keystore) == PASSWORD
 
 
 def test_default_dir_is_under_home(monkeypatch: pytest.MonkeyPatch) -> None:

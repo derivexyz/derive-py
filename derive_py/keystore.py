@@ -1,8 +1,9 @@
 """Encrypted key storage in the Web3 Secret Storage v3 format, as used by geth and foundry.
 
 Keystores live in ~/.derive-py/keystores/<name>.json unless DERIVE_KEYSTORE_DIR
-points elsewhere, for example at ~/.foundry/keystores. The password comes from
-DERIVE_KEYSTORE_PASSWORD, or is prompted for on a terminal.
+points elsewhere, for example at ~/.foundry/keystores. The password is only ever
+prompted for: a keystore is for someone at a terminal. Unattended runs take an
+injected DERIVE_SESSION_KEY instead.
 """
 
 from __future__ import annotations
@@ -19,7 +20,6 @@ from eth_account.signers.local import LocalAccount
 from derive_py.data_types import ChecksumAddress
 
 DEFAULT_KEYSTORE_DIR = Path.home() / ".derive-py" / "keystores"
-PASSWORD_ENV = "DERIVE_KEYSTORE_PASSWORD"
 
 
 def keystore_dir() -> Path:
@@ -45,12 +45,10 @@ def keystore_address(path: Path) -> ChecksumAddress:
 
 
 def keystore_password(path: Path, *, confirm: bool = False) -> str:
-    """DERIVE_KEYSTORE_PASSWORD if set, otherwise a prompt. Raises ValueError without a terminal."""
+    """Prompt for the password of path. Raises ValueError without a terminal."""
 
-    if (password := os.environ.get(PASSWORD_ENV)) is not None:
-        return password
     if not sys.stdin.isatty():
-        raise ValueError(f"No terminal to prompt for the password of {path}; set {PASSWORD_ENV}.")
+        raise ValueError(f"No terminal to prompt for the password of {path}; unattended runs use DERIVE_SESSION_KEY.")
     password = getpass(f"Password for {path}: ")
     if confirm and getpass("Repeat password: ") != password:
         raise ValueError("Passwords differ.")
