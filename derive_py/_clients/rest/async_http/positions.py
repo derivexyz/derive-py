@@ -55,7 +55,11 @@ class PositionOperations:
         maker_nonce: Optional[int] = None,
         taker_nonce: Optional[int] = None,
     ) -> TransferPositionsResponse:
-        """Transfers multiple positions from one subaccount to another, owned by the same wallet."""
+        """Transfers multiple positions from one subaccount to another, owned by the same wallet.
+
+        All positions must share one currency: the transfer settles as an RFQ, and RFQs
+        reject legs in more than one currency (RPC 14028).
+        """
 
         from_subaccount = self._subaccount.id
         positions = sort_by_instrument_name(positions)
