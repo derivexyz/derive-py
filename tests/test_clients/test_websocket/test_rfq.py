@@ -124,7 +124,10 @@ async def _create_rfq(client) -> Rfq:
 @pytest.mark.asyncio
 async def test_rfq_send_rfq(client_admin_wallet):
     rfq = await _create_rfq(client_admin_wallet)
-    assert isinstance(rfq, Rfq)
+    try:
+        assert isinstance(rfq, Rfq)
+    finally:
+        await client_admin_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
 
 
 @pytest.mark.asyncio
