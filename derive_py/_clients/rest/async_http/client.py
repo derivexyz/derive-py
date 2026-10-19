@@ -21,9 +21,16 @@ from derive_py._clients.rest.async_http.session import AsyncHTTPSession, request
 from derive_py._clients.rest.async_http.subaccount import Subaccount
 from derive_py._clients.rest.async_http.system import SystemOperations
 from derive_py._clients.rest.async_http.vaults import VaultOperations
-from derive_py._clients.utils import load_client_config, make_auth
-from derive_py._web3 import ContractRegistry, Deposits
+from derive_py._clients.utils import (
+    is_account_not_found,
+    load_client_config,
+    make_auth,
+    require_auth,
+    require_subaccount_id,
+)
+from derive_py._web3 import ContractRegistry, Deposits, make_web3
 from derive_py._web3.async_utils import AsyncDepositStep, iterate_deposit_steps_in_thread
+from derive_py.config import CONFIGS
 from derive_py.data_types import (
     AsyncHTTPSessionConfig,
     ChecksumAddress,
@@ -33,7 +40,7 @@ from derive_py.data_types import (
     MarginType,
     RiskUniverseID,
 )
-from derive_py.exceptions import NotConnectedError
+from derive_py.exceptions import CredentialsRequired, DeriveJSONRPCError, NotConnectedError
 from derive_py.utils.logger import get_logger
 
 
@@ -48,17 +55,19 @@ class AsyncHTTPClient:
         session_config: AsyncHTTPSessionConfig | None = None,
     ):
         logger = logger if logger is not None else get_logger()
-        auth = make_auth(client_config, logger=logger)
+        w3 = make_web3(client_config.chain, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
 
-        self._auth = auth
-        self._config = auth.config
+        self._auth = make_auth(client_config, w3=w3)
+        self._config = CONFIGS[client_config.chain]
         self._subaccount_id = client_config.subaccount_id
 
         self._logger = logger
         self._session = AsyncHTTPSession(config=session_config, logger=self._logger)
 
         self._public_api = AsyncPublicAPI(session=self._session, config=self._config)
-        self._private_api = AsyncPrivateAPI(session=self._session, config=self._config, auth=auth)
+        self._private_api = (
+            AsyncPrivateAPI(session=self._session, config=self._config, auth=self._auth) if self._auth else None
+        )
 
         self._markets = MarketOperations(public_api=self._public_api, logger=self._logger)
         self._system = SystemOperations(public_api=self._public_api, logger=self._logger)
@@ -66,8 +75,8 @@ class AsyncHTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        self._contract_registry = ContractRegistry(w3=auth.w3, chain=client_config.chain)
-        self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
+        self._contract_registry = ContractRegistry(w3=w3, chain=client_config.chain)
+        self._deposits = Deposits(self._contract_registry, w3=w3, logger=self._logger)
 
     @classmethod
     def from_env(
@@ -80,20 +89,21 @@ class AsyncHTTPClient:
         return cls(load_client_config(session_key_path=session_key_path, env_file=env_file))
 
     async def connect(self) -> None:
-        """Connect to Derive and validate credentials, fetch and cache market instruments."""
+        """Connect to Derive, fetch and cache market instruments, and with a signer load the account.
+
+        A wallet with no Derive account yet is not an error: its first deposit creates one.
+        """
 
         await self._session.open()
 
-        self._light_account = await LightAccount.from_api(
-            auth=self._auth,
-            config=self._config,
-            logger=self._logger,
-            public_api=self._public_api,
-            private_api=self._private_api,
-        )
+        if self._auth is not None:
+            self._light_account = await self._try_instantiate_account()
 
         await self._markets.fetch_all_instruments(expired=False)
         await self._markets.get_risk_universes()  # cache risk universes
+
+        if self._light_account is None or self._subaccount_id is None:
+            return
 
         subaccount_ids = self._light_account.state.subaccount_ids
         if self._subaccount_id not in subaccount_ids:
@@ -117,17 +127,33 @@ class AsyncHTTPClient:
         self._markets._option_instruments_cache.clear()
         self._markets._risk_universes_cache.clear()
 
+    async def _try_instantiate_account(self) -> LightAccount | None:
+        auth = require_auth(self._auth)
+        try:
+            return await LightAccount.from_api(
+                auth=auth,
+                config=self._config,
+                logger=self._logger,
+                public_api=self._public_api,
+                private_api=self.private_api,
+            )
+        except DeriveJSONRPCError as e:
+            if not is_account_not_found(e):
+                raise
+            self._logger.info(f"Wallet {auth.wallet} has no Derive account yet; a deposit creates one.")
+            return None
+
     async def _instantiate_subaccount(self, subaccount_id: int) -> Subaccount:
         return await Subaccount.from_api(
             subaccount_id=subaccount_id,
-            auth=self._auth,
+            auth=require_auth(self._auth),
             config=self._config,
             logger=self._logger,
             markets=self._markets,
             system=self._system,
             deposits=self._deposits,
             public_api=self._public_api,
-            private_api=self._private_api,
+            private_api=self.private_api,
         )
 
     @property
@@ -142,23 +168,28 @@ class AsyncHTTPClient:
 
     @property
     def private_api(self) -> AsyncPrivateAPI:
-        """Direct access to the private API for requests."""
+        """Direct access to the private API for requests. Needs a signer."""
 
+        if self._private_api is None:
+            raise CredentialsRequired("private_api needs a signer: set session_key and wallet in ClientConfig.")
         return self._private_api
 
     @property
     def account(self) -> LightAccount:
         """Get the LightAccount instance (this is not a web3 contract instance)."""
 
+        require_auth(self._auth)
         if self._light_account is None:
-            raise NotConnectedError("AsyncHTTPClient.account accessed before connect(); call connect() first.")
+            raise NotConnectedError(
+                "AsyncHTTPClient.account is not loaded: call connect(), or the wallet has no Derive account yet."
+            )
         return self._light_account
 
     @property
     def active_subaccount(self) -> Subaccount:
         """Get the currently active subaccount."""
 
-        if (subaccount := self._subaccounts.get(self._subaccount_id)) is None:
+        if (subaccount := self._subaccounts.get(require_subaccount_id(self._subaccount_id))) is None:
             raise NotConnectedError("No active subaccount. Call connect() first and ensure subaccount exists.")
         return subaccount
 
@@ -173,6 +204,7 @@ class AsyncHTTPClient:
     ) -> AsyncIterator[AsyncDepositStep]:
         """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
 
+        auth = require_auth(self._auth)
         risk_universes = self._markets._risk_universes_cache or await self._markets.get_risk_universes()
 
         sync_plan = self._deposits.plan_new_subaccount(
@@ -181,9 +213,9 @@ class AsyncHTTPClient:
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,
-            from_address=ChecksumAddress(self._auth.account.address),
-            owner=self._auth.wallet,
-            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            from_address=ChecksumAddress(auth.account.address),
+            owner=auth.wallet,
+            private_key=cast(HexBytes, auth.account.key).to_0x_hex(),
             gas_priority=gas_priority,
         )
 

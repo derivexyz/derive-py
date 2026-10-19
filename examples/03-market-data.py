@@ -13,11 +13,10 @@ get_ticker returns a TickerSlimSnapshot, which is the same type the
 ticker_slim websocket channel pushes in 04-subscribe.py: one snapshot here,
 a stream of them there.
 
-TODO: from_env() still requires a wallet, a session key and a subaccount id,
-none of which this file uses. A public-data client should be constructible
-without them.
+The client is built from a chain alone: no wallet, no key, no subaccount, so
+anything account-scoped raises CredentialsRequired.
 
-Prerequisites: none beyond network access. Copy .env.template to .env first.
+Prerequisites: none beyond network access.
 
 Run:
     python examples/03-market-data.py
@@ -29,13 +28,14 @@ from decimal import Decimal
 from msgspec import UNSET
 
 from derive_py import HTTPClient
+from derive_py.data_types import Chain, ClientConfig
 from derive_py.data_types.generated_models import AssetType
 
 CURRENCY = "ETH"
 CURRENCIES_TO_SHOW = 5
 OPTIONS_TO_SHOW = 3
 
-client = HTTPClient.from_env()
+client = HTTPClient(ClientConfig(chain=Chain.SEPOLIA))
 log = client.logger
 
 

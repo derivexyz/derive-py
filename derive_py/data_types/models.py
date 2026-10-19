@@ -62,11 +62,27 @@ class ChainConfig(BaseModel, frozen=True):
 
 
 class ClientConfig(BaseModel):
-    session_key: SecretStr
-    wallet: ChecksumAddress
-    subaccount_id: int
+    """Client settings. Only `chain` is required.
+
+    Without `session_key` and `wallet` the client is public-only: market and
+    system data, no account. Both together give a signer acting for `wallet`,
+    which may not have a Derive account yet. `subaccount_id` picks the active
+    subaccount and needs a signer.
+    """
+
     chain: Chain
+    session_key: SecretStr | None = None
+    wallet: ChecksumAddress | None = None
+    subaccount_id: int | None = None
     rpc_endpoints: tuple[str, ...] | None = None
+
+    @model_validator(mode="after")
+    def _signer_complete(self) -> ClientConfig:
+        if (self.session_key is None) != (self.wallet is None):
+            raise ValueError("session_key and wallet go together: set both, or neither for a public-only client")
+        if self.subaccount_id is not None and self.session_key is None:
+            raise ValueError("subaccount_id needs a signer: set session_key and wallet too")
+        return self
 
 
 class _HTTPSessionConfigBase(BaseModel, frozen=True):

@@ -190,6 +190,7 @@ class WebSocketSession:
 
         # Message routing; one subscription per channel
         self._subscriptions: dict[str, Subscription] = {}
+        self._warned_unwatched_stream = False
 
         # RPC tracking
         self._pending_requests: dict[str | int, asyncio.Queue] = {}
@@ -276,6 +277,18 @@ class WebSocketSession:
         """Channels this session holds a handler for, in subscription order."""
         return tuple(self._subscriptions)
 
+    def _warn_if_stream_unwatched(self) -> None:
+        """Once per session: a stream with a gap in it needs someone told."""
+
+        if self._on_state_change is not None or self._warned_unwatched_stream:
+            return
+        self._warned_unwatched_stream = True
+        self._logger.warning(
+            "Subscribing without an on_state_change callback: after a dropped connection the client "
+            "reconnects and resubscribes, but messages sent during the outage are lost and nothing "
+            "tells your code. Pass one to connect() to know when to re-read state built from the stream."
+        )
+
     async def subscribe(
         self,
         channel: str,
@@ -299,6 +312,8 @@ class WebSocketSession:
         """
         if not await self._state.is_connected():
             raise RuntimeError("WebSocket not connected. Call open() first.")
+
+        self._warn_if_stream_unwatched()
 
         if channel in self._subscriptions:
             self._logger.warning(

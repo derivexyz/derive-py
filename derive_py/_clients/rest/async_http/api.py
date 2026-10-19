@@ -70,6 +70,7 @@ from derive_py.data_types.generated_models import (
     GetMakerProgramScoresParams,
     GetMakerProgramScoresResponse,
     GetMakerProgramsParams,
+    GetMakerRfqHistoryRequest,
     GetMarginResponse,
     GetOnchainActionHistoryParams,
     GetOnchainActionHistoryResponse,
@@ -106,6 +107,8 @@ from derive_py.data_types.generated_models import (
     GetVaultSharesRequest,
     GetVaultsRequest,
     GetWalletsFromSessionKeyRequest,
+    GetWithdrawAddressesParams,
+    GetWithdrawAddressesResult,
     GetWithdrawalHistoryRequest,
     IndexCandle,
     Instrument,
@@ -155,6 +158,7 @@ from derive_py.data_types.generated_models import (
     PublicExecuteQuoteDebugRequest,
     PublicGetLiveAuctionsResponse,
     PublicGetMarginRequest,
+    PublicGetSubaccountsRequest,
     PublicGetWalletsFromSessionKeyResponse,
     PublicMarginWatchResponse,
     PublicSendQuoteDebugRequest,
@@ -175,6 +179,8 @@ from derive_py.data_types.generated_models import (
     RegisterBridgeDepositParams,
     RegisterDepositAddressParams,
     RegisterDepositAddressResult,
+    RegisterWithdrawAddressParams,
+    RegisterWithdrawAddressResult,
     RejectDepositRequestRequest,
     ReplaceOrderRequest,
     ReplaceOrderResponse,
@@ -257,6 +263,24 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetMarginResponse)
+
+        return result
+
+    async def get_subaccounts(
+        self,
+        params: PublicGetSubaccountsRequest,
+    ) -> PrivateGetSubaccountsResponse:
+        """
+        Returns the wallet address and the sorted list of all subaccount IDs owned by
+        that wallet. Yields an empty list if the wallet has no subaccounts. Public
+        endpoint, no authentication required.
+        """
+
+        url = self._endpoints.get_subaccounts
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PrivateGetSubaccountsResponse)
 
         return result
 
@@ -390,11 +414,11 @@ class AsyncPublicRPC:
         """
         Calculates the mark-to-market value and initial/maintenance margin for a given
         subaccount, with per-position and per-collateral breakdowns, computed from live
-        feed data at request time. Margins are reported on the margin basis actually in
-        effect: when a delayed-liquidation override is active the response's
-        is_delayed_liquidation flag is true and the reported margins use the temporarily
-        lowered requirements. A maintenance margin below zero means the subaccount is
-        flagged for liquidation.
+        feed data at request time. Margins use the subaccount's manager's params. Set
+        is_delayed_liquidation to get them under the subaccount's delayed-liquidation
+        override instead; the request is rejected for a subaccount without one.
+        has_delayed_liquidation reports whether the subaccount has one. A maintenance
+        margin below zero means the subaccount is flagged for liquidation.
         """
 
         url = self._endpoints.margin_watch
@@ -734,10 +758,16 @@ class AsyncPublicRPC:
         params: GetAllInstrumentsRequest,
     ) -> GetAllInstrumentsResponse:
         """
-        Returns a paginated list of full instrument definitions filtered by
-        `instrument_type`, optional `currency`, and `expired` flag, with
-        `page`/`page_size` (max 1000) controls and pagination metadata. Expired options
-        are included when the `expired` flag is set. Public endpoint.
+        Returns a paginated, name-descending list of full instrument definitions
+        filtered by `instrument_type`, optional `currency` and optional
+        `risk_universe_id`, with `page`/`page_size` (max 1000) controls and pagination
+        metadata. For options, `expired` selects the listing: `false` returns live
+        options, `true` returns only expired options. An option enters the expired
+        listing up to a minute before it expires, so it does not drop out of both
+        listings at expiry. Perps and spot ignore `expired`. An empty listing returns
+        `instrument_not_found`; a page past the end returns the last page. An option's
+        `settlement_price` here can lag settlement by a few minutes;
+        `public/get_instrument` returns it at once. Public endpoint.
         """
 
         url = self._endpoints.get_all_instruments
@@ -1223,7 +1253,10 @@ class AsyncPrivateRPC:
         an optional simulated state change (position and/or collateral deltas), and
         whether that change would pass the margin requirement. Values are net margin —
         mark-to-market value minus the requirement — so positive means healthy. Does not
-        take open-order margin into account.
+        take open-order margin into account. Margins use the subaccount's manager's
+        params. Set is_delayed_liquidation to use its delayed-liquidation override
+        instead, as order checks do; the request is rejected for a subaccount without
+        one.
         """
 
         url = self._endpoints.get_margin
@@ -1795,9 +1828,10 @@ class AsyncPrivateRPC:
         Taker-side call that accepts a specific maker quote and settles the trade
         atomically. You reference the rfq_id and quote_id and supply the taker's priced
         legs, direction, max fee, and EIP-712 signature (signer, signature, nonce,
-        expiry), with an optional taker-protection flag. The signature is verified and
-        the taker fill, maker quote, and RFQ are updated together in one atomic step.
-        Requires trade scope for every instrument in the legs.
+        expiry), with an optional taker-protection flag. It does not check the RFQ's
+        max_total_cost or min_total_cost. The signature is verified and the taker fill,
+        maker quote, and RFQ are updated together in one atomic step. Requires trade
+        scope for every instrument in the legs.
         """
 
         url = self._endpoints.execute_quote
@@ -1805,6 +1839,30 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, QuoteExecuteResponse)
+
+        return result
+
+    async def get_maker_rfq_history(
+        self,
+        params: GetMakerRfqHistoryRequest,
+    ) -> RFQPollResponse:
+        """
+        Maker-side history of RFQs the subaccount was eligible to quote, i.e. RFQs open
+        to all makers or naming the maker's wallet as a counterparty, including ones the
+        maker never quoted. Returns filled, cancelled and expired RFQs only; use
+        private/poll_rfqs for open ones. Supports filtering by rfq_id, status, an
+        originating RFQ subaccount, and an RFQ creation-time window, with pagination.
+        Without from_timestamp, the window covers the 30 days before to_timestamp (or
+        before now). Newest RFQs first. Returns the same public RFQ view as
+        private/poll_rfqs, with fill rates unset. An RFQ appears here a few seconds
+        after it leaves private/poll_rfqs.
+        """
+
+        url = self._endpoints.get_maker_rfq_history
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, RFQPollResponse)
 
         return result
 
@@ -1914,8 +1972,9 @@ class AsyncPrivateRPC:
         """
         Taker-side dry run that evaluates a prospective RFQ (its legs and intended
         direction) without creating anything. Returns the best available maker quote if
-        one exists, along with the expected fee, validity, projected liquidation prices,
-        and realized-PnL estimate for taking it.
+        one exists. It returns no quote when the best quote breaks the RFQ's
+        max_total_cost or min_total_cost. The response also includes the expected fee,
+        validity, projected liquidation prices, and realized-PnL estimate for taking it.
         """
 
         url = self._endpoints.rfq_get_best_quote
@@ -1954,10 +2013,10 @@ class AsyncPrivateRPC:
         """
         Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount,
         inviting makers to quote it. You supply the legs (instrument, amount, and
-        direction per leg) plus optional limits such as min/max total cost, a partial-
-        fill step, a label, and a list of specific counterparties to restrict who can
-        see it. Returns the created RFQ including its assigned id and validity window.
-        Requires trade scope for every instrument in the legs.
+        direction per leg) plus optional min/max total cost limits that filter only the
+        best quote, a partial-fill step, a label, and a list of specific counterparties
+        to restrict who can see it. Returns the created RFQ including its assigned id
+        and validity window. Requires trade scope for every instrument in the legs.
         """
 
         url = self._endpoints.send_rfq
@@ -2711,6 +2770,27 @@ class AsyncPrivateRPC:
 
         return result
 
+    async def get_withdraw_addresses(
+        self,
+        params: GetWithdrawAddressesParams,
+    ) -> GetWithdrawAddressesResult:
+        """
+        Lists the account's withdraw addresses from private/register_withdraw_address:
+        its EVM ones (their recipient is the wallet) and every withdraw address on its
+        whitelisted_recipients. Each entry gives the destination chain id, the address
+        kind (evm or solana), the recipient as registered and whether it is whitelisted,
+        which session keys need before they can withdraw to it. A Solana address that
+        was registered but never whitelisted is not listed.
+        """
+
+        url = self._endpoints.get_withdraw_addresses
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, GetWithdrawAddressesResult)
+
+        return result
+
     async def register_bridge_deposit(
         self,
         params: RegisterBridgeDepositParams,
@@ -2730,6 +2810,30 @@ class AsyncPrivateRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PendingDepositBridgeOrigin)
+
+        return result
+
+    async def register_withdraw_address(
+        self,
+        params: RegisterWithdrawAddressParams,
+    ) -> RegisterWithdrawAddressResult:
+        """
+        Returns the Ethereum withdraw address that forwards a withdrawal of a forwarded
+        token to a recipient on its home chain, and records it so the forwarder watches
+        it. Takes the wallet, the destination chain id (a key of the route file's
+        withdraw_forwarding section; Solana is 101, devnet 103) and the recipient. On an
+        EVM chain the recipient must be the account wallet; on Solana it must be a
+        base58 wallet address, which is screened. Repeated calls return the same
+        address; new registrations are rate limited per rolling window. Withdraw to the
+        returned address with private/withdraw. Session keys without unbounded Admin
+        scope must first add it with private/update_whitelisted_recipients.
+        """
+
+        url = self._endpoints.register_withdraw_address
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, RegisterWithdrawAddressResult)
 
         return result
 

@@ -119,7 +119,10 @@ def _create_rfq(client) -> Rfq:
 
 def test_rfq_send_rfq(client_admin_wallet):
     rfq = _create_rfq(client_admin_wallet)
-    assert isinstance(rfq, Rfq)
+    try:
+        assert isinstance(rfq, Rfq)
+    finally:
+        client_admin_wallet.rfq.cancel_rfq(rfq_id=rfq.rfq_id)
 
 
 def test_rfq_get_rfqs(client_admin_wallet):

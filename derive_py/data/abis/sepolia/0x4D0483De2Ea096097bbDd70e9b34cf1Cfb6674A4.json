@@ -237,6 +237,11 @@
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "ReentrancyGuardReentrantCall",
+        "type": "error"
+    },
+    {
         "inputs": [
             {
                 "internalType": "bytes32",

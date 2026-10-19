@@ -34,6 +34,7 @@ class PublicEndpoints:
         self._base_url = base_url
 
     get_margin = Endpoint("public", "get_margin")
+    get_subaccounts = Endpoint("public", "get_subaccounts")
     get_wallets_from_session_key = Endpoint("public", "get_wallets_from_session_key")
     order_quote = Endpoint("public", "order_quote")
     execute_quote_debug = Endpoint("public", "execute_quote_debug")
@@ -117,6 +118,7 @@ class PrivateEndpoints:
     cancel_quote = Endpoint("private", "cancel_quote")
     cancel_rfq = Endpoint("private", "cancel_rfq")
     execute_quote = Endpoint("private", "execute_quote")
+    get_maker_rfq_history = Endpoint("private", "get_maker_rfq_history")
     get_quotes = Endpoint("private", "get_quotes")
     get_rfqs = Endpoint("private", "get_rfqs")
     poll_quotes = Endpoint("private", "poll_quotes")
@@ -162,5 +164,7 @@ class PrivateEndpoints:
     update_whitelisted_recipients = Endpoint("private", "update_whitelisted_recipients")
     update_whitelisted_recipients_debug = Endpoint("private", "update_whitelisted_recipients_debug")
     withdraw = Endpoint("private", "withdraw")
+    get_withdraw_addresses = Endpoint("private", "get_withdraw_addresses")
     register_bridge_deposit = Endpoint("private", "register_bridge_deposit")
+    register_withdraw_address = Endpoint("private", "register_withdraw_address")
     get_subaccount_value_history = Endpoint("private", "get_subaccount_value_history")

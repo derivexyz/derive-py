@@ -127,8 +127,11 @@ log.info(
 
 # -- 2. External transfer: to a wallet you do not own -----------------------
 
-recipient = client._auth.signer  # session key EOA
-if recipient == client._auth.wallet:
+auth = client._auth
+if auth is None:
+    raise SystemExit("This example needs DERIVE_SESSION_KEY and DERIVE_WALLET.")
+recipient = auth.signer  # session key EOA
+if recipient == auth.wallet:
     # Environment fact, not a failure: everything above ran.
     log.info("the session key is the owner wallet, so there is no second address to transfer to")
     raise SystemExit(0)

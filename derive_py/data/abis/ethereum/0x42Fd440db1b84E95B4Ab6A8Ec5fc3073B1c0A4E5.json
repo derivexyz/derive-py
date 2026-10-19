@@ -12,6 +12,11 @@
     },
     {
         "inputs": [],
+        "name": "DepositAmountTooLarge",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "FeeChargingTokensNotSupported",
         "type": "error"
     },
@@ -59,6 +64,11 @@
     },
     {
         "inputs": [],
+        "name": "ReentrancyGuardReentrantCall",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "ReservedActionIdForbidden",
         "type": "error"
     },
@@ -81,6 +91,11 @@
     {
         "inputs": [],
         "name": "ZeroAddress",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "ZeroAmount",
         "type": "error"
     },
     {

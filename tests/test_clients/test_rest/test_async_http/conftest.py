@@ -3,7 +3,7 @@ import pytest_asyncio
 
 from derive_py._clients.rest.async_http.client import AsyncHTTPClient
 from derive_py.data_types.generated_models import Vault
-from tests.conftest import ENV_TEMPLATE
+from tests.conftest import ENV_TEMPLATE, fresh_wallet_client_config, public_client_config
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -64,3 +64,23 @@ def history_scope(request, client_admin_wallet):
     if request.param == "wallet":
         return client_admin_wallet.account
     return client_admin_wallet.active_subaccount
+
+
+@pytest_asyncio.fixture(scope="session")
+async def client_public():
+    """Client with no signer: public data only."""
+
+    client = AsyncHTTPClient(public_client_config())
+    await client.connect()
+    yield client
+    await client.disconnect()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def client_fresh_wallet():
+    """Client signing for a wallet with no Derive account, as before a first deposit."""
+
+    client = AsyncHTTPClient(fresh_wallet_client_config())
+    await client.connect()
+    yield client
+    await client.disconnect()

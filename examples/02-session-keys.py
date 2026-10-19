@@ -21,8 +21,14 @@ list of dead entries. This registers one key the first time and refreshes
 that same entry on every run after. Derive only ever returns a key's address,
 so the private key is shown once, on the run that creates it, and never again.
 
-This ends by retiring the key it made. Drop the last block to keep a working
-one.
+This ends by retiring the key it made. To keep one instead, answer yes at the
+first prompt. That skips the demo and registers a key labelled KEEP_LABEL, with
+KEEP_SCOPES and KEEP_LIFETIME_SEC, encrypted in ~/.derive-py/keystores/<KEEP_LABEL>.json.
+A later run refreshes that same key rather than minting another. It then offers
+to point .env at it: DERIVE_KEYSTORE=<KEEP_LABEL> plus DERIVE_WALLET, removing
+any plaintext DERIVE_SESSION_KEY, which would otherwise take precedence. The
+session key holds no withdraw scope and no L1 funds, so for deposits and
+withdrawals set DERIVE_KEYSTORE back to the owner keystore.
 
 Prerequisites: a client whose key may register session keys, meaning the
 owner wallet or a session key holding ADMIN or CREATE_SESSION_KEY.
@@ -32,12 +38,17 @@ Run:
     python examples/02-session-keys.py
 """
 
+import sys
 import time
+from pathlib import Path
 
+import rich_click as click
+from dotenv import set_key, unset_key
 from eth_account import Account
 
 from derive_py import HTTPClient
 from derive_py.data_types import OffchainScope, ProtocolScope
+from derive_py.keystore import create_keystore, keystore_password, load_keystore, resolve_keystore
 
 LABEL = "example-session-key"
 KEY_LIFETIME_SEC = 24 * 60 * 60  # the key's lifetime, not the signature's
@@ -48,8 +59,19 @@ SCOPES = [
     ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT,
 ]
 
+KEEP_LABEL = "examples"
+KEEP_LIFETIME_SEC = 30 * 24 * 60 * 60
+KEEP_SCOPES = [
+    ProtocolScope.TRADE_ALL,
+    ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT,
+]
+
+ENV_FILE = Path.cwd() / ".env"
+
 client = HTTPClient.from_env()
 log = client.logger
+if client._auth is None:
+    raise SystemExit("This example needs a signer: run 01-deposit.py, or set DERIVE_KEYSTORE in .env.")
 
 
 def log_key(heading: str, key) -> None:
@@ -63,6 +85,33 @@ def log_key(heading: str, key) -> None:
         f"  expiry_sec:         {key.expiry_sec}\n"
         f"  label:              {key.label}"
     )
+
+
+if sys.stdin.isatty() and click.confirm("Register a session key to keep for the other examples?", default=False):
+    keystore = resolve_keystore(KEEP_LABEL)
+    if keystore.exists():
+        kept = load_keystore(keystore, keystore_password(keystore))
+        log.info(f"Refreshing the kept session key {kept.address} from {keystore}")
+    else:
+        kept = create_keystore(keystore, keystore_password(keystore, confirm=True))
+        log.info(f"Created session key {kept.address}, encrypted in {keystore}")
+    registered = client.account.set_session_key(
+        expiry_sec=int(time.time()) + KEEP_LIFETIME_SEC,
+        protocol_scopes=KEEP_SCOPES,
+        offchain_scopes=[],
+        public_session_key=kept.address,
+        label=KEEP_LABEL,
+    )
+    log_key("Registered to keep", registered)
+    wallet = client.account.address
+    if click.confirm(
+        f"In {ENV_FILE}, set DERIVE_KEYSTORE={KEEP_LABEL} and DERIVE_WALLET={wallet}, remove DERIVE_SESSION_KEY?"
+    ):
+        set_key(ENV_FILE, "DERIVE_KEYSTORE", KEEP_LABEL)
+        set_key(ENV_FILE, "DERIVE_WALLET", wallet)
+        unset_key(ENV_FILE, "DERIVE_SESSION_KEY")
+        log.info(f"Updated {ENV_FILE}")
+    raise SystemExit(0)
 
 
 # -- Register, or refresh the one registered before ------------------------

@@ -32,7 +32,9 @@ import asyncio
 from decimal import Decimal
 
 from derive_py import WebSocketClient
+from derive_py.data_types import DeriveJSONRPCErrorCode
 from derive_py.data_types.generated_models import Direction, LegUnpricedParams
+from derive_py.exceptions import DeriveJSONRPCError
 
 INSTRUMENT = "ETH-PERP"
 SIZE = Decimal("0.1")
@@ -87,11 +89,17 @@ async def main() -> None:
         best = min(quotes, key=lambda q: q.legs[0].price)
         log.info(f"best quote {best.quote_id} at {best.legs[0].price} from {best.wallet}")
 
-        fill = await subaccount.rfq.accept_quote(
-            quote=best,
-            max_fee=max(MAX_FEE_FLOOR, notional * MAX_FEE_RATE),
-            enable_taker_protection=True,  # exchange-side execution guard, see the API docs
-        )
+        try:
+            fill = await subaccount.rfq.accept_quote(
+                quote=best,
+                max_fee=max(MAX_FEE_FLOOR, notional * MAX_FEE_RATE),
+                enable_taker_protection=True,  # exchange-side execution guard, see the API docs
+            )
+        except DeriveJSONRPCError as e:
+            if e.rpc_error.code != DeriveJSONRPCErrorCode.QUOTE_TAKER_COST_TOO_HIGH:
+                raise
+            log.warning(f"Taker protection rejected quote {best.quote_id}, the book is cheaper: {e.rpc_error.data}")
+            return
         executed = True
 
         legs = "\n".join(f"  {leg.direction} {leg.amount} {leg.instrument_name} @ {leg.price}" for leg in fill.legs)

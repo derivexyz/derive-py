@@ -9,6 +9,7 @@ reconnects without resubscribing goes silent, as it does live.
 
 import asyncio
 import json
+import logging
 from collections import Counter
 from contextlib import asynccontextmanager
 
@@ -414,3 +415,39 @@ async def test_subscribing_to_a_channel_the_venue_refuses_fails():
 
         assert await venue.publish(OTHER) == 0, "refused, yet reported as subscribed"
         await _assert_delivers(venue, received, "a refused subscribe took the live channel down")
+
+
+async def _subscribe_twice(port: int, logger: logging.Logger, on_state_change=None) -> None:
+    session = WebSocketSession(
+        url=f"ws://127.0.0.1:{port}",
+        config=WebSocketSessionConfig(request_timeout=REQUEST_TIMEOUT, reconnect_delay=RECONNECT_DELAY),
+        logger=logger,
+        on_state_change=on_state_change,
+    )
+    try:
+        await session.open()
+        for channel in (CHANNEL, OTHER):
+            await session.subscribe(channel, lambda _data: None, notification_type=dict)
+    finally:
+        await session.close()
+
+
+@pytest.mark.asyncio
+async def test_subscribing_without_a_state_callback_warns_once(caplog):
+    logger = logging.getLogger("test.unwatched_stream")
+    async with _venue() as (_venue_, port):
+        with caplog.at_level(logging.WARNING, logger=logger.name):
+            await _subscribe_twice(port, logger)
+
+    warnings = [r for r in caplog.records if "on_state_change" in r.getMessage()]
+    assert len(warnings) == 1
+
+
+@pytest.mark.asyncio
+async def test_subscribing_with_a_state_callback_does_not_warn(caplog):
+    logger = logging.getLogger("test.watched_stream")
+    async with _venue() as (_venue_, port):
+        with caplog.at_level(logging.WARNING, logger=logger.name):
+            await _subscribe_twice(port, logger, on_state_change=lambda _state: None)
+
+    assert not [r for r in caplog.records if "on_state_change" in r.getMessage()]

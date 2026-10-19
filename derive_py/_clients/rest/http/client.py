@@ -20,9 +20,16 @@ from derive_py._clients.rest.http.session import HTTPSession, request_timeout_ov
 from derive_py._clients.rest.http.subaccount import Subaccount
 from derive_py._clients.rest.http.system import SystemOperations
 from derive_py._clients.rest.http.vaults import VaultOperations
-from derive_py._clients.utils import load_client_config, make_auth
-from derive_py._web3 import ContractRegistry, Deposits
+from derive_py._clients.utils import (
+    is_account_not_found,
+    load_client_config,
+    make_auth,
+    require_auth,
+    require_subaccount_id,
+)
+from derive_py._web3 import ContractRegistry, Deposits, make_web3
 from derive_py._web3.deposits import DepositStep
+from derive_py.config import CONFIGS
 from derive_py.data_types import (
     ChecksumAddress,
     ClientConfig,
@@ -32,6 +39,7 @@ from derive_py.data_types import (
     MarginType,
     RiskUniverseID,
 )
+from derive_py.exceptions import CredentialsRequired, DeriveJSONRPCError
 from derive_py.utils.logger import get_logger
 
 
@@ -46,17 +54,19 @@ class HTTPClient:
         session_config: HTTPSessionConfig | None = None,
     ):
         logger = logger if logger is not None else get_logger()
-        auth = make_auth(client_config, logger=logger)
+        w3 = make_web3(client_config.chain, rpc_endpoints=client_config.rpc_endpoints, logger=logger)
 
-        self._auth = auth
-        self._config = auth.config
+        self._auth = make_auth(client_config, w3=w3)
+        self._config = CONFIGS[client_config.chain]
         self._subaccount_id = client_config.subaccount_id
 
         self._logger = logger
         self._session = HTTPSession(config=session_config, logger=self._logger)
 
-        self._public_api = PublicAPI(session=self._session, config=auth.config)
-        self._private_api = PrivateAPI(session=self._session, config=auth.config, auth=auth)
+        self._public_api = PublicAPI(session=self._session, config=self._config)
+        self._private_api = (
+            PrivateAPI(session=self._session, config=self._config, auth=self._auth) if self._auth else None
+        )
 
         self._markets = MarketOperations(public_api=self._public_api, logger=self._logger)
         self._system = SystemOperations(public_api=self._public_api, logger=self._logger)
@@ -64,8 +74,8 @@ class HTTPClient:
         self._light_account: LightAccount | None = None
         self._subaccounts: dict[int, Subaccount] = {}
 
-        self._contract_registry = ContractRegistry(w3=auth.w3, chain=client_config.chain)
-        self._deposits = Deposits(self._contract_registry, w3=auth.w3, logger=self._logger)
+        self._contract_registry = ContractRegistry(w3=w3, chain=client_config.chain)
+        self._deposits = Deposits(self._contract_registry, w3=w3, logger=self._logger)
 
     @classmethod
     def from_env(
@@ -78,13 +88,20 @@ class HTTPClient:
         return cls(load_client_config(session_key_path=session_key_path, env_file=env_file))
 
     def connect(self) -> None:
-        """Connect to Derive and validate credentials, fetch and cache market instruments."""
+        """Connect to Derive, fetch and cache market instruments, and with a signer load the account.
+
+        A wallet with no Derive account yet is not an error: its first deposit creates one.
+        """
 
         self._session.open()
 
-        self._light_account = self._instantiate_account()
+        if self._auth is not None:
+            self._light_account = self._try_instantiate_account()
         self._markets.fetch_all_instruments(expired=False)
         self._markets.get_risk_universes()  # cache risk universes
+
+        if self._light_account is None or self._subaccount_id is None:
+            return
 
         subaccount_ids = self._light_account.state.subaccount_ids
         if self._subaccount_id not in subaccount_ids:
@@ -110,24 +127,35 @@ class HTTPClient:
 
     def _instantiate_account(self) -> LightAccount:
         return LightAccount.from_api(
-            auth=self._auth,
+            auth=require_auth(self._auth),
             config=self._config,
             logger=self._logger,
             public_api=self._public_api,
-            private_api=self._private_api,
+            private_api=self.private_api,
         )
+
+    def _try_instantiate_account(self) -> LightAccount | None:
+        try:
+            return self._instantiate_account()
+        except DeriveJSONRPCError as e:
+            if not is_account_not_found(e):
+                raise
+            self._logger.info(
+                f"Wallet {require_auth(self._auth).wallet} has no Derive account yet; a deposit creates one."
+            )
+            return None
 
     def _instantiate_subaccount(self, subaccount_id: int) -> Subaccount:
         return Subaccount.from_api(
             subaccount_id=subaccount_id,
-            auth=self._auth,
+            auth=require_auth(self._auth),
             config=self._config,
             logger=self._logger,
             markets=self._markets,
             system=self._system,
             deposits=self._deposits,
             public_api=self._public_api,
-            private_api=self._private_api,
+            private_api=self.private_api,
         )
 
     @property
@@ -142,8 +170,10 @@ class HTTPClient:
 
     @property
     def private_api(self) -> PrivateAPI:
-        """Direct access to the private API for requests."""
+        """Direct access to the private API for requests. Needs a signer."""
 
+        if self._private_api is None:
+            raise CredentialsRequired("private_api needs a signer: set session_key and wallet in ClientConfig.")
         return self._private_api
 
     @property
@@ -158,8 +188,9 @@ class HTTPClient:
     def active_subaccount(self) -> Subaccount:
         """Get the currently active subaccount."""
 
-        if (subaccount := self._subaccounts.get(self._subaccount_id)) is None:
-            subaccount = self.fetch_subaccount(subaccount_id=self._subaccount_id)
+        subaccount_id = require_subaccount_id(self._subaccount_id)
+        if (subaccount := self._subaccounts.get(subaccount_id)) is None:
+            subaccount = self.fetch_subaccount(subaccount_id=subaccount_id)
         return subaccount
 
     def plan_deposit_to_new_subaccount(
@@ -173,6 +204,7 @@ class HTTPClient:
     ) -> Iterator[DepositStep]:
         """Yield a lazily-built sequence of DepositStep for depositing into a NEW subaccount."""
 
+        auth = require_auth(self._auth)
         risk_universes = self._markets._risk_universes_cache or self._markets.get_risk_universes()
 
         return self._deposits.plan_new_subaccount(
@@ -181,9 +213,9 @@ class HTTPClient:
             margin_type=margin_type,
             asset_name=asset_name,
             amount=amount,
-            from_address=ChecksumAddress(self._auth.account.address),
-            owner=self._auth.wallet,
-            private_key=cast(HexBytes, self._auth.account.key).to_0x_hex(),
+            from_address=ChecksumAddress(auth.account.address),
+            owner=auth.wallet,
+            private_key=cast(HexBytes, auth.account.key).to_0x_hex(),
             gas_priority=gas_priority,
         )
 
