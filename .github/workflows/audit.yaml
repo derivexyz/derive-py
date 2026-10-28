@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install osv-scanner
+        run: make install-osv-scanner
+
       - name: Audit
         run: make audit
 
