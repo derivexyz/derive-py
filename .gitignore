@@ -42,3 +42,6 @@ site/
 *private_key.txt
 
 node_modules/
+
+# osv-scanner, fetched by make install-osv-scanner
+.tools/

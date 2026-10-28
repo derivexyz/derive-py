@@ -46,7 +46,6 @@ pkgs.mkShell {
       asciinema-agg
       poetry
       python
-      osv-scanner
       pythonManylinuxPackages.manylinux2014Package
       cmake
     ]

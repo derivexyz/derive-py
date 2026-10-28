@@ -2,6 +2,15 @@ TOML_FILE := pyproject.toml
 MASTER_BRANCH := main
 DEV_BRANCH := dev
 
+# The osv-scanner release `make audit` runs, and each platform's binary's sha256, from the
+# release's osv-scanner_SHA256SUMS.
+OSV_SCANNER_VERSION := 2.7.0
+OSV_SCANNER_SHA256_linux_amd64 := 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+OSV_SCANNER_SHA256_linux_arm64 := 4061ef4c021ed3c47f203b818f337e351336cc5cd67c0274fc36bd1dfc728dd7
+OSV_SCANNER_SHA256_darwin_amd64 := e82c5df7ab0a42dff29a1cd0660711447b56b4c0483ff66ad8634df10fd81a45
+OSV_SCANNER_SHA256_darwin_arm64 := d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b
+OSV_SCANNER := .tools/bin/osv-scanner
+
 VERSION := $(shell sed -n 's/^version *= *"\(.*\)"/\1/p' $(TOML_FILE))
 
 .PHONY: dev-version
@@ -171,8 +180,34 @@ deptry:
 	poetry run deptry derive_py
 
 .PHONY: audit
-audit:
-	osv-scanner scan source --lockfile=poetry.lock
+audit: install-osv-scanner
+	$(OSV_SCANNER) scan source --lockfile=poetry.lock
+
+# One pinned release, locally and in CI alike, fetched once and kept only while its sha256 matches.
+.PHONY: install-osv-scanner
+install-osv-scanner:
+	@set -e; \
+	case "$$(uname -s)-$$(uname -m)" in \
+		Linux-x86_64) want="$(OSV_SCANNER_SHA256_linux_amd64)"; asset=linux_amd64 ;; \
+		Linux-aarch64 | Linux-arm64) want="$(OSV_SCANNER_SHA256_linux_arm64)"; asset=linux_arm64 ;; \
+		Darwin-x86_64) want="$(OSV_SCANNER_SHA256_darwin_amd64)"; asset=darwin_amd64 ;; \
+		Darwin-arm64) want="$(OSV_SCANNER_SHA256_darwin_arm64)"; asset=darwin_arm64 ;; \
+		*) echo "install-osv-scanner: no pinned release for $$(uname -s)-$$(uname -m)" >&2; exit 1 ;; \
+	esac; \
+	sha256() { { sha256sum "$$1" 2> /dev/null || shasum -a 256 "$$1"; } | cut -d' ' -f1; }; \
+	if [ -x "$(OSV_SCANNER)" ] && [ "$$(sha256 "$(OSV_SCANNER)")" = "$$want" ]; then exit 0; fi; \
+	mkdir -p "$(dir $(OSV_SCANNER))"; \
+	tmp="$(OSV_SCANNER).download"; \
+	curl -sSfL -o "$$tmp" \
+		"https://github.com/google/osv-scanner/releases/download/v$(OSV_SCANNER_VERSION)/osv-scanner_$$asset"; \
+	got="$$(sha256 "$$tmp")"; \
+	if [ "$$got" != "$$want" ]; then \
+		rm -f "$$tmp"; \
+		echo "osv-scanner $(OSV_SCANNER_VERSION) $$asset: sha256 $$got, expected $$want" >&2; exit 1; \
+	fi; \
+	chmod +x "$$tmp"; \
+	mv "$$tmp" "$(OSV_SCANNER)"; \
+	echo "installed osv-scanner $(OSV_SCANNER_VERSION) $$asset at $(OSV_SCANNER)"
 
 .PHONY: check_diff
 check_diff:
@@ -183,4 +218,4 @@ demo:
 	poetry run bash scripts/demos/all.sh
 
 .PHONY: all
-all: download-abis codegen-all fmt lint deptry typecheck docs tests
+all: download-abis codegen-all fmt lint deptry audit typecheck docs tests

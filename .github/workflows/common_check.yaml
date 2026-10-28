@@ -52,6 +52,9 @@ jobs:
       - name: Deptry
         run: poetry run make deptry
 
+      - name: Audit
+        run: poetry run make audit
+
       - name: Typecheck
         run: poetry run make typecheck
 
