@@ -170,6 +170,10 @@ typecheck:
 deptry:
 	poetry run deptry derive_py
 
+.PHONY: audit
+audit:
+	osv-scanner scan source --lockfile=poetry.lock
+
 .PHONY: check_diff
 check_diff:
 	@git diff --exit-code

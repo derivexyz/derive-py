@@ -10,8 +10,6 @@ let
   poetry = pkgs.poetry;
   userShell = builtins.getEnv "SHELL";
 
-  
-
   runtimeLibraries = with pkgs; [
     nss
     sane-backends
@@ -48,6 +46,7 @@ pkgs.mkShell {
       asciinema-agg
       poetry
       python
+      osv-scanner
       pythonManylinuxPackages.manylinux2014Package
       cmake
     ]
