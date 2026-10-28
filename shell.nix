@@ -1,12 +1,12 @@
 let
   pkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/nixos-25.11.tar.gz";
-    sha256 = "0ln4yw7z3g9lb0x081hc0pd2j1wsx2qqf6bgmwwvdbkcl4bcy1dp";
+    url = "https://github.com/NixOS/nixpkgs/archive/718f670e845328e9c2cecdd832835712b2cbd065.tar.gz";
+    sha256 = "0jw6fc1f4p6hnpmnp6c5ga5a0xlfbba5245xnx37m1rcixd43vhi";
   }) {};
 
   inherit (pkgs) lib;
 
-  python = pkgs.python311;
+  python = pkgs.python312;
   poetry = pkgs.poetry;
   userShell = builtins.getEnv "SHELL";
 
@@ -46,6 +46,7 @@ pkgs.mkShell {
       asciinema-agg
       poetry
       python
+      osv-scanner
       pythonManylinuxPackages.manylinux2014Package
       cmake
     ]
