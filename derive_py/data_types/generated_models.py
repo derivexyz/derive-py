@@ -924,11 +924,11 @@ class OptionSettlementResponse(Struct):
     amount: Decimal
     expiry: int
     instrument_name: str
+    option_settlement_pnl: Decimal | None
+    option_settlement_pnl_excl_fees: Decimal | None
     settlement_price: Decimal
     settlement_value: Decimal
     subaccount_id: int
-    option_settlement_pnl: Decimal | None = None
-    option_settlement_pnl_excl_fees: Decimal | None = None
 
 
 class OracleSignatureDataResponse(Struct):
@@ -1499,25 +1499,25 @@ class RequestVaultWithdrawRequest(Struct):
 
 
 class Rfq(Struct):
+    ask_total_cost: Decimal | None
+    bid_total_cost: Decimal | None
     cancel_reason: RFQCancelReason
     creation_timestamp: int
     filled_pct: Decimal
     label: str
     last_update_timestamp: int
     legs: list[LegUnpricedParams]
+    mark_total_cost: Decimal | None
+    max_total_cost: Decimal | None
+    min_total_cost: Decimal | None
     partial_fill_step: Decimal
     rfq_id: str
     status: RFQStatus
     subaccount_id: int
+    total_cost: Decimal | None
     valid_until: int
     wallet: Address
-    ask_total_cost: Decimal | None = None
-    bid_total_cost: Decimal | None = None
-    mark_total_cost: Decimal | None = None
-    max_total_cost: Decimal | None = None
-    min_total_cost: Decimal | None = None
-    total_cost: Decimal | None = None
-    counterparties: list[Address] | UnsetType = UNSET
+    counterparties: list[Address] | None | UnsetType = UNSET
     filled_direction: Direction | None | UnsetType = UNSET
 
 
@@ -1611,8 +1611,8 @@ class SessionKey(Struct):
     subaccount_ids: list[int]
 
 
-class SessionKeysRequest(Struct):
-    wallet: str
+class SessionKeysRequest(GetCuratedVaultsRequest):
+    pass
 
 
 class SetMmpConfigRequest(Struct):
@@ -1687,8 +1687,10 @@ class SettledTrade(Struct):
     instrument_name: str
     liquidity_role: LiquidityRole
     mark_price: Decimal
+    quote_id: str | None
     realized_pnl: Decimal
     realized_pnl_excl_fees: Decimal
+    rfq_id: str | None
     subaccount_id: int
     timestamp: int
     trade_amount: Decimal
@@ -1697,8 +1699,6 @@ class SettledTrade(Struct):
     trade_price: Decimal
     tx_hash: str
     wallet: str
-    quote_id: str | None = None
-    rfq_id: str | None = None
     batch_status: BatchStatus | None | UnsetType = UNSET
 
 
@@ -1825,16 +1825,16 @@ class Trade(Struct):
     mark_price: Decimal
     op_uuid: str
     order_id: str
+    quote_id: str | None
     realized_pnl: Decimal
     realized_pnl_excl_fees: Decimal
+    rfq_id: str | None
     subaccount_id: int
     timestamp: int
     trade_amount: Decimal
     trade_fee: Decimal
     trade_id: str
     trade_price: Decimal
-    quote_id: str | None = None
-    rfq_id: str | None = None
     batch_status: BatchStatus | None | UnsetType = UNSET
     label: str | UnsetType = ''
     tx_hash: str | None | UnsetType = UNSET
@@ -1852,16 +1852,16 @@ class TradeHistoryResponse(Struct):
     mark_price: Decimal
     op_uuid: str
     order_id: str
+    quote_id: str | None
     realized_pnl: Decimal
     realized_pnl_excl_fees: Decimal
+    rfq_id: str | None
     subaccount_id: int
     timestamp: int
     trade_amount: Decimal
     trade_fee: Decimal
     trade_id: str
     trade_price: Decimal
-    quote_id: str | None = None
-    rfq_id: str | None = None
     batch_status: BatchStatus | None | UnsetType = UNSET
     tx_hash: str | None | UnsetType = UNSET
 
@@ -2129,14 +2129,14 @@ class VaultIdsResponse(Struct):
 
 
 class VaultPerformancePointResponse(Struct):
+    benchmark_price: Decimal | None
     curator_shares: Decimal
     global_hwm: Decimal
+    nav: Decimal | None
+    nav_benchmark: Decimal | None
     share_price: Decimal
     total_shares: Decimal
     ts: int
-    benchmark_price: Decimal | None = None
-    nav: Decimal | None = None
-    nav_benchmark: Decimal | None = None
 
 
 class VaultRequestId(Struct):
@@ -2409,15 +2409,15 @@ class Order(Struct):
     order_id: str
     order_status: OrderStatus
     order_type: OrderType
+    quote_id: str | None
+    replaced_order_id: str | None
     signature: str
     signature_expiry_sec: int
+    signed_limit_price: Decimal | None
     signer: str
     subaccount_id: int
     time_in_force: TimeInForce
-    quote_id: str | None = None
-    replaced_order_id: str | None = None
-    signed_limit_price: Decimal | None = None
-    trigger_price: Decimal | None = None
+    trigger_price: Decimal | None
     algo_duration_sec: int | None | UnsetType = UNSET
     algo_num_slices: int | None | UnsetType = UNSET
     algo_slices_completed: int | None | UnsetType = UNSET
@@ -2559,18 +2559,18 @@ class PublicQuote(Struct):
 class PublicRfq(Struct):
     cancel_reason: RFQCancelReason
     creation_timestamp: int
+    fill_rate: Decimal | None
     filled_pct: Decimal
     last_update_timestamp: int
     legs: list[LegUnpricedParams]
     partial_fill_step: Decimal
+    recent_fill_rate: Decimal | None
     rfq_id: str
     status: RFQStatus
     subaccount_id: int
+    total_cost: Decimal | None
     valid_until: int
     wallet: Address
-    fill_rate: Decimal | None = None
-    recent_fill_rate: Decimal | None = None
-    total_cost: Decimal | None = None
     filled_direction: Direction | None | UnsetType = UNSET
 
 
@@ -2697,24 +2697,24 @@ class ReplaceOrderResponse(Struct):
     cancelled_order: Order
     create_order_error: RPCError | None | UnsetType = UNSET
     order: Order | None | UnsetType = UNSET
-    trades: list[Trade] | UnsetType = UNSET
+    trades: list[Trade] | None | UnsetType = UNSET
 
 
 class RfqGetBestQuoteResponse(Struct):
     direction: Direction
+    down_liquidation_price: Decimal | None
     estimated_fee: Decimal
     estimated_realized_pnl: Decimal
     estimated_realized_pnl_excl_fees: Decimal
     estimated_total_cost: Decimal
     filled_pct: Decimal
     is_valid: bool
+    orderbook_total_cost: Decimal | None
     post_initial_margin: Decimal
+    post_liquidation_price: Decimal | None
     pre_initial_margin: Decimal
     suggested_max_fee: Decimal
-    down_liquidation_price: Decimal | None = None
-    orderbook_total_cost: Decimal | None = None
-    post_liquidation_price: Decimal | None = None
-    up_liquidation_price: Decimal | None = None
+    up_liquidation_price: Decimal | None
     best_quote: PublicQuote | None | UnsetType = UNSET
     invalid_reason: str | None | UnsetType = UNSET
 
@@ -2841,10 +2841,10 @@ class VolFeedDataResponse(Struct):
 
 
 class WithdrawalForward(Struct):
+    amount_forwarded: Decimal | None
     chain_id: int
     recipient: str
     status: WithdrawalForwardStatus
-    amount_forwarded: Decimal | None = None
     destination_tx: str | None | UnsetType = UNSET
     forward_tx: str | None | UnsetType = UNSET
     hold_reason: str | None | UnsetType = UNSET
