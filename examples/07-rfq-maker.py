@@ -15,6 +15,8 @@ bounded to a few rounds so it terminates.
     cancelled, including after this process exits. Hence the label, and the
     cancel by that label in the finally block: it retires this example's own
     quotes without touching anything else the subaccount has resting.
+    A subaccount trades only instruments of its own risk universe, and open
+    RFQs are anyone's: one with a leg in another universe is skipped, not quoted.
 
 Uses WebSocketClient for the same reason as 05-place-order.py: signed
 actions and repeated polling over one persistent connection.
@@ -54,14 +56,14 @@ def snap_to_tick(price: Decimal, tick_size: Decimal, *, favor_high: bool) -> Dec
     return price.quantize(tick_size, rounding=ROUND_CEILING if favor_high else ROUND_FLOOR)
 
 
-async def price_leg(client, leg: LegUnpricedParams) -> tuple[LegUnpricedParams, Decimal, Decimal]:
-    """Mark price and tick size for one leg, fetched concurrently."""
+async def price_leg(client, leg: LegUnpricedParams) -> tuple[LegUnpricedParams, Decimal, Decimal, int]:
+    """Mark price, tick size and risk universe id for one leg, fetched concurrently."""
 
     ticker, instrument = await asyncio.gather(
         client.markets.get_ticker(instrument_name=leg.instrument_name),
         client.markets.get_instrument(instrument_name=leg.instrument_name),
     )
-    return leg, Decimal(ticker.mark_price), Decimal(instrument.tick_size)
+    return leg, Decimal(ticker.mark_price), Decimal(instrument.tick_size), instrument.risk_universe_id
 
 
 async def main() -> None:
@@ -90,11 +92,25 @@ async def main() -> None:
 
             for rfq in fresh:
                 priced = await asyncio.gather(*(price_leg(client, leg) for leg in rfq.legs))
-                notional_usd = sum((leg.amount * mark for leg, mark, _ in priced), Decimal("0"))
+                # Compared as ints: a universe id the enum does not list yet is
+                # foreign, not an error.
+                foreign = [
+                    f"{leg.instrument_name} (universe {universe})"
+                    for leg, _, _, universe in priced
+                    if universe != subaccount.risk_universe_id
+                ]
+                if foreign:
+                    log.warning(
+                        f"  skipped rfq {rfq.rfq_id}: {', '.join(foreign)} outside "
+                        f"{subaccount.risk_universe_id.name}, which subaccount {subaccount.id} trades"
+                    )
+                    quoted_rfq_ids.add(rfq.rfq_id)
+                    continue
+                notional_usd = sum((leg.amount * mark for leg, mark, _, _ in priced), Decimal("0"))
 
                 for direction in (Direction.sell, Direction.buy):
                     legs = []
-                    for leg, mark, tick_size in priced:
+                    for leg, mark, tick_size, _ in priced:
                         # Selling the package means pricing over mark on legs
                         # the taker buys and under mark on legs it sells.
                         # Bidding for the package flips both.
