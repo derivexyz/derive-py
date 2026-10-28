@@ -178,6 +178,7 @@ class CancelReason(StrEnum):
     trigger_failed = 'trigger_failed'
     validation_failed = 'validation_failed'
     algo_completed = 'algo_completed'
+    max_crossed_orders = 'max_crossed_orders'
 
 
 class CancelRfqRequest(Struct):
@@ -878,12 +879,6 @@ class OpenInterestStats(Struct):
     interest_cap: str
 
 
-class OperationAckResponse(Struct):
-    mmp_triggered: list[int]
-    op_uuid: str
-    operation_id: int
-
-
 class OptionDetails(Struct):
     expiry: int
     index: str
@@ -1269,6 +1264,15 @@ class PublicGetSubaccountsRequest(GetAccountRequest):
     pass
 
 
+class PublicGetWalletRequest(CancelAllAlgoOrdersRequest):
+    pass
+
+
+class PublicGetWalletResponse(Struct):
+    subaccount_id: int
+    wallet: str
+
+
 class PublicGetWalletsFromSessionKeyResponse(Struct):
     wallets: list[str]
 
@@ -1289,31 +1293,6 @@ class PublicMarginWatchResponse(Struct):
     regular_margin_flagged_sec: int | None | UnsetType = UNSET
 
 
-class PublicOracleSignatureDataParams(Struct):
-    signatures: list[str] | UnsetType = field(default_factory=list)
-    signers: list[str] | UnsetType = field(default_factory=list)
-
-
-class PublicPerpFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    spot_diff_value: str
-    timestamp: int
-    type: str
-    deadline: int | UnsetType = 0
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
-
-
-class PublicRateFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    expiry: int
-    rate: str
-    timestamp: int
-    deadline: int | UnsetType = 0
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
-
-
 class PublicSendQuoteDebugRequest(Struct):
     direction: Direction
     legs: list[PricedLegParamsAndResponse]
@@ -1324,24 +1303,6 @@ class PublicSendQuoteDebugRequest(Struct):
     signature_expiry_sec: int
     signer: Address
     subaccount_id: int
-
-
-class PublicSpotFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    price: str
-    timestamp: int
-    deadline: int | UnsetType = 0
-    feed_source_type: str | UnsetType = UNSET
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
-
-
-class PublicStartAuctionRequest(Struct):
-    subaccount_id: int
-
-
-class PublicStartAuctionResponse(DeleteSubaccountResponse):
-    pass
 
 
 class PublicVaultActionResponse(Struct):
@@ -1361,16 +1322,6 @@ class PublicVaultActionResponse(Struct):
     status: str
     subaccount_id: int
     total_shares: Decimal
-
-
-class PublicVolSVIParamDataParams(Struct):
-    SVI_a: str
-    SVI_b: str
-    SVI_fwd: str
-    SVI_m: str
-    SVI_refTau: str
-    SVI_rho: str
-    SVI_sigma: str
 
 
 class PublicWithdrawDebugRequest(Struct):
@@ -2198,8 +2149,14 @@ class VaultSettleResponse(DeleteSubaccountResponse):
     pass
 
 
-class VolSVIParamDataResponse(PublicVolSVIParamDataParams):
-    pass
+class VolSVIParamDataResponse(Struct):
+    SVI_a: str
+    SVI_b: str
+    SVI_fwd: str
+    SVI_m: str
+    SVI_refTau: str
+    SVI_rho: str
+    SVI_sigma: str
 
 
 class WithdrawAddressEntry(Struct):
@@ -2574,27 +2531,6 @@ class ProtocolVault(Struct):
     total_shares: Decimal
 
 
-class PublicForwardFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    expiry: int
-    fwd_diff: str
-    spot_aggregate_latest: str
-    spot_aggregate_start: str
-    timestamp: int
-    deadline: int | UnsetType = 0
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
-
-
-class PublicFundingFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    funding_rate: str
-    timestamp: int
-    deadline: int | UnsetType = 0
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
-
-
 class PublicGetMarginRequest(Struct):
     margin_type: str
     simulated_collaterals: list[SimulatedCollateralRequest]
@@ -2641,16 +2577,6 @@ class PublicRfq(Struct):
 class PublicTradesResult(Struct):
     pagination: Pagination
     trades: list[SettledTrade]
-
-
-class PublicVolFeedDataParams(Struct):
-    confidence: str
-    currency: str
-    expiry: int
-    timestamp: int
-    vol_data: PublicVolSVIParamDataParams
-    deadline: int | UnsetType = 0
-    signatures: PublicOracleSignatureDataParams | UnsetType = UNSET
 
 
 class Quote(Struct):
@@ -2995,20 +2921,6 @@ class Instrument(Struct):
 class MultipleVaultRequestsResponse(Struct):
     requests: list[VaultRequestResponse]
     total: int
-
-
-class PublicSetFeedDataRequest(Struct):
-    forward: list[PublicForwardFeedDataParams]
-    perp: list[PublicPerpFeedDataParams]
-    rate: list[PublicRateFeedDataParams]
-    spot: list[PublicSpotFeedDataParams]
-    vol: list[PublicVolFeedDataParams]
-    funding: list[PublicFundingFeedDataParams] | UnsetType = UNSET
-
-
-class PublicSetSocializationFeedDataRequest(Struct):
-    feeds: PublicSetFeedDataRequest
-    universe_id: int
 
 
 class WithdrawalEntry(Struct):
