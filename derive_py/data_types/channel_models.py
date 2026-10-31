@@ -208,19 +208,19 @@ class QuotePublishResult(Struct):
 
 class RfqGetBestQuoteResponse(Struct):
     direction: Direction
+    down_liquidation_price: Decimal | None
     estimated_fee: Decimal
     estimated_realized_pnl: Decimal
     estimated_realized_pnl_excl_fees: Decimal
     estimated_total_cost: Decimal
     filled_pct: Decimal
     is_valid: bool
+    orderbook_total_cost: Decimal | None
     post_initial_margin: Decimal
+    post_liquidation_price: Decimal | None
     pre_initial_margin: Decimal
     suggested_max_fee: Decimal
-    down_liquidation_price: Decimal | None = None
-    orderbook_total_cost: Decimal | None = None
-    post_liquidation_price: Decimal | None = None
-    up_liquidation_price: Decimal | None = None
+    up_liquidation_price: Decimal | None
     best_quote: PublicQuote | None | UnsetType = UNSET
     invalid_reason: str | None = None
 
