@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "derive-py"
-version = "0.1.5"
+version = "0.2.0"
 description = "Python client for the Derive v3 API"
 authors = [
   "8baller <8baller@station.codes>",
@@ -29,15 +29,15 @@ packages = [{ include = "derive_py" }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.16"
-requests = ">=2.31"
+requests = ">=2.33"
 rich-click = ">=1.7.1"
-python-dotenv = ">=0.14"
+python-dotenv = ">=1.2.2"
 pandas = ">=2,<4"
 pydantic = ">=2.11.3"
 msgspec = ">=0.19,<1.0"
-web3 = ">=7.14,<8"
+web3 = ">=7.15,<8"
 websockets = ">=15"
-aiohttp = ">=3.13"
+aiohttp = ">=3.14.4"
 click = ">=8.3"
 rich = ">=14"
 more-itertools = ">=10.8"
@@ -51,12 +51,12 @@ hexbytes = ">=1.3"
 drv = "derive_py.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "9.0.2"
+pytest = "9.0.3"
 tbump = "^6.11.0"
 pytest-rerunfailures = "^13.0"
 semver = ">=2.9.1,<3.0.0"
 ruff = "^0.13.0"
-datamodel-code-generator = "^0.58.0"
+datamodel-code-generator = "^0.81.0"
 libcst = "^1.8.5"
 pytest-asyncio = "1.3.0"
 pyright = { version = "^1.1.407", extras = ["nodejs"] }
@@ -67,7 +67,7 @@ deptry = "^0.25.1"
 mkdocs = "^1.6.1"
 mkdocs-material = "^9.6.20"
 mkdocs-include-markdown-plugin = "^7.1.7"
-mkdocstrings = {extras = ["python"], version = "^0.30.1"}
+mkdocstrings = {extras = ["python"], version = "^1.0.8"}
 mkdocs-gen-files = "^0.5.0"
 mkdocs-literate-nav = "^0.6.2"
 

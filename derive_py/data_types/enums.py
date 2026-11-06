@@ -73,7 +73,7 @@ class ProtocolScope(StrEnum):
     TRANSFER_EXISTING_SUBACCOUNT = "transfer:existing_subaccount"
     TRANSFER_NEW_SUBACCOUNT = "transfer:new_subaccount"
     TRANSFER_DIFFERENT_OWNER_SUBACCOUNT = "transfer:different_owner_subaccount"
-    CREATE_SESSION_KEY = "create_session_key"
+    SET_SESSION_KEY = "set_session_key"
     LIQUIDATE = "liquidate"
     VAULT_ALL = "vault:all"
     VAULT_CURATOR_CREATE = "vault:curator_create"
@@ -103,7 +103,7 @@ _PROTOCOL_SCOPE_CODES: dict[ProtocolScope, int] = {
     ProtocolScope.TRANSFER_EXISTING_SUBACCOUNT: 12,
     ProtocolScope.TRANSFER_NEW_SUBACCOUNT: 13,
     ProtocolScope.TRANSFER_DIFFERENT_OWNER_SUBACCOUNT: 14,
-    ProtocolScope.CREATE_SESSION_KEY: 15,
+    ProtocolScope.SET_SESSION_KEY: 15,
     ProtocolScope.LIQUIDATE: 16,
     ProtocolScope.VAULT_ALL: 17,
     ProtocolScope.VAULT_CURATOR_CREATE: 18,

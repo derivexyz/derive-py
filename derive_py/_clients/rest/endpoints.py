@@ -35,6 +35,7 @@ class PublicEndpoints:
 
     get_margin = Endpoint("public", "get_margin")
     get_subaccounts = Endpoint("public", "get_subaccounts")
+    get_wallet = Endpoint("public", "get_wallet")
     get_wallets_from_session_key = Endpoint("public", "get_wallets_from_session_key")
     order_quote = Endpoint("public", "order_quote")
     execute_quote_debug = Endpoint("public", "execute_quote_debug")
@@ -42,7 +43,6 @@ class PublicEndpoints:
     get_liquidation_history = Endpoint("public", "get_liquidation_history")
     get_live_auctions = Endpoint("public", "get_live_auctions")
     margin_watch = Endpoint("public", "margin_watch")
-    start_auction = Endpoint("public", "start_auction")
     get_vault = Endpoint("public", "get_vault")
     get_vault_action_history = Endpoint("public", "get_vault_action_history")
     get_vault_performance_history = Endpoint("public", "get_vault_performance_history")
@@ -76,7 +76,6 @@ class PublicEndpoints:
     get_maker_programs = Endpoint("public", "get_maker_programs")
     get_all_referral_codes = Endpoint("public", "get_all_referral_codes")
     get_referral_performance = Endpoint("public", "get_referral_performance")
-    set_socialization_feed_data = Endpoint("public", "set_socialization_feed_data")
 
 
 class PrivateEndpoints:

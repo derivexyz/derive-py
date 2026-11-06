@@ -989,7 +989,8 @@
           "compliance",
           "trigger_failed",
           "validation_failed",
-          "algo_completed"
+          "algo_completed",
+          "max_crossed_orders"
         ]
       },
       "DailyTradingStatistics": {

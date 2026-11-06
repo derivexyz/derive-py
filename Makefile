@@ -2,6 +2,11 @@ TOML_FILE := pyproject.toml
 MASTER_BRANCH := main
 DEV_BRANCH := dev
 
+# The osv-scanner shell.nix's nixpkgs provides, which CI installs as the same release.
+# Bumping nixpkgs can move it: `make audit` refuses until this follows.
+OSV_SCANNER_VERSION := 2.3.3
+OSV_SCANNER_SHA256 := 777b4bb7ddd10bdcc8a1aa398d37d05e91e866e7586f9cff3fca2f72b8153033
+
 VERSION := $(shell sed -n 's/^version *= *"\(.*\)"/\1/p' $(TOML_FILE))
 
 .PHONY: dev-version
@@ -170,6 +175,27 @@ typecheck:
 deptry:
 	poetry run deptry derive_py
 
+.PHONY: audit
+audit:
+	@command -v osv-scanner > /dev/null || { echo "osv-scanner is not on PATH: the nix shell provides $(OSV_SCANNER_VERSION)" >&2; exit 1; }
+	@osv-scanner --version | grep -qx 'osv-scanner version: $(OSV_SCANNER_VERSION)' || { \
+		echo "osv-scanner is $$(osv-scanner --version | head -1), not $(OSV_SCANNER_VERSION): keep shell.nix and OSV_SCANNER_VERSION in step" >&2; exit 1; }
+	osv-scanner scan source --lockfile=poetry.lock
+
+# CI only, whose runner has no nix shell: the same release, checked by sha256, onto the job's PATH.
+.PHONY: install-osv-scanner
+install-osv-scanner:
+	@set -e; \
+	if [ -z "$${CI:-}" ]; then echo "install-osv-scanner: CI only; here the nix shell provides osv-scanner"; exit 0; fi; \
+	dir="$${RUNNER_TEMP:?}/osv-scanner"; \
+	mkdir -p "$$dir"; \
+	curl -sSfL -o "$$dir/osv-scanner" \
+		"https://github.com/google/osv-scanner/releases/download/v$(OSV_SCANNER_VERSION)/osv-scanner_linux_amd64"; \
+	echo "$(OSV_SCANNER_SHA256)  $$dir/osv-scanner" | sha256sum -c --quiet -; \
+	chmod +x "$$dir/osv-scanner"; \
+	echo "$$dir" >> "$$GITHUB_PATH"
+
+
 .PHONY: check_diff
 check_diff:
 	@git diff --exit-code
@@ -179,4 +205,4 @@ demo:
 	poetry run bash scripts/demos/all.sh
 
 .PHONY: all
-all: download-abis codegen-all fmt lint deptry typecheck docs tests
+all: download-abis codegen-all fmt lint deptry audit typecheck docs tests

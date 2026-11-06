@@ -121,7 +121,6 @@ from derive_py.data_types.generated_models import (
     MmpScopeRequest,
     MultipleVaultRequestsResponse,
     OffchainAckResponse,
-    OperationAckResponse,
     OptionSettlementHistoryResponse,
     OptionSettlementPricesResult,
     Order,
@@ -159,12 +158,11 @@ from derive_py.data_types.generated_models import (
     PublicGetLiveAuctionsResponse,
     PublicGetMarginRequest,
     PublicGetSubaccountsRequest,
+    PublicGetWalletRequest,
+    PublicGetWalletResponse,
     PublicGetWalletsFromSessionKeyResponse,
     PublicMarginWatchResponse,
     PublicSendQuoteDebugRequest,
-    PublicSetSocializationFeedDataRequest,
-    PublicStartAuctionRequest,
-    PublicStartAuctionResponse,
     PublicTradesResult,
     PublicWithdrawDebugRequest,
     Quote,
@@ -281,6 +279,25 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PrivateGetSubaccountsResponse)
+
+        return result
+
+    async def get_wallet(
+        self,
+        params: PublicGetWalletRequest,
+    ) -> PublicGetWalletResponse:
+        """
+        Returns the wallet address that owns `subaccount_id`; the reverse of
+        `public/get_subaccounts`. Returns a subaccount-not-found error if the subaccount
+        does not exist. The result can be up to 60 seconds old. Public endpoint, no
+        authentication required.
+        """
+
+        url = self._endpoints.get_wallet
+        data = encode_request(params)
+        message = await self._session._send_request(url, data, headers=self.headers)
+        envelope = decode_envelope(message)
+        result = decode_result(envelope, PublicGetWalletResponse)
 
         return result
 
@@ -426,26 +443,6 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, PublicMarginWatchResponse)
-
-        return result
-
-    async def start_auction(
-        self,
-        params: PublicStartAuctionRequest,
-    ) -> PublicStartAuctionResponse:
-        """
-        Opens a Dutch-auction liquidation against a subaccount whose maintenance margin
-        is breached. Permissionless: it takes only the target subaccount and needs no
-        signer, nonce or session-key scope, and the engine validates the breach before
-        opening. Fails if an auction is already running on that account. The liquidation
-        keeper calls this automatically, so it is rarely needed by hand.
-        """
-
-        url = self._endpoints.start_auction
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, PublicStartAuctionResponse)
 
         return result
 
@@ -683,8 +680,7 @@ class AsyncPublicRPC:
         Returns every incident the exchange operators have declared and not yet
         resolved, each with its label, message, severity (low, medium or high), whether
         it was raised manually or by an automated monitor, and when it was raised. Takes
-        no parameters. Incidents are recorded and resolved by operators in ClickHouse; a
-        resolved incident disappears from this list.
+        no parameters. A resolved incident disappears from this list.
         """
 
         url = self._endpoints.get_live_incidents
@@ -1067,8 +1063,7 @@ class AsyncPublicRPC:
         """
         Returns the wallet-level score breakdown for one maker-program epoch, including
         square-rooted coverage and quality components, traded-volume multiplier, holder
-        boost, volume, and epoch totals. Scores, trades, program configuration, and the
-        temporary enrolled-wallet set are read from ClickHouse.
+        boost, volume, and epoch totals.
         """
 
         url = self._endpoints.get_maker_program_scores
@@ -1086,7 +1081,7 @@ class AsyncPublicRPC:
         """
         Returns every maker-program epoch, including historical epochs, with its asset
         and currency scope, minimum eligible notional, timestamps, and reward-token
-        amounts. Takes no parameters and reads the configuration from ClickHouse.
+        amounts. Takes no parameters.
         """
 
         url = self._endpoints.get_maker_programs
@@ -1133,22 +1128,6 @@ class AsyncPublicRPC:
         message = await self._session._send_request(url, data, headers=self.headers)
         envelope = decode_envelope(message)
         result = decode_result(envelope, GetReferralPerformanceResult)
-
-        return result
-
-    async def set_socialization_feed_data(
-        self,
-        params: PublicSetSocializationFeedDataRequest,
-    ) -> OperationAckResponse:
-        """
-        public/set_socialization_feed_data
-        """
-
-        url = self._endpoints.set_socialization_feed_data
-        data = encode_request(params)
-        message = await self._session._send_request(url, data, headers=self.headers)
-        envelope = decode_envelope(message)
-        result = decode_result(envelope, OperationAckResponse)
 
         return result
 
@@ -2796,13 +2775,15 @@ class AsyncPrivateRPC:
         params: RegisterBridgeDepositParams,
     ) -> PendingDepositBridgeOrigin:
         """
-        Reports a Li.Fi bridge into one of the caller's deposit addresses the moment its
+        Reports a bridge into one of the caller's deposit addresses the moment its
         source transaction is sent, so public/get_pending_deposits shows it as
-        `bridging` at once with the quoted amount, before Li.Fi indexes it. Takes the
-        source chain and transaction, the quote's transactionId, the deposit address,
-        the source and delivered tokens and the quoted toAmount. Idempotent per source
-        transaction. Display only: nothing is credited from it, and a registration Li.Fi
-        never confirms expires.
+        `bridging` at once with the expected amount, before the bridge's own API reports
+        it. Rails: `lifi`, `layerzero` and `ccip`. Takes the rail, the source chain and
+        transaction, the rail's transfer id (Li.Fi: the quote's transactionId, optional;
+        LayerZero: the message guid; CCIP: the messageId), the deposit address, the
+        source and delivered tokens and the expected amount. Idempotent per bridge.
+        Display only: nothing is credited from it, and a registration its rail never
+        confirms expires.
         """
 
         url = self._endpoints.register_bridge_deposit

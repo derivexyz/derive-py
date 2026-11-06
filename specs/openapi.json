@@ -105,11 +105,33 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Updates the human-readable label for a subaccount. The label must be at most 16 characters, otherwise an invalid-params error is returned. Requires a signed session key with account-info scope; on success it echoes back the subaccount ID and the new label.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -141,9 +163,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Permanently deletes one of the caller's subaccounts via a signed action. The subaccount must be fully wound down: no balances or debt, no open orders, RFQs, or quotes, not a vault, not under auction, and not the wallet's fallback subaccount. Deletion never moves value; subaccount ids are never reused. This is an owner-or-admin operation (session keys need the admin scope).",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -180,9 +224,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the complete portfolio (same shape as get_subaccount) for every subaccount owned by the given wallet, including valuations, margin figures, open orders, positions, and collaterals. If an individual subaccount's portfolio cannot be built, it is returned as a placeholder entry with failed_to_fetch set to true rather than failing the whole request.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -216,9 +282,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the subaccount ID and the list of its collateral balances, including each asset's amount and current value valued against live feed data. A lighter alternative to get_subaccount when only collateral holdings are needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -252,9 +340,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Calculates net initial and maintenance margin for a subaccount before and after an optional simulated state change (position and/or collateral deltas), and whether that change would pass the margin requirement. Values are net margin — mark-to-market value minus the requirement — so positive means healthy. Does not take open-order margin into account. Margins use the subaccount's manager's params. Set is_delayed_liquidation to use its delayed-liquidation override instead, as order checks do; the request is rejected for a subaccount without one.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -288,9 +398,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the subaccount ID and the list of its active positions, including size, mark price, average price, unrealized and realized PnL, and Greeks where applicable, valued against live feed data at request time. A lighter alternative to get_subaccount when only positions are needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -324,9 +456,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the complete portfolio for a single subaccount: its label, manager and risk-universe identifiers, margin type and liquidation status, aggregate valuation and margin figures (positions, collaterals, initial and maintenance margin, open-order margin) as decimal strings, plus the full lists of open orders, positions, and collateral balances. Margin, mark price, and Greek values are computed from live feed data at request time.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -360,9 +514,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the wallet address and the sorted list of subaccount IDs owned by that wallet. Yields an empty list if the wallet has no subaccounts.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -396,7 +572,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Calculates net initial and maintenance margin for a fully simulated portfolio under a chosen margin type (SM or PM2; market selects the currency a PM2 manager must cover), optionally with a further simulated state change layered on top. Values are net margin — mark-to-market value minus the requirement — so positive means healthy. Does not take open-order margin into account.",
@@ -432,7 +623,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the wallet address and the sorted list of all subaccount IDs owned by that wallet. Yields an empty list if the wallet has no subaccounts. Public endpoint, no authentication required.",
@@ -443,6 +649,57 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PublicGetSubaccountsRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/get_wallet": {
+      "post": {
+        "tags": [
+          "Subaccounts"
+        ],
+        "summary": "public/get_wallet",
+        "operationId": "public_get_wallet",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGetWalletResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Returns the wallet address that owns `subaccount_id`; the reverse of `public/get_subaccounts`. Returns a subaccount-not-found error if the subaccount does not exist. The result can be up to 60 seconds old. Public endpoint, no authentication required.",
+        "x-rate-limit-class": "non_matching",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicGetWalletRequest"
               }
             }
           }
@@ -468,11 +725,33 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Updates an existing session key's label, IP allowlist, and/or off-chain scopes for a given wallet; it cannot change on-chain (protocol) scopes, for which you must re-register with private/set_session_key. Editing only the label needs account-info permission, while changing the IP allowlist or off-chain scopes requires admin/owner authorization. Returns the updated session key details.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -504,9 +783,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns every session key registered to the given wallet, including expired and not-yet-activated keys, each with its public address, scopes, expiry, label, IP allowlist, and permitted subaccounts.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -540,9 +841,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Authorizes a new session key for a wallet from a signed action, granting it a set of on-chain (protocol) scopes and off-chain scopes with an expiry, an optional label, an optional IP allowlist, and an optional list of subaccounts it may act on (defaults to all of the wallet's subaccounts). Send the signed action fields (nonce, signer, signature, signature expiry, and module) alongside the requested scopes; the endpoint returns the registered key's public address and its granted scopes, expiry, allowlist, label, and subaccounts.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -576,9 +899,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/set_session_key and rebuilds the session-key Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded session key, expiry, protocol scopes and subaccounts. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -612,7 +957,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Public lookup that returns the wallet addresses a given session key is registered to, sorted by expiry, with expired keys omitted. An optional scope filter narrows results to keys holding that off-chain scope; returns an error if no matching, unexpired keys exist.",
@@ -648,9 +1008,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns account-level information for a given wallet address: the list of its subaccount IDs, WebSocket rate limits (matching, non-matching, perp, and option messages per second) and any per-endpoint overrides, cancel-on-disconnect and RFQ-maker flags, the account creation timestamp, and a fee_info block with fee discounts and per-instrument maker/taker fee overrides expressed as decimals. Returns an account-not-found error if the wallet has never been registered.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -684,9 +1066,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels one resting order identified by order_id, subaccount_id and instrument_name. Requires any trade scope on the session; returns the cancelled order with its final status.",
         "x-rate-limit-class": "matching",
         "requestBody": {
@@ -720,9 +1124,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels a single active algo order identified by order_id and subaccount_id, stopping any further child-order execution. Requires any trade scope; returns the cancelled order.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -756,9 +1182,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels every open order on the given subaccount. Optional cancel_trigger_orders and cancel_algo_orders flags additionally clear the subaccount's trigger and algo orders in the same call. Requires any trade scope; returns \"ok\" on success.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
@@ -792,9 +1240,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels every active algo order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -828,9 +1298,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels every pending trigger order on the given subaccount. Requires any trade scope; returns \"ok\" on success.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -864,9 +1356,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels every open order for a subaccount on a single instrument. Requires any trade scope; returns the number of orders cancelled.",
         "x-rate-limit-class": "matching",
         "requestBody": {
@@ -900,9 +1414,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels a subaccount's open orders that carry the given client label, optionally scoped to a single instrument_name. When an instrument is supplied the call is acknowledged with the number of orders cancelled; without one it runs as a bulk fire-and-forget cancel and returns a -1 sentinel count. Requires any trade scope.",
         "x-rate-limit-class": "custom",
         "requestBody": {
@@ -936,9 +1472,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels a single order identified by its signing nonce, instrument_name and subaccount_id. The owning wallet is taken from the authenticated session rather than the request. Requires any trade scope; returns the cancelled order.",
         "x-rate-limit-class": "matching",
         "requestBody": {
@@ -972,9 +1530,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels a single pending trigger order identified by order_id and subaccount_id. Requires any trade scope; returns the cancelled order.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1011,9 +1591,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns all active algo orders (e.g. time-sliced execution orders) for the given subaccount as a flat list. Read-only query.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1047,9 +1649,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns all currently open orders for the given subaccount, including each order's instrument, direction, prices, amounts and status. Only orders resting on the order book are returned: pending trigger orders that have not yet fired are available from get_trigger_orders, and active algo orders from get_algo_orders. Once a trigger order fires, the resulting order appears here if it rests on the book rather than filling immediately; algo orders execute as IOC slices and so never rest here. Read-only query.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1083,9 +1707,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns one order (active or completed) by order_id and subaccount_id; the subaccount filter enforces ownership. Returns the order or an order-does-not-exist error.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1119,9 +1765,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns all pending trigger (conditional) orders for the given subaccount that have not yet fired. Read-only query.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1155,9 +1823,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed limit or market order for a subaccount, specifying instrument, direction, amount, limit price and max fee, plus optional flags like time-in-force, reduce-only, post-only and MMP. The same endpoint also creates trigger orders (via trigger_type/trigger_price) and algo orders (via algo_type), though the two cannot be combined in one request. Requires a signed order payload and Orderbook trade scope for the instrument's asset; returns the created order with its assigned id and current status.",
         "x-rate-limit-class": "matching",
         "requestBody": {
@@ -1191,9 +1881,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/order and rebuilds the order Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded order action data. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no trade scope needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1227,9 +1939,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Dry-run pricing helper that estimates the outcome of a prospective order without placing it, returning projected fill price and amount, fees, pre/post initial margin, realized PnL, resulting order status and (where relevant) liquidation price and max tradable amount. All monetary values are returned as decimal strings. The private variant requires account-level authentication.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1263,9 +1997,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Atomically cancels a resting order (identified by order_id_to_cancel or nonce_to_cancel) and submits a replacement order in a single request. The payload is a full new-order specification plus the cancel target and an optional expected_filled_amount guard. Requires a signed order payload and Orderbook trade scope; returns both the cancelled and the newly created order.",
         "x-rate-limit-class": "matching",
         "requestBody": {
@@ -1299,7 +2055,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Public dry-run variant of order_quote that estimates fill price, fees, margin impact, projected order status and realized PnL for a prospective order without placing it, returning all values as decimal strings. Unlike private/order_quote it bypasses session scope checks, so it can be used to preview costs without account authentication.",
@@ -1335,9 +2106,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels all open quotes on a subaccount that match the supplied filters (any combination of quote_id, rfq_id, label, and nonce, applied together) in a single atomic operation. Omitting the optional filters targets all of the subaccount's open quotes. Returns the list of cancelled quote ids. Requires an RFQ trade scope.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1371,9 +2164,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels all open RFQs on a subaccount that match the supplied filters (any combination of rfq_id, label, and nonce, applied together), cascade-cancelling their quotes. Omitting the optional filters targets all of the subaccount's open RFQs. Returns the set of cancelled RFQs. Requires an RFQ trade scope.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1407,9 +2222,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels one open quote owned by the subaccount, identified by quote_id (optionally further constrained by rfq_id, label, or nonce). Returns the cancelled quote, or a quote-not-found error if it does not exist or is no longer open. Requires an RFQ trade scope.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
@@ -1443,9 +2280,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Cancels one open RFQ owned by the given subaccount and cascade-cancels any quotes makers have submitted against it, notifying those makers. Identify the RFQ by its rfq_id. Returns \"ok\" on success. Requires an RFQ trade scope.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1479,9 +2338,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Taker-side call that accepts a specific maker quote and settles the trade atomically. You reference the rfq_id and quote_id and supply the taker's priced legs, direction, max fee, and EIP-712 signature (signer, signature, nonce, expiry), with an optional taker-protection flag. It does not check the RFQ's max_total_cost or min_total_cost. The signature is verified and the taker fill, maker quote, and RFQ are updated together in one atomic step. Requires trade scope for every instrument in the legs.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1515,9 +2396,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Maker-side history of RFQs the subaccount was eligible to quote, i.e. RFQs open to all makers or naming the maker's wallet as a counterparty, including ones the maker never quoted. Returns filled, cancelled and expired RFQs only; use private/poll_rfqs for open ones. Supports filtering by rfq_id, status, an originating RFQ subaccount, and an RFQ creation-time window, with pagination. Without from_timestamp, the window covers the 30 days before to_timestamp (or before now). Newest RFQs first. Returns the same public RFQ view as private/poll_rfqs, with fill rates unset. An RFQ appears here a few seconds after it leaves private/poll_rfqs.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1551,9 +2454,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns a paginated, merged view of a subaccount's quotes, combining currently open quotes with the archived history of filled, cancelled, and expired ones. Supports filtering by quote_id, rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes priced legs, direction, fees, liquidity role, and fill percentage.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1587,9 +2512,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns a paginated, merged view of a subaccount's RFQs, combining currently open RFQs with the archived history of filled, cancelled, and expired ones. Supports filtering by rfq_id, status, and a from/to timestamp window, with page and page_size controls. Each entry includes legs, status, timestamps, cost bounds, and fill percentage.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1623,9 +2570,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Taker-side call that lists the maker quotes received against RFQs owned by the subaccount. Supports filtering by quote_id, rfq_id, status, and a timestamp window, with pagination. Returns public quote views (including the maker's wallet) without any signing material.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1659,9 +2628,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Maker-side call that lists the RFQs a subaccount is eligible to quote, i.e. RFQs that are open to all makers or that name the maker's wallet as a counterparty. Supports filtering by rfq_id, status, an originating RFQ subaccount, and a timestamp window, with pagination. Returns public RFQ views without taker-private signing material.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1695,9 +2686,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Maker-side call that atomically cancels an existing quote and submits a new signed quote for the same RFQ in one operation. You provide the new priced legs, direction, max fee, and EIP-712 signature, plus the quote to cancel (by quote_id or nonce_to_cancel). Returns the cancellation result together with the newly created quote. Requires trade scope for every instrument quoted.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
@@ -1731,9 +2744,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Taker-side dry run that evaluates a prospective RFQ (its legs and intended direction) without creating anything. Returns the best available maker quote if one exists. It returns no quote when the best quote breaks the RFQ's max_total_cost or min_total_cost. The response also includes the expected fee, validity, projected liquidation prices, and realized-PnL estimate for taking it.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1767,9 +2802,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Maker-side call that submits a priced, signed quote in response to an existing RFQ. You provide the priced legs, direction, max fee, an EIP-712 signature (signer, signature, nonce, expiry), and optional label or MMP flag. The quote's signature is verified and validated against the referenced RFQ before it is stored. Returns the created quote. Requires trade scope for every instrument quoted.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
@@ -1803,9 +2860,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Taker-side call that opens a new RFQ for a multi-leg structure on a subaccount, inviting makers to quote it. You supply the legs (instrument, amount, and direction per leg) plus optional min/max total cost limits that filter only the best quote, a partial-fill step, a label, and a list of specific counterparties to restrict who can see it. Returns the created RFQ including its assigned id and validity window. Requires trade scope for every instrument in the legs.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -1839,7 +2918,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Public signing-preview helper that returns the taker's EIP-712 encoding artifacts (encoded data and hashes) plus the maker-side encoded legs and legs hash for a quote execution a client is about to sign. It does not verify signatures, persist anything, or execute the trade; use it to construct and check the exact payload before calling private/execute_quote.",
@@ -1875,7 +2969,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Public signing-preview helper that returns the EIP-712 encoding artifacts (encoded data, its hash, the action hash, and the typed-data hash) for a maker quote a client is about to sign. It does not verify signatures, persist anything, or place a quote; use it to construct and check the exact payload to sign before calling private/send_quote.",
@@ -1911,9 +3020,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Bids on an open liquidation auction. Names the bidder's own subaccount, the account being auctioned, the fraction of it to absorb as a whole percent (a multiple of 0.01), and a signed limit price. The limit is compared against the discounted price of the whole remaining account — the quote's estimated_bid_price — not against the cash the bid actually moves, and it is negative for an insolvent auction where the security module pays the bidder. The realized fill is capped at the auction's current maximum proportion, so it can land below the requested percent. Quote the auction first with public/get_live_auctions or the auctions.watch channel: both the price and the fraction on offer move with wall-clock and with the account's mark.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -1947,7 +3078,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a paginated history of liquidation auctions, newest first, for a single subaccount or across all of them, optionally bounded by a start/end timestamp window over the auction start. Each entry gives the auctioned subaccount, whether the auction was solvent or insolvent, the fee charged at start, the start and end timestamps, and the bids that filled it with the fraction of the account each absorbed and the cash it moved.",
@@ -1983,7 +3129,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns every liquidation auction open right now, each priced for a maximal bid at the moment of the response: the cash a bid would cost, the largest fraction of the account it could take, the account's mark-to-market value, the expected discount profit, and the balances on offer. Takes no parameters. This is the polling counterpart to the auctions.watch channel and carries the same values; both a solvent auction's price and the fraction on offer move with wall-clock and with the account's mark, so a quote is only good for the instant it was taken.",
@@ -2019,7 +3180,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Calculates the mark-to-market value and initial/maintenance margin for a given subaccount, with per-position and per-collateral breakdowns, computed from live feed data at request time. Margins use the subaccount's manager's params. Set is_delayed_liquidation to get them under the subaccount's delayed-liquidation override instead; the request is rejected for a subaccount without one. has_delayed_liquidation reports whether the subaccount has one. A maintenance margin below zero means the subaccount is flagged for liquidation.",
@@ -2030,42 +3206,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MarginWatchRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/start_auction": {
-      "post": {
-        "tags": [
-          "Liquidations"
-        ],
-        "summary": "public/start_auction",
-        "operationId": "public_start_auction",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicStartAuctionResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "description": "Opens a Dutch-auction liquidation against a subaccount whose maintenance margin is breached. Permissionless: it takes only the target subaccount and needs no signer, nonce or session-key scope, and the engine validates the breach before opening. Fails if an auction is already running on that account. The liquidation keeper calls this automatically, so it is rarely needed by hand.",
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicStartAuctionRequest"
               }
             }
           }
@@ -2091,9 +3231,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed cancel action that drains all of the caller's pending deposit and withdraw requests for a given vault and posts the corresponding on-chain operation. Input is the vault subaccount; any subaccount the caller owns may sign. Requires the user-cancel permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2127,9 +3289,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the caller's currently-pending vault deposit and withdraw requests, read live from the vault queue. Not paginated (the live queue is bounded); settled and terminal history is served by get_vault_request_history. The wallet parameter must match the authenticated connection.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2163,9 +3347,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the subaccount ids of the vaults in which the given wallet holds shares. The wallet parameter must match the authenticated connection. Read-only.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2199,9 +3405,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the caller's full vault action history (deposits, withdrawals, force-withdrawals, and cancels) across every status — enqueued, requested, applied, cancelled, rejected, or expired — with one row per action at its latest state. Paginated by page and page_size; monetary amounts, prices, and share counts are decimal strings. The wallet parameter must match the authenticated connection.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2235,9 +3463,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the caller's share balance for every vault it holds shares in, each paired with the full enriched vault row (the same shape as public/get_vault). The wallet parameter must match the authenticated connection. Read-only.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2271,9 +3521,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed deposit action from the user's source subaccount and enqueues it in the vault's pending-deposit queue for the curator to settle. Inputs are the target vault subaccount, the deposit asset, and the amount as a decimal string. Returns an acknowledgement with the queued request; requires the user-deposit permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2307,9 +3579,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed withdraw action that enqueues a request to burn a given number of vault shares and redeem the proceeds to the user's subaccount. Inputs are the vault subaccount and the share quantity to burn (decimal string). Returns an acknowledgement with the queued request; requires the user-withdraw permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2343,7 +3637,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the full vault record — on-chain state plus curator metadata — for one vault subaccount id. Unauthenticated and read-only.",
@@ -2379,7 +3688,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a vault's finalized deposit, withdrawal, fee-accrual, and cancel events — including NAV, share price, high-water mark, and the fee-share split across management, performance, curator, and protocol — at the vault level (per-holder position details are omitted). Inputs are the vault subaccount, an optional event_type filter, and pagination. Amounts and prices are decimal strings. Unauthenticated.",
@@ -2415,7 +3739,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a time series of a vault's mark-to-market performance (NAV, share price, total and curator shares, high-water mark, optional benchmark) sampled hourly and downsampled to the requested resolution (1h, 8h, 24h, or 1wk). Supports optional from/to unix-second bounds and a limit (newest first, default 1000, capped at 10000). Values are decimal strings, with live prices nullable. Unauthenticated.",
@@ -2451,7 +3790,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns every vault in the system, each paired with its subaccount id, paginated by page and page_size. Unauthenticated and read-only.",
@@ -2487,9 +3841,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-only endpoint that settles a pending withdraw request by signing a burn approval at a quoted share price (USD per share). Takes the request id and the user's withdraw-action hash, burns the shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2523,9 +3899,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Registers a new vault on-chain from a signed action; the signing wallet becomes the vault's curator and seeds the initial deposit from its funding subaccount. Inputs set the deposit asset, initial deposit amount, initial share price, management/performance fee rates (in basis points), max slippage, redemption cooldown, an optional benchmark asset for the high-water mark, and the max sequencer fee authorized. Requires the vault curator-create permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2559,9 +3957,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-signed endpoint that builds an on-chain action to forcibly redeem a given holder's entire share balance at the current mark-to-market share price. Inputs are the vault subaccount the curator signs on, the EIP-712 envelope (nonce, signer, signature, expiry), and the holder's wallet address. Requires the curator mint-and-burn permission; the protocol re-verifies the curator signature.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2595,9 +4015,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the subaccount ids of the vaults curated by the given wallet. The wallet parameter must match the authenticated connection. Read-only.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2631,9 +4073,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-only endpoint that returns a FIFO page of a vault's pending withdraw (burn) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2667,9 +4131,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-only endpoint that returns a FIFO page of a vault's pending deposit (mint) requests. Inputs are the vault subaccount and a page limit. Requires the curator mint-and-burn permission.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2703,9 +4189,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-only endpoint that settles a pending deposit request by signing a mint approval at a quoted share price (USD per share). Takes the request id and the user's deposit-action hash, mints the corresponding shares, and returns the settlement result. Requires the curator mint-and-burn permission.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -2739,9 +4247,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Curator-only endpoint that removes a queued deposit request off-chain (no on-chain settlement), recording the rejection with an optional short reason. Takes the request id and returns an acknowledgement. Requires the curator mint-and-burn permission.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2775,11 +4305,33 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Applies an off-chain patch to a vault the caller curates, updating any of its display name, description, advisory mark-to-market cap (a USD decimal), or whitelist-only flag. Only the fields supplied are changed. The caller must own the vault's subaccount (i.e. be its curator); description length is capped.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -2811,9 +4363,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns settled deposits for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the deposited amount as a decimal, the fee routed to the security module (the net credited amount is amount minus fee), and the resolved settlement batch and status. A deposit that could not reach its target is credited to the wallet's fallback subaccount instead: it reports `is_fallback: true` and the rejection that caused it in `fallback_error_code`, `fallback_error_message` and `fallback_error_data`.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2847,9 +4421,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns settled spot (ERC-20) transfers involving a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the transfer amount and fee as decimals along with direction — the sender sees the gross amount plus fee, the receiver sees the net credit — plus the resolved settlement batch and status.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2883,9 +4479,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns a paginated history of perpetual funding (settlement) events for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window and filtered by perpetual instrument name. The response includes the funding events with their instrument name and settled amounts, plus pagination info with total count and page count.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2919,9 +4537,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns realized interest settlements per subaccount, for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry gives the settled interest as a decimal, where a negative value was paid (borrowed) and a positive value was received (supplied).",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2955,9 +4595,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns option settlement (expiry) events for a single subaccount or an entire wallet (specify exactly one). Each settlement includes the reconstructed option instrument name, the settled amount and value for that expired position, and the realized settlement PnL against the position's cost basis, with and without trading fees.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -2991,9 +4653,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns a paginated history of orders for a single subaccount or for an entire wallet (specify exactly one), optionally bounded by a from/to timestamp window. Only orders in a terminal state (filled, cancelled, expired) are recorded here, one record per order. Trigger and algo orders appear once they terminate, carrying their accumulated filled amount; while they are still live — including partially executed algo orders and trigger orders that have not yet fired — read them from get_trigger_orders and get_algo_orders instead. Each page includes the order records plus pagination info with the total count and number of pages.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3027,9 +4711,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns a paginated history of executed trades for a single subaccount or an entire wallet (specify exactly one), with optional filters for a time window, order id, instrument name, or quote id. The response includes the trade records and pagination info with total count and page count.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3063,9 +4769,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns settled withdrawals for a single subaccount or an entire wallet (specify exactly one), optionally bounded by a start/end timestamp window. Each entry reports the withdrawn amount as a decimal, the fee routed to the security module (the net amount sent to the recipient is amount minus fee), and the resolved settlement batch and status.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3102,9 +4830,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the market maker protection (MMP) settings for a subaccount, optionally filtered to a single currency. Each entry reports the amount and delta limits (as decimal strings), the rolling interval and freeze duration (in milliseconds), and the current freeze state, including whether MMP is currently frozen and the timestamp at which it unfreezes.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3138,11 +4888,33 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Clears an active market maker protection freeze and resets the rolling MMP window for a subaccount, optionally scoped to a single currency. Use this to resume quoting after MMP has frozen a subaccount. Requires a trading-scoped session key and returns \"ok\" on success.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -3174,11 +4946,33 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Creates or fully replaces the market maker protection settings for a subaccount and currency. Accepts an amount limit and delta limit (as decimals) plus the rolling interval and freeze duration in milliseconds; omitted limits default to zero. Requires a trading-scoped session key and echoes the applied configuration back.",
-        "x-rate-limit-class": "non_matching",
+        "x-rate-limit-class": "proven",
         "requestBody": {
           "required": true,
           "content": {
@@ -3210,9 +5004,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Atomically transfers one or more derivative positions between a maker and a taker subaccount using matched, signed transfer quotes. Each side supplies its subaccount, signer, nonce, signature, expiry, max fee, direction, and priced legs (instrument, amount, price); the two quotes must mirror each other. Requires a session key with transfer permission and returns the resulting operation details.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -3246,9 +5062,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/transfer_positions and rebuilds both the maker and taker Actions without executing anything, returning for each side the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded action data (the maker's priced legs, and the taker's order_hash committing to them). Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3282,9 +5120,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed transfer of a single spot asset from one subaccount to another subaccount you own. You specify the source and destination subaccounts (or set new_subaccount_manager to create a new destination subaccount under a manager), the asset and its sub_id, the amount, a nonce, signer, signature with expiry, and the maximum USD sequencer fee. Requires a session key with a transfer permission and returns the operation id and uuid.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -3318,9 +5178,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/transfer_spot and rebuilds the transfer Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded transfer action data. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3354,9 +5236,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed transfer of a single spot asset to a subaccount belonging to a different owner. Alongside the standard transfer fields (asset, sub_id, amount, nonce, signer, signature, expiry, max USD fee) you give the recipient's wallet address and either an existing destination subaccount or 0 to create a new one under new_subaccount_manager; the max fee must cover both the transfer and any subaccount-creation cost. Requires a session key permitted to transfer to a different owner and returns the operation id and uuid.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -3390,9 +5294,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/transfer_spot_external and rebuilds the external transfer Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded transfer action data including the recipient address. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session; no transfer scope needed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3426,9 +5352,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Adds and/or removes recipient wallet addresses on an account's transfer whitelist via a signed, wallet-level action. Provide the owner wallet, signer, nonce, signature with expiry, and the add and remove address lists. This is an owner-or-admin operation (session keys need the admin scope); it returns the operation id, uuid, and the full whitelist after the update is applied.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -3462,9 +5410,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Takes the same params as private/update_whitelisted_recipients and rebuilds the whitelist Action without executing anything, returning the EIP-712 encoded_data, encoded_data_hashed, action_hash, typed_data_hash, domain_separator, action_typehash, module, owner and expected_signer, plus the decoded add and remove address lists. Byte-compare these against your local computation to find why a signature is rejected. Requires a logged-in session.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3498,9 +5468,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Submits a signed request to withdraw a spot asset out of a subaccount. You provide the subaccount id, asset name, amount in underlying units, a nonce, the signer, an EIP-712 signature with its expiry, and the maximum sequencer fee (in USD) you authorise; setting force_batch controls whether the withdrawal is batched. Requires a session key with withdraw permission, and returns the accepted operation id and its uuid for tracking.",
         "x-rate-limit-class": "proven",
         "requestBody": {
@@ -3532,7 +5524,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Dry-run helper that returns the EIP-712 typed data and hashes that would be computed for the given withdrawal parameters, so clients can verify their own signing and hashing before submitting. Takes the same inputs as private/withdraw (subaccount, signer, nonce, amount, max fee, expiry, asset) but performs no state change and needs no signature.",
@@ -3568,9 +5575,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Lists the account's withdraw addresses from private/register_withdraw_address: its EVM ones (their recipient is the wallet) and every withdraw address on its whitelisted_recipients. Each entry gives the destination chain id, the address kind (evm or solana), the recipient as registered and whether it is whitelisted, which session keys need before they can withdraw to it. A Solana address that was registered but never whitelisted is not listed.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
@@ -3604,10 +5633,32 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "description": "Reports a Li.Fi bridge into one of the caller's deposit addresses the moment its source transaction is sent, so public/get_pending_deposits shows it as `bridging` at once with the quoted amount, before Li.Fi indexes it. Takes the source chain and transaction, the quote's transactionId, the deposit address, the source and delivered tokens and the quoted toAmount. Idempotent per source transaction. Display only: nothing is credited from it, and a registration Li.Fi never confirms expires.",
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
+        "description": "Reports a bridge into one of the caller's deposit addresses the moment its source transaction is sent, so public/get_pending_deposits shows it as `bridging` at once with the expected amount, before the bridge's own API reports it. Rails: `lifi`, `layerzero` and `ccip`. Takes the rail, the source chain and transaction, the rail's transfer id (Li.Fi: the quote's transactionId, optional; LayerZero: the message guid; CCIP: the messageId), the deposit address, the source and delivered tokens and the expected amount. Idempotent per bridge. Display only: nothing is credited from it, and a registration its rail never confirms expires.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
           "required": true,
@@ -3640,9 +5691,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "description": "Returns the Ethereum withdraw address that forwards a withdrawal of a forwarded token to a recipient on its home chain, and records it so the forwarder watches it. Takes the wallet, the destination chain id (a key of the route file's withdraw_forwarding section; Solana is 101, devnet 103) and the recipient. On an EVM chain the recipient must be the account wallet; on Solana it must be a base58 wallet address, which is screened. Repeated calls return the same address; new registrations are rate limited per rolling window. Withdraw to the returned address with private/withdraw. Session keys without unbounded Admin scope must first add it with private/update_whitelisted_recipients.",
         "x-rate-limit-class": "endpoint",
         "requestBody": {
@@ -3676,7 +5749,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the lifecycle of onchain actions submitted via `OnchainActionManager.sol`. Public endpoint.\n\nOnchain actions are either applied directly or with a `fallback` flag. Each onchain action is affected by the `fallback` flag uniquely:\n\n- Deposits: sequencer moved the deposit into the `fallback_subaccount`\n- SetSessionKey: no-op\n- Admin actions: no-op\n\nThe onchain action can have several states:\n\n- `applied`: action was successfully applied by the sequencer\n- `applied_with_fallback`: action was applied by the sequencer with fallback=true\n- `instant_fallback`: action failed its initial attempt, will be re-submitted with fallback=true\n- `retry_then_fallback`: action failed its initial attempt, will be re-submitted with fallback=false until the retry budget is exceeded, then re-submitted with fallback=true\n- `never_escalate`: action failed its initial attempt but will retry until successful, never with fallback=true\n\nA failed attempt is recorded in `error_code`, `error_message` and `error_data`, and kept once the action is applied. `error_code` is a catalogued error code; `error_data` carries the specifics, and is null for an internal error.",
@@ -3712,7 +5800,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns deposits queued on L1 but not yet applied by the sequencer, indexed for a wallet and keyed by (tx_hash, log_index). Once a deposit is applied it moves to private/get_deposit_history; this endpoint covers the window in between. Public because a first-time depositor has no account (and thus no session key) until their deposit is applied.",
@@ -3748,7 +5851,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "A pre-requisite before using the `standard` deposit method as opposed to `direct` contract calls. Returns the deterministic on-chain deposit address for a wallet and records it so incoming deposits are watched and credited. Pass the wallet and optionally an existing subaccount id; when creating a new subaccount (subaccount omitted or 0) a non-zero manager_id is required. Repeated calls return the same cached address and keep it alive, while new registrations are rate limited per rolling window; unused addresses are dropped after 7 days.",
@@ -3784,7 +5902,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Runs a hex-encoded Action.data payload through the exchange's own ABI decoder and returns either the decoded fields or the exact reason the bytes were rejected, naming the 32-byte word and the field that broke. Reach for this first when a request fails signature verification (14014): every other route encodes Action.data server-side, so a client whose encoder emits a bad word never sees a decode error - the hashes simply disagree. This is the only route a client's own bytes reach the decoder. Needs no auth and executes nothing.",
@@ -3820,7 +5953,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the caller's current remaining rate-limit allowances for the active connection, broken out into matching-request, non-matching-request, and per-endpoint buckets. On WebSocket connections it also includes the remaining connection allowance.",
@@ -3856,10 +6004,25 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "description": "Returns every incident the exchange operators have declared and not yet resolved, each with its label, message, severity (low, medium or high), whether it was raised manually or by an automated monitor, and when it was raised. Takes no parameters. Incidents are recorded and resolved by operators in ClickHouse; a resolved incident disappears from this list.",
+        "description": "Returns every incident the exchange operators have declared and not yet resolved, each with its label, message, severity (low, medium or high), whether it was raised manually or by an automated monitor, and when it was raised. Takes no parameters. A resolved incident disappears from this list.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -3892,7 +6055,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the current server time in milliseconds since the UNIX epoch. Takes no parameters and requires no authentication. Use it to align the timestamps and nonces bound into signed actions with the server clock.",
@@ -3928,7 +6106,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Looks up the settlement lifecycle of a previously submitted operation by its operation UUID (op_uuid). Returns the operation's serialized data along with its batch status, settlement transaction hash, and any error log; the status is null until the operation has been picked up for settlement.",
@@ -3967,7 +6160,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns detailed metadata for every configured currency, including supported instrument types, risk managers, spot price and 24h-ago price, SRM/portfolio margin collateral discounts, lending borrow/supply APYs, open-interest caps and utilization per manager, and protocol asset addresses. Currencies that exist but have no configured assets are omitted. Public endpoint, no authentication required.",
@@ -4003,7 +6211,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a paginated, name-descending list of full instrument definitions filtered by `instrument_type`, optional `currency` and optional `risk_universe_id`, with `page`/`page_size` (max 1000) controls and pagination metadata. For options, `expired` selects the listing: `false` returns live options, `true` returns only expired options. An option enters the expired listing up to a minute before it expires, so it does not drop out of both listings at expiry. Perps and spot ignore `expired`. An empty listing returns `instrument_not_found`; a page past the end returns the last page. An option's `settlement_price` here can lag settlement by a few minutes; `public/get_instrument` returns it at once. Public endpoint.",
@@ -4042,7 +6265,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a sorted list of the names of every currently live instrument (active and within its scheduled activation window). Takes no parameters and returns names only, not full definitions. Public endpoint.",
@@ -4078,7 +6316,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the full detail record for one currency named by the required `currency` parameter: supported instrument types, risk managers, current and 24h spot price, margin collateral discounts, lending APYs and totals, per-manager open-interest caps and current OI, and protocol asset addresses. Returns a not-found error for unknown currencies. Public endpoint.",
@@ -4114,7 +6367,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns funding-rate OHLC candles for a perpetual instrument (`instrument_name`) over an optional `start_timestamp`/`end_timestamp` window (UTC milliseconds) at a `period` granularity (defaults to 1h; 60s up to 1w supported). Each candle carries open/high/low/close per-hour rates plus a `funding_rate` mirroring the close. Public endpoint.",
@@ -4153,7 +6421,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns spot index OHLC candles for a `currency` between required `start_timestamp` and `end_timestamp` (UTC seconds) at the given `period` granularity (1m up to 1w). Each candle includes open/high/low/close and a `price` mirroring the close. The requested range is clamped to a maximum number of buckets. Public endpoint.",
@@ -4189,7 +6472,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the full public definition of one instrument named by `instrument_name`: type, activation window and active status, tick size, min/max/step amounts, maker/taker/base fee rates, pro-rata matching parameters, base/quote currencies, and type-specific details (option, perp, or spot). Expired options remain queryable by `instrument_name`. Public endpoint.",
@@ -4225,7 +6523,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns lending borrow/supply APY OHLC candles for a `currency`'s pool over an optional time window (UTC milliseconds) at a `period` of 1h or larger (defaults to 1h; sub-hour periods are rejected). An optional `risk_universe_id` restricts to one pool; otherwise every universe's candles are returned, each tagged and carrying pool total supply/borrow. Public endpoint.",
@@ -4261,7 +6574,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the most recent oracle-signed feed data — spot, forward, volatility (SVI), rate, perp, and perpetual funding-rate feeds — each with signer addresses and signatures for on-chain submission. Optional `currency` and `expiry` filters narrow the result (use `expiry` 0 for the non-expiry feeds: spot, perp and funding); both default to all. Public endpoint.",
@@ -4297,7 +6625,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the settlement price for each settled option expiry of a `currency`, with the expiry date (YYYYMMDD), unix expiry timestamp, and price. Only already-settled expiries are returned. Unknown currencies return a not-found error. Public endpoint.",
@@ -4333,7 +6676,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns TWAPs of the perp mid, ask impact and bid impact prices minus spot for a `currency` between `start_time` and `end_time` (unix seconds).",
@@ -4372,7 +6730,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns every risk universe (the isolated risk-containment boundaries trades never cross), each with its display name and description, its managers — at most one Standard (`SM`) and one Portfolio (`PM2`), each listing the derivative instruments it risk-prices and the collateral assets it accepts with their margin discounts and deposit metadata — and its Security Module. The one call that answers which universe and manager to choose: pick a universe, pick a manager in it, and pass its `manager_id` when depositing to a new subaccount (the accepted collateral entries carry the `asset` address for the deposit). The no-margin fallback universe (id 0) is included; it custodies dead-lettered deposits and lists no tradeable instruments. Public endpoint, no authentication required.",
@@ -4408,7 +6781,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns the latest ticker snapshot for a single instrument named by `instrument_name`. The payload matches the data of a `ticker_slim.{instrument}.{interval}` subscription update (mark/index prices, best bid/ask, sizes, greeks, and related fields). Returns an error if no ticker is available. Public endpoint.",
@@ -4444,7 +6832,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns a map of instrument name to latest ticker snapshot for an `instrument_type`. Options require both `currency` and an 8-digit `expiry_date` (YYYYMMDD); perps and spot accept an optional `currency` (omit to fetch all currencies) and reject `expiry_date`. Public endpoint.",
@@ -4480,7 +6883,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns paginated, anonymized trades with optional filters: `trade_id` (a UUID, which overrides all other filters), `instrument_name`, `instrument_type` (erc20/option/perp), `currency`, `subaccount_id`, `batch_status` (a batch-status name; unset returns trades in every batch state), and `from_timestamp`/`to_timestamp`. Without `trade_id`, `subaccount_id` or `instrument_name`, or whenever `batch_status` is set, the window is limited to the 30 days ending at `to_timestamp` (or now). Each trade is enriched with its settlement status and transaction hash. Public endpoint.",
@@ -4519,7 +6937,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns traded-price OHLCV candles for an `instrument_name` between required `start_timestamp` and `end_timestamp` (UTC seconds) at the given `period` (1m up to 1w), aggregated from executed trade history. Each candle includes open/high/low/close prices plus USD and contract volume, formatted for charting. Public endpoint.",
@@ -4555,10 +6988,25 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "description": "Returns the wallet-level score breakdown for one maker-program epoch, including square-rooted coverage and quality components, traded-volume multiplier, holder boost, volume, and epoch totals. Scores, trades, program configuration, and the temporary enrolled-wallet set are read from ClickHouse.",
+        "description": "Returns the wallet-level score breakdown for one maker-program epoch, including square-rooted coverage and quality components, traded-volume multiplier, holder boost, volume, and epoch totals.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -4594,10 +7042,25 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "description": "Returns every maker-program epoch, including historical epochs, with its asset and currency scope, minimum eligible notional, timestamps, and reward-token amounts. Takes no parameters and reads the configuration from ClickHouse.",
+        "description": "Returns every maker-program epoch, including historical epochs, with its asset and currency scope, minimum eligible notional, timestamps, and reward-token amounts. Takes no parameters.",
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -4633,7 +7096,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns every registered referral code along with the owner's wallet address and, when configured, the wallet that receives referral rewards. Takes no parameters.",
@@ -4669,7 +7147,22 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "description": "Returns broker-program referral performance for a referral code, identified either by the code itself or by the referrer's wallet, over a requested time window (start_ms to end_ms, capped at 28 days). The response includes total notional volume, referred fees, fee rewards, builder fees collected, the applicable fee-share percentage, and a per-role/currency/instrument-type breakdown, all as decimal strings.",
@@ -4705,9 +7198,31 @@
             }
           },
           "default": {
-            "description": "JSON-RPC error (see Error Codes)"
+            "description": "JSON-RPC error (see Error Codes)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/RPCError"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "DeriveWallet": [],
+            "DeriveTimestamp": [],
+            "DeriveSignature": []
+          }
+        ],
         "x-rate-limit-class": "non_matching",
         "requestBody": {
           "required": true,
@@ -4715,41 +7230,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GetSubaccountValueHistoryRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/public/set_socialization_feed_data": {
-      "post": {
-        "tags": [
-          "Other"
-        ],
-        "summary": "public/set_socialization_feed_data",
-        "operationId": "public_set_socialization_feed_data",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationAckResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "JSON-RPC error (see Error Codes)"
-          }
-        },
-        "x-rate-limit-class": "non_matching",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicSetSocializationFeedDataRequest"
               }
             }
           }
@@ -5602,7 +8082,8 @@
           "compliance",
           "trigger_failed",
           "validation_failed",
-          "algo_completed"
+          "algo_completed",
+          "max_crossed_orders"
         ]
       },
       "CancelRfqRequest": {
@@ -5861,7 +8342,7 @@
             "$ref": "#/components/schemas/Direction"
           },
           "extra_fee": {
-            "description": "Optional extra fee per unit of volume, as a decimal string or JSON number. Defaults to zero.",
+            "description": "Optional builder fee for the whole order, in USDC, as a decimal string or JSON number. Each fill pays its pro-rata share. Defaults to zero.",
             "default": null,
             "type": [
               "string",
@@ -6324,7 +8805,7 @@
         ],
         "properties": {
           "rail": {
-            "description": "Bridge protocol: `lifi` or `layerzero`.",
+            "description": "Bridge protocol: `lifi`, `layerzero` or `ccip`.",
             "type": "string"
           },
           "source_address": {
@@ -9651,33 +12132,6 @@
           }
         }
       },
-      "OperationAckResponse": {
-        "description": "Postcard-friendly mirror of `sequencer_runtime::types::OperationResult`.\n\nWe can't use `OperationResult` directly for two reasons: - it only derives `Serialize` (no `Deserialize` or `JsonSchema`), and - it has a `BalanceSnapshot` field marked `#[serde(skip)]` that we don't want crossing the wire.\n\nThis mirror carries just the fields that actually cross the wire and adds the derives the gateway needs.",
-        "type": "object",
-        "required": [
-          "mmp_triggered",
-          "op_uuid",
-          "operation_id"
-        ],
-        "properties": {
-          "mmp_triggered": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          },
-          "op_uuid": {
-            "type": "string"
-          },
-          "operation_id": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          }
-        }
-      },
       "OptionDetails": {
         "type": "object",
         "required": [
@@ -10291,7 +12745,7 @@
             "$ref": "#/components/schemas/Direction"
           },
           "extra_fee": {
-            "description": "Optional extra fee per unit of volume, as a decimal string or JSON number. Defaults to zero.",
+            "description": "Optional builder fee for the whole order, in USDC, as a decimal string or JSON number. Each fill pays its pro-rata share. Defaults to zero.",
             "default": null,
             "type": [
               "string",
@@ -10621,7 +13075,7 @@
             "type": "string"
           },
           "bridge_status": {
-            "description": "`registered` (reported by the client, not yet confirmed by Li.Fi) `submitted` (in flight) `delivered` (landed on the destination chain) `matched` (joined to the L1 deposit) `failed` (the bridge refunded or could not fill — nothing reached the escrow) `expired` (unresolved past `expires_at_ms`; check the source chain) `unmatched` (delivered, but not credited within 24h; contact support)",
+            "description": "`registered` (reported by the client, not yet confirmed by its rail) `submitted` (in flight) `delivered` (landed on the destination chain) `matched` (joined to the L1 deposit) `failed` (the bridge refunded or could not fill — nothing reached the escrow) `expired` (unresolved past `expires_at_ms`; check the source chain) `unmatched` (delivered, but not credited within 24h; contact support)",
             "type": "string"
           },
           "delivered_at_ms": {
@@ -10645,14 +13099,14 @@
             "format": "int64"
           },
           "provider_transfer_id": {
-            "description": "The provider's own id for the bridge (Li.Fi: the quote's `transactionId`), stable through its lifecycle.",
+            "description": "The provider's own id for the bridge (Li.Fi: the quote's `transactionId`; LayerZero: the message `guid`; CCIP: the `messageId`), stable through its lifecycle.",
             "type": [
               "string",
               "null"
             ]
           },
           "rail": {
-            "description": "Bridge protocol: `lifi` or `layerzero`.",
+            "description": "Bridge protocol: `lifi`, `layerzero` or `ccip`.",
             "type": "string"
           },
           "receiving_amount": {
@@ -11978,84 +14432,6 @@
           }
         }
       },
-      "PublicForwardFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "expiry",
-          "fwd_diff",
-          "spot_aggregate_latest",
-          "spot_aggregate_start",
-          "timestamp"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "expiry": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "fwd_diff": {
-            "type": "string"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "spot_aggregate_latest": {
-            "type": "string"
-          },
-          "spot_aggregate_start": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "PublicFundingFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "funding_rate",
-          "timestamp"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "funding_rate": {
-            "description": "Per-hour funding rate as a decimal string; may be negative.",
-            "type": "string"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
       "PublicGetLiveAuctionsResponse": {
         "type": "object",
         "required": [
@@ -12083,7 +14459,7 @@
             "type": "string"
           },
           "market": {
-            "description": "Currency the PM2 manager must cover; required for PM2.",
+            "description": "Currency the manager must cover; required for PM2.",
             "default": null,
             "type": [
               "string",
@@ -12135,6 +14511,36 @@
         "properties": {
           "wallet": {
             "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "PublicGetWalletRequest": {
+        "type": "object",
+        "required": [
+          "subaccount_id"
+        ],
+        "properties": {
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        }
+      },
+      "PublicGetWalletResponse": {
+        "type": "object",
+        "required": [
+          "subaccount_id",
+          "wallet"
+        ],
+        "properties": {
+          "subaccount_id": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "wallet": {
+            "type": "string"
           }
         }
       },
@@ -12235,61 +14641,6 @@
           }
         }
       },
-      "PublicOracleSignatureDataParams": {
-        "type": "object",
-        "properties": {
-          "signatures": {
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "signers": {
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "PublicPerpFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "spot_diff_value",
-          "timestamp",
-          "type"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "spot_diff_value": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "type": {
-            "type": "string"
-          }
-        }
-      },
       "PublicQuote": {
         "type": "object",
         "required": [
@@ -12358,43 +14709,6 @@
           },
           "wallet": {
             "$ref": "#/components/schemas/Address"
-          }
-        }
-      },
-      "PublicRateFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "expiry",
-          "rate",
-          "timestamp"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "expiry": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "rate": {
-            "type": "string"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -12552,144 +14866,6 @@
           }
         }
       },
-      "PublicSetFeedDataRequest": {
-        "type": "object",
-        "required": [
-          "forward",
-          "perp",
-          "rate",
-          "spot",
-          "vol"
-        ],
-        "properties": {
-          "forward": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicForwardFeedDataParams"
-            }
-          },
-          "funding": {
-            "description": "Per-hour perpetual funding rates. Optional so an oracle that predates the funding feed keeps publishing the other five.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicFundingFeedDataParams"
-            }
-          },
-          "perp": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicPerpFeedDataParams"
-            }
-          },
-          "rate": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicRateFeedDataParams"
-            }
-          },
-          "spot": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicSpotFeedDataParams"
-            }
-          },
-          "vol": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicVolFeedDataParams"
-            }
-          }
-        }
-      },
-      "PublicSetSocializationFeedDataRequest": {
-        "type": "object",
-        "required": [
-          "feeds",
-          "universe_id"
-        ],
-        "properties": {
-          "feeds": {
-            "description": "Oracle feed batch, in the `public/set_feed_data` shape.",
-            "$ref": "#/components/schemas/PublicSetFeedDataRequest"
-          },
-          "universe_id": {
-            "description": "Universe whose pending socialization event to patch.",
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0.0
-          }
-        }
-      },
-      "PublicSpotFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "price",
-          "timestamp"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "feed_source_type": {
-            "default": null,
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "price": {
-            "type": "string"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "PublicStartAuctionRequest": {
-        "type": "object",
-        "required": [
-          "subaccount_id"
-        ],
-        "properties": {
-          "subaccount_id": {
-            "description": "Subaccount to auction.",
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          }
-        }
-      },
-      "PublicStartAuctionResponse": {
-        "type": "object",
-        "required": [
-          "op_uuid",
-          "operation_id"
-        ],
-        "properties": {
-          "op_uuid": {
-            "type": "string"
-          },
-          "operation_id": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0.0
-          }
-        }
-      },
       "PublicTradesResult": {
         "type": "object",
         "required": [
@@ -12803,78 +14979,6 @@
             "description": "Non-negative decimal string of the human value (e.g. `\"1.5\"`), up to 12 fractional digits; a string or JSON number is accepted",
             "type": "string",
             "format": "decimal"
-          }
-        }
-      },
-      "PublicVolFeedDataParams": {
-        "type": "object",
-        "required": [
-          "confidence",
-          "currency",
-          "expiry",
-          "timestamp",
-          "vol_data"
-        ],
-        "properties": {
-          "confidence": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "deadline": {
-            "default": 0,
-            "type": "integer",
-            "format": "int64"
-          },
-          "expiry": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "signatures": {
-            "$ref": "#/components/schemas/PublicOracleSignatureDataParams"
-          },
-          "timestamp": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "vol_data": {
-            "$ref": "#/components/schemas/PublicVolSVIParamDataParams"
-          }
-        }
-      },
-      "PublicVolSVIParamDataParams": {
-        "type": "object",
-        "required": [
-          "SVI_a",
-          "SVI_b",
-          "SVI_fwd",
-          "SVI_m",
-          "SVI_refTau",
-          "SVI_rho",
-          "SVI_sigma"
-        ],
-        "properties": {
-          "SVI_a": {
-            "type": "string"
-          },
-          "SVI_b": {
-            "type": "string"
-          },
-          "SVI_fwd": {
-            "type": "string"
-          },
-          "SVI_m": {
-            "type": "string"
-          },
-          "SVI_refTau": {
-            "type": "string"
-          },
-          "SVI_rho": {
-            "type": "string"
-          },
-          "SVI_sigma": {
-            "type": "string"
           }
         }
       },
@@ -13557,11 +15661,11 @@
             "type": "string"
           },
           "expected_amount": {
-            "description": "What the quote says will arrive, in `bridge_token`'s native units, as a decimal string (Li.Fi: `estimate.toAmount`).",
+            "description": "What will arrive, in `bridge_token`'s native units, as a decimal string (Li.Fi: `estimate.toAmount`; LayerZero: `amountReceivedLD`; CCIP: the amount sent).",
             "type": "string"
           },
           "provider_transfer_id": {
-            "description": "The provider's own id for the transfer, kept if the source transaction is sped up or replaced: Li.Fi's quote `transactionId`.",
+            "description": "The provider's own id for the transfer, kept if the source transaction is sped up or replaced. Li.Fi: the quote's `transactionId`, optional. LayerZero: the message `guid`; CCIP: the `messageId`. Both required.",
             "default": null,
             "type": [
               "string",
@@ -13569,17 +15673,17 @@
             ]
           },
           "rail": {
-            "description": "Bridge protocol: `lifi`. (`layerzero` is not registrable yet.)",
+            "description": "Bridge protocol: `lifi`, `layerzero` or `ccip`.",
             "type": "string"
           },
           "source_chain_id": {
-            "description": "Chain the bridge was sent from.",
+            "description": "EVM chain the bridge was sent from.",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
           },
           "source_token": {
-            "description": "The ERC20 sent on the source chain.",
+            "description": "The ERC20 sent on the source chain; the zero address for the chain's gas token.",
             "type": "string"
           },
           "source_tx_hash": {
@@ -13811,7 +15915,7 @@
             "format": "decimal"
           },
           "extra_fee": {
-            "description": "Optional extra fee per unit of volume, as a decimal string or JSON number. Defaults to zero.",
+            "description": "Optional builder fee for the whole order, in USDC, as a decimal string or JSON number. Each fill pays its pro-rata share. Defaults to zero.",
             "default": null,
             "type": [
               "string",
@@ -18016,6 +20120,26 @@
             }
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "DeriveWallet": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-DeriveWallet",
+        "description": "The wallet the request acts for."
+      },
+      "DeriveTimestamp": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-DeriveTimestamp",
+        "description": "The current time in milliseconds, as a decimal string."
+      },
+      "DeriveSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-DeriveSignature",
+        "description": "EIP-191 signature of the timestamp, by the wallet or one of its session keys."
       }
     }
   }
